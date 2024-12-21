@@ -9,7 +9,7 @@
 	<a href="https://gitee.com/y_project/mtedu-Cloud/blob/master/LICENSE"><img src="https://img.shields.io/github/license/mashape/apistatus.svg"></a>
 </p>
 
-## 平台简介-测试上传
+## 平台简介-去掉测试上传
 
 * 本仓库为前端技术栈 [Vue3](https://v3.cn.vuejs.org) + [Element Plus](https://element-plus.org/zh-CN) + [Vite](https://cn.vitejs.dev) 版本。
 * 配套后端代码仓库地址[mtedu-Cloud](https://gitee.com/y_project/mtedu-Cloud) 或 [mtedu-Cloud-Oracle](https://github.com/yangzongzhuan/mtedu-Cloud-Oracle) 版本。
