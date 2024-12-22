@@ -55,19 +55,22 @@
               {{ formData.academicStageType }}
             </el-form-item>
             <el-form-item label="科目-教材体系：" prop="subjectId" required>
-              <el-select 
-                v-model="formData.subjectId" 
-                placeholder="请选择学科"
-                class="fixed-width-select"
-              >
-                <el-option 
-                  v-for="item in subjectFilterTmp" 
-                  :key="item.id" 
-                  :value="item.id" 
-                  :label="item.name+' ( '+item.levelName+' )'"
-                ></el-option>
-              </el-select>
-              {{ formData.subjectId }}
+              <el-cascader
+            v-model="formData.courseSystems"
+            :options="courseSystemOptions"
+            :props="{ 
+              expandTrigger: 'hover',
+              multiple: true,
+              emitPath: true
+            }"
+            placeholder="请选择课程体系"
+            clearable
+            collapse-tags
+            collapse-tags-tooltip
+            class="w-full"
+            @change="handleCourseSystemChange"
+          />
+          {{ formData.courseSystems }}
             </el-form-item>
           
           </div>
@@ -225,8 +228,9 @@ import { addQuestion, getQuestion, updateQuestion } from '@/api/glxt/question'
 
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
-const { mt_school_type, mt_vocal_education_type, mt_academic_stage} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage');
+const { mt_school_type, mt_vocal_education_type, mt_academic_stage, mt_school_subject} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject');
 
+import { initSubject, getCourseSystemOptions } from '@/api/glxt/subject'
 
 //获取知识点树形结构
 import { getKnowledgeTree } from '@/api/glxt/knowledge';
@@ -297,11 +301,12 @@ const formData = ref({
   difficult: 0,
   knowledge:'',
   knowledgePoints: [],
+  courseSystems: [[]],
 })
 
 const rules = {
   gradeLevel: [{ required: true, message: '请选择年级', trigger: 'change' }],
-  subjectId: [{ required: true, message: '请选择学科', trigger: 'change' }],
+  courseSystems: [{ required: true, message: '请选择学科', trigger: 'change' }],
   academicStageType: [{ required: true, message: '请选择学段', trigger: 'change' }],
   title: [{ required: true, message: '请输入题干', trigger: 'blur' }],
   analyze: [{ required: true, message: '请输入解析', trigger: 'blur' }],
@@ -521,6 +526,39 @@ onMounted(async () => {
   
   await getKnowledgeTreeList()
 })
+
+
+const courseSystemOptions = ref([])//获取挂载课程
+const getCourseSystemOptionList = (schoolType, academicStage) => {
+
+  getCourseSystemOptions(schoolType, academicStage).then(response => {
+    courseSystemOptions.value = response.data
+
+    console.log('courseSystemOptions',courseSystemOptions.value)
+    courseSystemOptions.value.forEach(item => {
+      console.log('item',item.value)
+      item.label = getSubjectName(item.value);
+    })
+  })
+}
+
+const handleCourseSystemChange = (values) => {
+// 挂载课程系统
+  if (!values || values.length === 0) {
+    formData.value.courseSystems = []
+    return
+  }
+
+}
+
+getCourseSystemOptionList(1,1)
+
+
+//获取科目名称
+const getSubjectName = (subjectType) => {
+  return mt_school_subject.value ?.find(item => item.value === subjectType).label
+}
+
 
 // 监听知识点的变化
 watch(() => formData.value.knowledgePoints, (newVal) => {
