@@ -22,7 +22,7 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/yangzongzhuan/mtedu-Cloud-Vue3.git
+git clone https://github.com/sljhxy/mtedu-vue3-poroseye.git
 
 # 进入项目目录
 cd mtedu-vues-poroseye
