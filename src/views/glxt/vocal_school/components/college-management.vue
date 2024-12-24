@@ -17,11 +17,11 @@
             <span class="label">学校类型：</span>
             <span class="value">{{ schoolInfo.educationLevelName }}</span>
           </div>
-          <div class="info-divider"></div>
+          <!-- <div class="info-divider"></div>
           <div class="info-item">
             <span class="label">学段：</span>
             <span class="value">{{ schoolInfo.schoolPeriodName }}-{{ schoolInfo.schoolYearName }}-{{ schoolInfo.schoolPeriod }}</span>
-          </div>
+          </div> -->
         </div>
       </div>
 

@@ -17,11 +17,11 @@
             <span class="label">学校类型：</span>
             <span class="value">{{ schoolInfo.educationLevelName }}</span>
           </div>
-          <div class="info-divider"></div>
+          <!-- <div class="info-divider"></div>
           <div class="info-item">
             <span class="label">学段：</span>
             <span class="value">{{ schoolInfo.schoolPeriodName }}-{{ schoolInfo.schoolPeriod }}</span>
-          </div>
+          </div> -->
         </div>
         <!-- 只有为本科院校时，才显示学院列表 1本科 -->
         <div class="college-section" v-show="schoolInfo.schoolPeriod == 1">

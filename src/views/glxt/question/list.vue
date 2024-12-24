@@ -28,7 +28,7 @@
         <el-button type="primary" @click="submitForm">查询</el-button>
         <!-- <el-tooltip placement="bottom" trigger="click">
           <template #content>
-            <el-button type="warning" size="mini" v-for="item in editUrlEnumTmp" :key="item.key"
+            <el-button type="warning" size="small" v-for="item in editUrlEnumTmp" :key="item.key"
                       @click="$router.push({path:item.value})">{{item.name}}
             </el-button>
           </template>
@@ -38,17 +38,31 @@
     </el-form>
     <!-- v-loading="listLoading"  -->
     <el-table :data="tableData" border fit highlight-current-row style="width: 100%" v-loading="listLoading">
-      <el-table-column type="index" label="序号" width="70px"/>
-      <el-table-column prop="subjectId" label="学科" :formatter="subjectFormatter" width="120px"/>
-      <el-table-column prop="questionType" label="题型" :formatter="questionTypeFormatter" width="70px"/>
+      <el-table-column type="index" label="序号" width="70px" align="center"/>
+      <el-table-column prop="schoolType" label="学校类型"  width="120px" align="center">
+        <template #default="{row}">
+          {{ getSchoolTypeName(row.schoolType) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="academicStageType" label="学段"  width="120px" align="center">
+        <template #default="{row}">
+          {{ row.schoolType == 1 ? getAcademicStageName(row.academicStageType) : getVocalEducationTypeName(row.academicStageType) }}
+        </template>
+      </el-table-column>
+      <!-- <el-table-column prop="questionType" label="题型" :formatter="questionTypeFormatter" width="70px"> -->
+      <el-table-column prop="questionType" label="题型"  width="70px" align="center">
+        <template #default="{row}">
+          {{ getQuestionName(row.questionType) }}
+        </template>
+      </el-table-column>
       <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip/>
       <el-table-column prop="score" label="分数" width="60px"/>
       <el-table-column prop="difficult" label="难度" width="60px"/>
       <el-table-column label="操作" align="center" width="300px">
         <template #default="{row}">
-          <el-button size="mini"   @click="showQuestion(row)">预览</el-button>
-          <el-button size="mini" plain type="success" icon="Edit"  @click="editQuestion(row)">编辑</el-button>
-          <el-button size="mini" plain type="danger" icon="Delete" @click="deleteQuestion(row)" class="link-left">删除</el-button>
+          <el-button size="small"   @click="showQuestion(row)">预览</el-button>
+          <el-button size="small" plain type="success" icon="Edit"  @click="editQuestion(row)">编辑</el-button>
+          <el-button size="small" plain type="danger" icon="Delete" @click="deleteQuestion(row)" class="link-left">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -76,10 +90,15 @@ import Pagination from '@/components/Pagination'
 import QuestionShow from './components/Show'
 import { listQuestion, getQuestion, delQuestion} from '@/api/glxt/question'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+
+const { proxy } = getCurrentInstance();
+//字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
+const { mt_question_type, mt_school_type, mt_vocal_education_type, mt_academic_stage} = proxy.useDict('mt_question_type', 'mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage');
+
 // 组件注册
 const components = { Pagination, QuestionShow }
 
-const store = useStore()
 const router = useRouter()
 
 // 响应式状态
@@ -113,11 +132,39 @@ const editUrlEnumTmp = [
   { key: 5, value: '/glxt/question/edit/shortAnswer', name: '简答题' }
 ]
 
-// 计算属性
-const questionType = computed(() => store.state.enumItem.exam.question.typeEnum)
-const editUrlEnum = computed(() => store.state.enumItem.exam.question.editUrlEnum)
-const levelEnum = computed(() => store.state.enumItem.user.levelEnum)
-const subjects = computed(() => store.state.exam.subjects)
+
+//获取题目类型名称
+const getQuestionName = (questionType) => {
+  if (!questionType || !mt_question_type.value) return '';
+  const found = mt_question_type.value.find(item => item.value === questionType.toString());
+  return found ? found.label : '';
+}
+
+
+//获取学校类型名称
+const getSchoolTypeName = (schoolType) => {
+  if (!schoolType || !mt_school_type.value) return '';
+  const found = mt_school_type.value.find(item => item.value === schoolType);
+  return found ? found.label : '';
+}
+
+//获取普教-学段名称
+const getAcademicStageName = (academicStageType) => {
+  if (!academicStageType || !mt_academic_stage.value) return '';
+  const found = mt_academic_stage.value.find(item => item.value === academicStageType);
+  return found ? found.label : '';
+}
+
+//获取职教-学段名称
+const getVocalEducationTypeName = (vocalEducationType) => {
+  if (!vocalEducationType || !mt_vocal_education_type.value) return '';
+  const found = mt_vocal_education_type.value.find(item => item.value === vocalEducationType);
+  return found ? found.label : '';
+}
+
+
+
+
 
 // 方法
 const submitForm = () => {
@@ -159,7 +206,6 @@ const showQuestion = async (row) => {
 }
 
 const editQuestion = (row) => {
-  // const url = store.getters['enumItem/enumFormat'](editUrlEnum.value, row.questionType)
   // router.push({ path: url, query: { id: row.id } })
   const url = editUrlEnumTmp.find(item => item.key === row.questionType)?.value
   if (url) {
@@ -194,13 +240,6 @@ const  deleteQuestion= async (row) => {
   })
 }
 
-// const questionTypeFormatter = (row, column, cellValue) => {
-//   return store.getters['enumItem/enumFormat'](questionType.value, cellValue)
-// }
-
-// const subjectFormatter = (row, column, cellValue) => {
-//   return store.getters['exam/subjectEnumFormat'](cellValue)
-// }
 
 // 生命周期钩子
 onMounted(() => {

@@ -51,9 +51,11 @@ const emits = defineEmits(["update:modelValue", "setHtml"]);
 const props = defineProps({
   value: {
     type: String,
-    default: () => {
-      return "";
-    },
+    default: ''
+  },
+  modelValue: {
+    type: String,
+    default: ''
   },
   baseUrl: {
     type: String,
@@ -71,14 +73,15 @@ const props = defineProps({
   plugins: {
     type: [String, Array],
     default:
-        "importcss autoresize searchreplace autolink directionality code visualblocks visualchars fullscreen image link codesample table charmap nonbreaking anchor insertdatetime advlist lists wordcount charmap quickbars emoticons accordion kityformula-editor",
+        "importcss autoresize searchreplace autolink directionality code visualblocks visualchars fullscreen image link codesample table charmap nonbreaking anchor insertdatetime advlist lists wordcount charmap quickbars emoticons accordion kityformula-editor gapfilling",
   },
   knwlgId: {
     type: String,
   },
   toolbar: {
     type: [String, Array, Boolean],
-    default: "undo redo | accordion accordionremove | blocks fontfamily fontsize| bold italic underline strikethrough ltr rtl  | align numlist bullist | link image | table | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | anchor codesample kityformula-editor",
+    default: "undo redo | accordion accordionremove | blocks fontfamily fontsize| bold italic underline strikethrough ltr rtl  | align numlist bullist | link image | table | lineheight outdent indent| forecolor  removeformat | charmap  anchor codesample kityformula-editor gapfilling",
+    // default: "undo redo | accordion accordionremove | blocks fontfamily fontsize| bold italic underline strikethrough ltr rtl  | align numlist bullist | link image | table | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | anchor codesample kityformula-editor gapfilling",
   },
   readonly: {
     type: Boolean,
@@ -103,7 +106,7 @@ const init = reactive({
   skin_url: "/tinymce/skins/ui/oxide", // skin路径，具体路径看自己的项目
   editable_root: props.editable_root,
   height: 600,
-  branding: false, // 是否禁用“Powered by TinyMCE”
+  branding: false, // 是否禁用"Powered by TinyMCE"
   promotion: false, //去掉 upgrade
   // toolbar_sticky: true,
   // toolbar_sticky_offset: 100,
@@ -133,8 +136,20 @@ const init = reactive({
   noneditable_class: "mceNonEditable",
   toolbar_mode: "wrap", // 工具栏模式 floating / sliding / scrolling / wrap
   // 默认样式
-  content_style:
-      "body { font-family:Helvetica,Arial,sans-serif; font-size:16px }p {margin:3px; line-height:24px;}",
+  content_style: `
+    body { font-family:Helvetica,Arial,sans-serif; font-size:16px }
+    p { margin:3px; line-height:24px; }
+    .gapfilling-span {
+      display: inline-block;
+      min-width: 40px;
+      text-align: center;
+      padding: 0 5px;
+      background-color: #f0f0f0;
+      border: 1px dashed #999;
+      border-radius: 3px;
+      cursor: default;
+    }
+  `,
   image_advtab: true,
   importcss_append: true,
   paste_webkit_styles: "all",
@@ -181,12 +196,27 @@ const init = reactive({
 
     });
   },
+  setup: function (editor) {
+    editor.ui.registry.addButton('gapfilling', {
+      text: '插入填空',
+      onAction: function () {
+        const uuid = 'gap_' + new Date().getTime();
+        const count = editor.getContent().match(/<span class="gapfilling-span/g)?.length || 0;
+        const number = count + 1;
+        editor.insertContent(`<span class="gapfilling-span ${uuid}">${number}</span>`);
+      }
+    });
+  },
+   // 添加外部插件路径
+  external_plugins: {
+    gapfilling: '/tinymce/plugins/gapfilling/plugin.js'
+  },
 });
 
 // 外部传递进来的数据变化
 const myValue = computed({
   get() {
-    return props.modelValue;
+    return props.modelValue || props.value || '';
   },
   set(val) {
     emits("update:modelValue", val);

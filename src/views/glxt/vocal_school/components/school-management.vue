@@ -1,7 +1,5 @@
 <template>
   <div class="page-container">
-    添加学校的时候：新增是否有学院和系<br>
-    学历和学制直接在专业里边去统一管理--对于特殊情况，是既有本科又有专科<br>
     <!-- 学校信息展示区域 -->
     <div v-if="hasSchools" class="school-content">
       <div class="school-card">
@@ -81,12 +79,12 @@
                 <span>{{ getBaseEducationType(formData.educationLevel) }}</span>
               </div>
               <div class="info-item">
-                <label>学段：</label>
-                <span>{{ getSchoolPeriod(formData.schoolPeriod) }}</span>
+                <label>是否有学院：</label>
+                <span>{{ formData.isCollege == '1' ? '是' : '否' }}</span>
               </div>
               <div class="info-item">
-                <label>学制：</label>
-                <span>{{ getSchoolYear(formData.schoolYear) }}</span>
+                <label>是否有系：</label>
+                <span>{{ formData.isSystem == '1' ? '是' : '否' }}</span>
               </div>
             </div>
           </div>
@@ -120,7 +118,7 @@
         ref="schoolForm"
         :model="formData"
         :rules="rules"
-        label-width="90px"
+        label-width="100px"
         class="school-form"
       >
         <!-- 基本信息 -->
@@ -211,25 +209,30 @@
           </div>
           <div class="form-content">
             <div class="form-row">
-              <el-form-item label="教育类型:" prop="schoolPeriod" class="full-width">
+              <el-form-item label="教育类型:" prop="isCollege" class="full-width">
                 <div class="education-group">
                   <el-select v-model="formData.educationLevel" placeholder="职教类型" disabled>
                     <el-option v-for="item in educationLevels" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
                   {{ formData.educationLevel }}
-                  <el-select v-model="formData.schoolPeriod" placeholder="请选择学段" clearable>
-                    <el-option v-for="item in mt_vocal_education_type" :key="item.value" :label="item.label" :value="item.value" />
-                  </el-select>
-                  {{ formData.schoolType }}
-                  <el-select v-model="formData.schoolYear" placeholder="请选择学制" clearable>
-                    <el-option v-for="item in mt_vocal_education_system_type" :key="item.value" :label="item.label" :value="item.value" />
-                  </el-select>
-                  {{ formData.schoolSystem }}
                 </div>
               </el-form-item>
             </div>
+            <el-form-item label="是否有学院:" class="full-width" prop="isCollege">
+              <el-radio-group v-model="formData.isCollege">
+                <el-radio :label="true">是</el-radio>
+                <el-radio :label="false">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
+
+            <el-form-item label="是否有系:" class="full-width" prop="isSystem">
+              <el-radio-group v-model="formData.isSystem">
+                <el-radio :label="true">是</el-radio>
+                <el-radio :label="false">否</el-radio>
+              </el-radio-group>
+            </el-form-item>
             <div class="form-row">
-              <el-form-item label="是否生效:" class="full-width">
+              <el-form-item label="是否生效:" class="full-width" prop="isActive">
                 <el-radio-group v-model="formData.isActive">
                   <el-radio :label="true">是</el-radio>
                   <el-radio :label="false">否</el-radio>
@@ -305,10 +308,8 @@ const formData = ref({
   website: '',
   educationLevel: '2',//类型 职教
   educationLevelName: '',//类型名称
-  schoolPeriod: '',//学段
-  schoolPeriodName: '',//学段名称
-  schoolYear: '',//学制
-  schoolYearName: '',//学制名称
+  isCollege: '0',//是否有学院
+  isSystem: '0',//是否有系
   isActive: false
 })
 
@@ -355,11 +356,14 @@ const rules = {
   website: [
     { required: true, message: '请输入学校网址', trigger: 'blur' }
   ],
-  schoolPeriod: [
-    { required: true, message: '请择段', trigger: 'change' }
+  isCollege: [
+    { required: true, message: '是否有学院', trigger: 'change' }
   ],
-  schoolYear: [
-    { required: true, message: '请选择学制', trigger: 'change' }
+  isSystem: [
+    { required: true, message: '是否有系', trigger: 'change' }
+  ],
+  isActive: [
+    { required: true, message: '是否生效', trigger: 'change' }
   ]
 }
 
@@ -580,10 +584,8 @@ function reset() {
     contactPhone: null,
     website: null,
     educationLevel: null,
-    schoolPeriod: null,
-    schoolPeriodName: null,
-    schoolYear: null,
-    schoolYearName: null,
+    isCollege: null,
+    isSystem: null,
     isActive: false
   };
   proxy.resetForm("schoolForm");
@@ -608,8 +610,8 @@ const handleEdit = async (id) => {
       // 将 isActive 转换为布尔值
       isActive: response.data.isActive === 'true' || response.data.isActive === true,
       educationLevel: '2',  // 固定为职教
-      schoolPeriod: response.data.schoolPeriod,
-      schoolYear: response.data.schoolYear.toString(),
+      isCollege: response.data.isCollege == '1' ? true : false,
+      isSystem: response.data.isSystem == '1' ? true : false,
       // 设置省市区的值
       province: response.data.province,
       city: response.data.city,
@@ -656,6 +658,10 @@ const showAddDialog = () => {
 
   // 确保教育类型默认为职教
   formData.value.educationLevel = '2'
+  // formData.value.isCollege = '0' 
+  // formData.value.isSystem = '0' 
+  formData.value.isCollege == '0' ? true : false,
+  formData.value.isSystem == '0' ? true : false,
 
   isEdit.value = false // 重置编辑状态
   dialogVisible.value = true
@@ -673,7 +679,8 @@ const handleConfirm = async () => {
         submitData.province = formData.value.province;
         submitData.city = formData.value.city;
         submitData.district = formData.value.district;
-
+        submitData.isCollege = formData.value.isCollege ? '1' : '0';
+        submitData.isSystem = formData.value.isSystem ? '1' : '0';
         if (submitData.id != null) {
           updateSchool(submitData).then(response => {
             proxy.$modal.msgSuccess("修改成功");
@@ -713,9 +720,7 @@ const getSchoolData = async (id) => {
     // 确保 isActive 是布尔值
     formData.value.isActive = response.data.isActive === 'true' || response.data.isActive === true;
     
-    // 添加空值检查 
-    formData.value.schoolPeriodName = response.data.schoolPeriod ? getSchoolPeriod(response.data.schoolPeriod) : '';
-    formData.value.schoolYearName = response.data.schoolYear ? getSchoolYear(response.data.schoolYear) : '';
+  
     formData.value.educationLevelName = response.data.educationLevel ? getBaseEducationType(response.data.educationLevel) : '';
 
   } catch (error) {
@@ -758,19 +763,6 @@ const getBaseEducationType = (educationType) => {
   return found ? found.label : '';
 }
 
-//获取学段
-const getSchoolPeriod = (schoolType) => {
-  if (!schoolType || !mt_vocal_education_type.value) return '';
-  const found = mt_vocal_education_type.value.find(item => item.value === schoolType.toString());
-  return found ? found.label : '';
-}
-
-//获取学制
-const getSchoolYear = (schoolSystem) => {
-  if (!schoolSystem || !mt_vocal_education_system_type.value) return '';
-  const found = mt_vocal_education_system_type.value.find(item => item.value === schoolSystem.toString());
-  return found ? found.label : '';
-}
 
 
 //获取操作类型
@@ -927,7 +919,7 @@ onMounted(async () => {
   }
 
   label {
-    width: 80px;
+    width: 100px;
     color: #606266;
     font-weight: 500;
   }

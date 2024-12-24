@@ -17,11 +17,11 @@
             <span class="label">学校类型：</span>
             <span class="value">{{ schoolInfo.educationLevelName }}-{{ schoolInfo.educationLevel }}</span>
           </div>
-          <div class="info-divider"></div>
-          <div class="info-item">
+          <!-- <div class="info-divider"></div> -->
+          <!-- <div class="info-item">
             <span class="label">学段：</span>
             <span class="value">{{ schoolInfo.schoolPeriodName }}-{{ schoolInfo.schoolPeriod }}</span>
-          </div>
+          </div> -->
         </div>
         <div class="grade-section">
           <div class="grade-header">
@@ -69,8 +69,18 @@
         <div class="table-container">
           <el-table :data="specialityList" v-loading="loading" style="width: 100%">
             <el-table-column type="index" width="70" label="序号" align="center"/>
-            <el-table-column prop="collegeName" label="学院" align="center"/>
-            <el-table-column prop="systemName" label="系" align="center"/>
+            <el-table-column prop="schoolPeriod" label="学段" align="center">
+              <template #default="scope">
+                {{ getisPeriod(scope.row.schoolPeriod) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="schoolYear" label="学制" align="center">
+              <template #default="scope">
+                {{ getisYear(scope.row.schoolYear) }}
+              </template>
+            </el-table-column>
+            <!-- <el-table-column prop="collegeName" label="学院" align="center"/>
+            <el-table-column prop="systemName" label="系" align="center"/> -->
             <el-table-column prop="specialityName" label="专业名称" align="center"/>
             <!-- <el-table-column prop="specialityName" label="专业名称" align="center">
               <template #default="scope">
@@ -132,6 +142,17 @@
       destroy-on-close
     >
       <el-form :model="specialityForm" label-width="80px" :rules="rules" ref="specialityFormRef">
+        
+        <el-form-item label="学段" prop="schoolPeriod">
+          <el-select v-model="specialityForm.schoolPeriod" placeholder="请选择学段" clearable>
+              <el-option v-for="item in mt_vocal_education_type" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="学制" prop="schoolYear">
+          <el-select v-model="specialityForm.schoolYear" placeholder="请选择学制" clearable>
+              <el-option v-for="item in mt_vocal_education_system_type" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="系" prop="vocalEduSystemId">
           <el-select v-model="specialityForm.vocalEduSystemId" placeholder="请选择系" class="w-full" disabled>
             <el-option
@@ -177,14 +198,28 @@ import { listSpeciality, addSpeciality, updateSpeciality, getSpeciality , delSpe
 
 const { proxy } = getCurrentInstance();
 // 专业字典引入
-const { mt_vocal_speciality_type} = proxy.useDict('mt_vocal_speciality_type');
+const { mt_vocal_speciality_type, mt_vocal_education_type, mt_vocal_education_system_type} = proxy.useDict('mt_vocal_speciality_type', 'mt_vocal_education_type', 'mt_vocal_education_system_type');
 
-//获取专业名称
-//获取学段
+//获取专业
 const getSpecialityDictLabel = (specialityType) => {
   if (!specialityType || !mt_vocal_speciality_type.value) return '';
   const res = mt_vocal_speciality_type.value.find(item => item.value === specialityType);
   return res ? res.label : '';
+}
+
+
+//获取学段
+const getisPeriod = (schoolType) => {
+  if (!schoolType || !mt_vocal_education_type.value) return '';
+  const found = mt_vocal_education_type.value.find(item => item.value === schoolType.toString());
+  return found ? found.label : '';
+}
+
+//获取学制
+const getisYear = (schoolSystem) => {
+  if (!schoolSystem || !mt_vocal_education_system_type.value) return '';
+  const found = mt_vocal_education_system_type.value.find(item => item.value === schoolSystem.toString());
+  return found ? found.label : '';
 }
 
 // 接收父组件传递的数据
@@ -215,6 +250,8 @@ const specialityFormRef = ref(null)
 
 const specialityForm = ref({
   id: null,
+  schoolPeriod: '',//学段
+  schoolYear: '',//学制
   vocalEduSystemId: '',//系列id
   specialityName: '',//专业名称
   specialityAbbreviation: '',//专业简称

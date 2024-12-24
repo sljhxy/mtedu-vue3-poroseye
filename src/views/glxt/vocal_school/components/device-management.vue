@@ -24,13 +24,13 @@
               <span class="value">{{ schoolInfo.educationLevelName }}</span>
             </div>
           </div>
-          <div class="info-divider"></div>
+          <!-- <div class="info-divider"></div>
           <div class="info-item">
             <div class="info-row">
               <span class="label">学段：</span>
               <span class="value">{{ schoolInfo.schoolTypeName }}</span>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
 

@@ -28,7 +28,7 @@
 
     <!-- 创建学院 - 只在本科时显示 -->
     <college-management
-      v-if="currentStep === 1 && schoolInfo.schoolPeriod === '1'"
+      v-if="currentStep === 1 && schoolInfo.isCollege === '1'"
       :schoolInfo="schoolInfo"
       @prev-step="handlePrevStep"
       @next-step="handleCollegeNext"
@@ -36,8 +36,8 @@
 
     <!-- 系管理 - 根据学校类型调整显示位置 -->
     <system-management
-      v-if="(schoolInfo.schoolPeriod === '1' && currentStep === 2) || 
-            (schoolInfo.schoolPeriod !== '1' && currentStep === 1)"
+      v-if="(schoolInfo.isCollege === '1' && currentStep === 2) || 
+            (schoolInfo.isCollege !== '1' && currentStep === 1)"
       :schoolInfo="schoolInfo"
       :colleges="colleges"
       @prev-step="handlePrevStep"
@@ -46,8 +46,8 @@
 
     <!-- 创建专业 -->
     <speciality-management 
-    v-if="(schoolInfo.schoolPeriod === '1' && currentStep === 3) || 
-            (schoolInfo.schoolPeriod !== '1' && currentStep === 2)"
+    v-if="(schoolInfo.isCollege === '1' && currentStep === 3) || 
+            (schoolInfo.isCollege !== '1' && currentStep === 2)"
       :school-info="schoolInfo"
       :systems="systems"
       @prev-step="handlePrevStep"
@@ -56,8 +56,8 @@
 
     <!-- 创建年级 -->
     <grade-management 
-      v-if="(schoolInfo.schoolPeriod === '1' && currentStep === 4) || 
-            (schoolInfo.schoolPeriod !== '1' && currentStep === 3)"
+      v-if="(schoolInfo.isCollege === '1' && currentStep === 4) || 
+            (schoolInfo.isCollege !== '1' && currentStep === 3)"
       :school-info="schoolInfo" 
       :specialities="specialities"
       @prev-step="handlePrevStep"
@@ -66,8 +66,8 @@
 
     <!-- 创建班级 -->
     <class-management 
-      v-if="(schoolInfo.schoolPeriod === '1' && currentStep === 5) || 
-            (schoolInfo.schoolPeriod !== '1' && currentStep === 4)"
+      v-if="(schoolInfo.isCollege === '1' && currentStep === 5) || 
+            (schoolInfo.isCollege !== '1' && currentStep === 4)"
       :grades="grades"
       :schoolInfo="schoolInfo"
       :specialities="specialities"
@@ -77,8 +77,8 @@
 
     <!-- 创建科目课程 -->
     <course-management 
-      v-if="(schoolInfo.schoolPeriod === '1' && currentStep === 6) || 
-            (schoolInfo.schoolPeriod !== '1' && currentStep === 5)"
+      v-if="(schoolInfo.isCollege === '1' && currentStep === 6) || 
+            (schoolInfo.isCollege !== '1' && currentStep === 5)"
       :grades="grades"
       :schoolInfo="schoolInfo"
       @prev-step="handlePrevStep"
@@ -87,8 +87,8 @@
 
     <!-- 设备激活 -->
     <device-management 
-      v-if="(schoolInfo.schoolPeriod === '1' && currentStep === 7) || 
-            (schoolInfo.schoolPeriod !== '1' && currentStep === 6)"
+      v-if="(schoolInfo.isCollege === '1' && currentStep === 7) || 
+            (schoolInfo.isCollege !== '1' && currentStep === 6)"
       :schoolInfo="schoolInfo"
       @prev-step="handlePrevStep"
     />
@@ -144,15 +144,15 @@ const stepsList = computed(() => {
     { title: '设备激活', description: '激活教学设备', icon: Monitor }
   ]
 
-  // 如果是本科(schoolPeriod === '1')，在第二个位置插入学院和系
-  console.log(schoolInfo.value.schoolPeriod + '<-学段')
-  if (schoolInfo.value?.schoolPeriod === '1') {
+  // 如果是本科(isCollege === '1')，在第二个位置插入学院和系
+  console.log(schoolInfo.value.isCollege + '<-学段')
+  if (schoolInfo.value?.isCollege === '1') {
     baseSteps.splice(1, 0, 
       { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
       { title: '创建系', description: '填写系基本信息', icon: Collection }
     )
   } else {
-    // 如果是专科或中专(schoolPeriod === '2' || '3')，只在第二个位置插入系
+    // 如果是专科或中专(isCollege === '2' || '3')，只在第二个位置插入系
     baseSteps.splice(1, 0, 
       { title: '创建系', description: '填写系基本信息', icon: Collection }
     )
@@ -177,8 +177,8 @@ const initForms = () => {
       schoolFormRef.value.formData.contactPhone = ''
       schoolFormRef.value.formData.website = ''
       schoolFormRef.value.formData.educationLevel = ''
-      schoolFormRef.value.formData.schoolPeriod = ''
-      schoolFormRef.value.formData.schoolYear = ''
+      schoolFormRef.value.formData.isCollege = ''
+      schoolFormRef.value.formData.isSystem = ''
       schoolFormRef.value.formData.isActive = true
     }
   } else {
@@ -195,7 +195,7 @@ const getSchoolData = async (id) => {
   try {
     const response = await getSchool(id);
     schoolInfo.value = {...response.data};
-    console.log(schoolInfo.value.schoolPeriod + '<-学校数据')
+    console.log(schoolInfo.value.isCollege + '<-学校数据')
   } catch (error) {
     ElMessage.error('获取学校数据失败');
   }
@@ -216,12 +216,10 @@ const handleSchoolNext = (schoolData) => {
   schoolInfo.value = {
     id: schoolData.id,
     name: schoolData.schoolName,
-    schoolPeriod: schoolData.schoolPeriod,
-    schoolYear: schoolData.schoolYear,
     educationLevel: schoolData.educationLevel,
     educationLevelName: schoolData.educationLevelName,//学校类型 1-普教 2-职教
-    schoolPeriodName: schoolData.schoolPeriodName,//学段名称
-    schoolYearName: schoolData.schoolYearName,//学制名称
+    isCollege: schoolData.isCollege,//是否有学院
+    isSystem: schoolData.isSystem,//是否有系
     // 添加其他可能需要的学校信息
     address: schoolData.address,
     detailAddress: schoolData.detailAddress,

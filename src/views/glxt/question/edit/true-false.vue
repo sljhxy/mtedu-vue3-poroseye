@@ -5,8 +5,9 @@
         <div class="card-header">
           <span>编辑判断题</span>
           <div class="header-actions">
+            <el-button @click="reback">返回</el-button>
             <el-button type="primary" @click="submitForm">保存</el-button>
-            <el-button @click="resetForm">重置</el-button>
+            <el-button type="info" @click="resetForm">重置</el-button>
             <el-button type="success" @click="showQuestion">预览</el-button>
           </div>
         </div>
@@ -15,7 +16,7 @@
       <el-form 
         :model="formData" 
         ref="formRef" 
-        label-width="100px" 
+        label-width="140px" 
         :rules="rules" 
         v-loading="formLoading"
         class="question-form"
@@ -23,37 +24,14 @@
         <!-- 基础信息区域 -->
         <div class="form-section">
           <div class="section-row">
-            <el-form-item label="年级：" prop="gradeLevel" required>
-              <el-select 
-                v-model="formData.gradeLevel" 
-                placeholder="请选择年级"  
-                @change="levelChange" 
-                clearable
-                class="fixed-width-select"
-              >
-                <el-option 
-                  v-for="item in levelEnumTmp" 
-                  :key="item.id" 
-                  :label="item.name"
-                  :value="item.id"
-                ></el-option>
-              </el-select>
-            </el-form-item>
-            
-            <el-form-item label="学科：" prop="subjectId" required>
-              <el-select 
-                v-model="formData.subjectId" 
-                placeholder="请选择学科"
-                class="fixed-width-select"
-              >
-                <el-option 
-                  v-for="item in subjectFilterTmp" 
-                  :key="item.id" 
-                  :value="item.id" 
-                  :label="item.name+' ( '+item.levelName+' )'"
-                ></el-option>
-              </el-select>
-            </el-form-item>
+            <FirstLinePlugins 
+              @selectData="handleSelectData"
+              :initialData="{
+                schoolType: formData.schoolType,
+                academicStageType: formData.academicStageType,
+                courseSystems: formData.courseSystems
+              }"
+            />
           </div>
         </div>
 
@@ -101,7 +79,26 @@
           <el-form-item label="难度：" required>
             <el-rate v-model="formData.difficult" class="question-item-rate"></el-rate>
           </el-form-item>
-          
+          <el-form-item label="知识点：" required>
+            <el-tree-select
+                v-model="formData.knowledgePoints"
+                :data="knowledgeTreeList"
+                :props="{
+                  value: 'id',
+                  label: 'knowledge',
+                  children: 'children',
+                  emitPath: false
+                }"
+                multiple
+                :render-after-expand="false"
+                show-checkbox
+                placeholder="请选择知识点"
+                clearable
+                class="knowledge-select"
+                collapse-tags-tooltip
+                />
+            </el-form-item>
+            
         </div>
       </el-form>
     </el-card>
@@ -145,34 +142,20 @@ import Tinymce from "@/components/Tinymce/index.vue"
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+
+import FirstLinePlugins from '../components/FirstLinePlugins'//类型、学段、科目教材体系组件
 import { addQuestion, getQuestion, updateQuestion } from '@/api/glxt/question'
+//获取知识点树形结构
+import { getKnowledgeTree } from '@/api/glxt/knowledge';
 
 const route = useRoute()
 const router = useRouter()
 const formRef = ref(null)
 const formLoading = ref(false)
 
-// 定义响应式状态
-const levelEnumTmp = ref([
-  {id:1, name:'一年级'},
-  {id:2, name:'二年级'},
-  {id:3, name:'三年级'}
-])
-
-const subjectFilterTmp = ref([
-  {id:1, name:'语文', levelName:'一年级'},
-  {id:2, name:'数学', levelName:'一年级'},
-  {id:3, name:'英语', levelName:'二年级'},
-  {id:4, name:'物理', levelName:'二年级'},
-  {id:5, name:'化学', levelName:'三年级'},
-  {id:6, name:'生物', levelName:'三年级'}
-])
-
 const formData = ref({
   id: null,
   questionType: 3,
-  gradeLevel: null,
-  subjectId: null,
   title: '',
   items: [
     { id: null, prefix: 'A', content: '是' },
@@ -180,29 +163,23 @@ const formData = ref({
   ],
   analyze: '',
   correct: '',
-  score: '',
-  difficult: 0
+  score: '1',
+  difficult: 0,
+  infoTextContentId: null,
+  knowledgePoints: [],//知识点
+  courseSystems: [[]],//挂载课程
+  schoolType: '',//学校类型 1-普教  2-职教
+  academicStageType: '',//学段
 })
 
 const rules = {
-  gradeLevel: [
-    { required: true, message: '请选择年级', trigger: 'change' }
-  ],
-  subjectId: [
-    { required: true, message: '请选择学科', trigger: 'change' }
-  ],
-  title: [
-    { required: true, message: '请输入题干', trigger: 'blur' }
-  ],
-  analyze: [
-    { required: true, message: '请输入解析', trigger: 'blur' }
-  ],
-  score: [
-    { required: true, message: '请输入分数', trigger: 'blur' }
-  ],
-  correct: [
-    { required: true, message: '请选择正确答案', trigger: 'change' }
-  ]
+  schoolType: [{ required: true, message: '请选择学校类型', trigger: 'change' }],
+  courseSystems: [{ required: true, message: '请选择学科', trigger: 'change' }],
+  academicStageType: [{ required: true, message: '请选择学段', trigger: 'change' }],
+  title: [{ required: true, message: '请输入题干', trigger: 'blur' }],
+  analyze: [{ required: true, message: '请输入解析', trigger: 'blur' }],
+  score: [{ required: true, message: '请输入分数', trigger: 'blur' }],
+  correct: [{ required: true, message: '请选择正确答案', trigger: 'change' }]
 }
 
 const tinymceRef = ref(null)
@@ -221,6 +198,11 @@ const questionShow = ref({
   loading: false
 })
 
+//返回列表
+const reback = () => {
+  router.push('/glxt/question/list')
+}
+
 // Methods
 const submitForm = async () => {
   if (!formRef.value) return
@@ -228,16 +210,26 @@ const submitForm = async () => {
   try {
     await formRef.value.validate()
     formLoading.value = true
-    const res = await addQuestion(formData.value)
-    
-    if (res.code === 200) {
-      ElMessage.success(res.message)
-      router.push('/exam/question/list')
+    if (formData.value.id) {
+      // formData.value.id = route.query.id
+      const res = await updateQuestion(formData.value)
+      if (res.code === 200) {
+        ElMessage.success('修改成功')
+        router.push('/glxt/question/list')
+      } else {
+        ElMessage.error('修改失败')
+      }
     } else {
-      ElMessage.error(res.message)
+      const res = await addQuestion(formData.value)
+      if (res.code === 200) {
+        ElMessage.success('添加成功')
+        router.push('/glxt/question/list')
+      } else {
+        ElMessage.error('添加失败')
+      }
     }
   } catch (error) {
-    console.error(error)
+    ElMessage.error('操作失败')
   } finally {
     formLoading.value = false
   }
@@ -249,8 +241,6 @@ const resetForm = () => {
   formData.value = {
     id: null,
     questionType: 3,
-    gradeLevel: null,
-    subjectId: null,
     title: '',
     items: [
       { id: null, prefix: 'A', content: '是' },
@@ -259,15 +249,22 @@ const resetForm = () => {
     analyze: '',
     correct: '',
     score: '',
-    difficult: 0
+    difficult: 0,
+    infoTextContentId: null,
+    knowledgePoints: [],//知识点
+    courseSystems: [[]],//挂载课程
+    schoolType: '',//学校类型 1-普教  2-职教
+    academicStageType: '',//学段
   }
   formData.value.id = lastId
 }
-
-const levelChange = () => {
-  formData.value.subjectId = null
-  // subjectFilterTmp.value = subjectFilterTmp.value.filter(data => data.level === formData.value.gradeLevel)
+// 处理firstLinePlugins组件传过来的数据
+const handleSelectData = (data) => {
+  formData.value.schoolType = data.schoolType
+  formData.value.academicStageType = data.academicStageType
+  formData.value.courseSystems = data.courseSystems
 }
+
 
 const showQuestion = () => {
   questionShow.value.dialog = true
@@ -292,16 +289,14 @@ const editorReady = (editor) => {
 const inputClick = (object, parameterName) => {
   richEditor.value.object = object
   richEditor.value.parameterName = parameterName
+  
+  // 设置初始内容
   if (object === formData.value) {
     richEditor.value.content = formData.value[parameterName] || ''
   } else {
     richEditor.value.content = object[parameterName] || ''
   }
   richEditor.value.dialogVisible = true
-  
-  if (richEditor.value.instance) {
-    richEditor.value.instance.setContent(richEditor.value.content)
-  }
 }
 
 const editorConfirm = () => {
@@ -324,26 +319,61 @@ const closeEditor = () => {
   richEditor.value.object = null
   richEditor.value.parameterName = ''
   richEditor.value.content = ''
-  if (richEditor.value.instance) {
-    richEditor.value.instance.setContent('')
-  }
 }
+
+//知识点树形结构
+const knowledgeTreeList = ref([])
+const getKnowledgeTreeList = () => {
+    getKnowledgeTree({}).then(response => {
+    // 递归处理树形数据，确保每个节点都有正确的属性
+    const processTreeData = (items) => {
+        return items.map(item => ({
+        id: item.id,
+        knowledge: item.knowledge || item.name,
+        label: item.knowledge || item.name, // 添加 label 属性
+        value: item.id, // 添加 value 属性
+        children: item.children ? processTreeData(item.children) : []
+    }))
+    }
+    knowledgeTreeList.value = processTreeData(response.rows)
+    })
+}
+
+getKnowledgeTreeList()
+
 
 // 生命周期钩子
 onMounted(async () => {
-  const id = route.query.id
-  if (id && parseInt(id) !== 0) {
+    const id = route.query.id
+    if (id && parseInt(id) !== 0) {
     formLoading.value = true
     try {
-      const response = await getQuestion(id)
-      Object.assign(formData.value, response.response)
+        const response = await getQuestion(id)
+        const questionData = response.data
+         //数组中字符串类型转换为整型
+        const newKnowledgePoints = Array.from(questionData.knowledgePoints).map(item => Number(item))
+        formData.value = {
+        ...questionData,
+        knowledgePoints: Array.isArray(newKnowledgePoints) 
+        ? newKnowledgePoints 
+        : []
+      }
     } catch (error) {
-      console.error(error)
+        ElMessage.error('加载题目数据失败')
     } finally {
-      formLoading.value = false
+        formLoading.value = false
     }
-  }
+}
+
+    await getKnowledgeTreeList()
 })
+
+// 监听知识点的变化
+watch(() => formData.value.knowledgePoints, (newVal) => {
+  formData.value.knowledgePoints = newVal
+}, { deep: true })
+
+
 </script>
 
 <style lang="scss" scoped>
