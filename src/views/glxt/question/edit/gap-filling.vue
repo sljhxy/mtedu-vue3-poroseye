@@ -5,6 +5,7 @@
         <div class="card-header">
           <span>编辑填空题</span>
           <div class="header-actions">
+            <el-button @click="reback">返回</el-button>
             <el-button type="primary" @click="submitForm">保存</el-button>
             <el-button type="info" @click="resetForm" >重置</el-button>
             <el-button type="success" @click="showQuestion">预览</el-button>
@@ -26,7 +27,11 @@
             <el-input v-model="form.title" @focus="inputClick(form,'title')" type="textarea" :rows="3"/>
           </el-form-item>
 
+
+          {{ form.items }}
+          <!-- {{ newItemArr }} -->
           <el-form-item label="填空答案：" required>
+
             <div class="answers-container">
               <div v-for="item in form.items" :key="item.prefix" class="answer-item">
                 <div class="answer-prefix">{{item.prefix}}</div>
@@ -117,6 +122,7 @@ import FirstLinePlugins from '../components/FirstLinePlugins'//类型、学段�
 import { addQuestion, getQuestion, updateQuestion } from '@/api/glxt/question'
 //获取知识点树形结构
 import { getKnowledgeTree } from '@/api/glxt/knowledge';
+
 
 const route = useRoute()
 const router = useRouter()
@@ -236,31 +242,29 @@ const inputClick = (object, parameterName) => {
   richEditor.value.parameterName = parameterName
   richEditor.value.dialogVisible = true
 }
-
+const updateEditorContent = (newContent) => {
+  richEditor.value.content = newContent
+}
 const editorConfirm = () => {
-  // let content = richEditor.value.instance.getContent()
-  // if (richEditor.value.parameterName === 'title') {
-  //   if (questionItemReset(content)) {
-  //     richEditor.value.object[richEditor.value.parameterName] = content
-  //     richEditor.value.dialogVisible = false
-  //   }
-  // } else {
-  //   richEditor.value.object[richEditor.value.parameterName] = content
-  //   richEditor.value.dialogVisible = false
-  // }
-  
   const content = richEditor.value.content
-  if (questionItemReset(content)) {
+  if (richEditor.value.parameterName === 'title') {
+    if (questionItemReset(content)) {
+      form.value[richEditor.value.parameterName] = content
+    }
+  } else {
     if (richEditor.value.object === form.value) {
       form.value[richEditor.value.parameterName] = content
     } else {
+      // 查找并更新对应的 item
       const index = form.value.items.findIndex(item => item === richEditor.value.object)
       if (index !== -1) {
-        form.value.items[index][richEditor.value.parameterName] = content
+        form.value.items[index] = {
+          ...form.value.items[index],
+          [richEditor.value.parameterName]: content
+        }
       }
     }
-  } 
-  
+  }
   closeEditor()
 }
 
@@ -271,42 +275,49 @@ const closeEditor = () => {
   richEditor.value.content = ''
 }
 
+
+//存储填空题的题干和答案
+const newItemArr = ref([])
+
 // 填空题特有的方法
 const questionItemReset = (content) => {
-  let spanRegex = new RegExp('<span class="gapfilling-span (.*?)">(.*?)<\\/span>', 'g')
-      let newFormItem = []
-      let gapfillingItems = content.match(spanRegex)
-      if (gapfillingItems === null) {
-        ElMessage.error('请插入填空')
-        return false
-      }
-      gapfillingItems.forEach(function (span, index) {
-        let pairRegex = /<span class="gapfilling-span (.*?)">(.*?)<\/span>/
-        pairRegex.test(span)
-        newFormItem.push({ id: null, itemUuid: RegExp.$1, prefix: RegExp.$2, content: '', score: '0' })
-      })
+  const spanRegex = /<span class="gapfilling-span (.*?)">(.*?)<\/span>/g
+  const matches = [...content.matchAll(spanRegex)]
+  
+  if (!matches.length) {
+    ElMessage.error('请插入填空')
+    return false
+  }
 
-      console.log('newFormItem', newFormItem)
-      console.log('newFormItem', form.value)
-      let formItem = []
-      newFormItem.forEach(function (item) {
-        formItem.some((oldItem, index) => {
-          if (oldItem.itemUuid === item.itemUuid) {
-            item.content = oldItem.content
-            item.id = oldItem.id
-            item.score = oldItem.score
-            return true
-          }
-        })
-      })
+  // 保存现有答案 - 添加空数组作为默认值
+  const existingAnswers = new Map(
+    (form.value.items || []).map(item => [item.itemUuid, item])
+  )
 
+  // 创建新的填空项
+  const newItems = matches.map(match => {
+    const [_, itemUuid, prefix] = match
+    const existing = existingAnswers.get(itemUuid)
     
-      form.value.items = [...newFormItem]
-      console.log('newFormItem', form.value.items)
-      return true
-};
+    return {
+      id: existing?.id || null,
+      itemUuid,
+      prefix,
+      content: existing?.content || '',
+      score: existing?.score || 0  // 改为数字 0 而不是字符串 '0'
+    }
+  })
 
+  // 更新表单数据
+  form.value.items = newItems
+  console.log('newItems',form.value.items)
+  return true
+}
 
+//返回列表
+const reback = () => {
+  router.push('/glxt/question/list')
+}
 // 表单操作方法
 const submitForm = async () => {
   if (!formRef.value) return

@@ -84,17 +84,10 @@
         :header-cell-style="{ background: '#f5f7fa' }"
       >
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="name" label="实验名称" min-width="100" align="center" show-overflow-tooltip />
-        <el-table-column prop="type" label="类型" width="150" align="center" />
-        <el-table-column prop="stage" label="学段" width="200" align="center" />
-        <el-table-column prop="textbook" label="教材版本" min-width="150" align="center" show-overflow-tooltip />
-        <el-table-column prop="status" label="审核状态" width="200" align="center">
-          <template #default="{ row }">
-            <el-tag :type="statusTypeMap[row.status]" effect="light">
-              {{ row.status }}
-            </el-tag>
-          </template>
-        </el-table-column>
+        <el-table-column prop="experimentName" label="实验名称" min-width="100" align="center" show-overflow-tooltip />
+        <el-table-column prop="schoolType" label="类型" width="150" align="center" />
+        <el-table-column prop="academicStageType" label="学段" width="200" align="center" />
+        <el-table-column prop="status" label="审核状态" width="200" align="center"/>
         <el-table-column label="操作" width="380" fixed="right">
           <template #default="scope">
             <div class="operation-buttons">
@@ -154,8 +147,10 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { ArrowUp, ArrowDown, Refresh } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+//导入实验信息API
+import { listExperimentInfo,delExperimentInfo } from '@/api/glxt/experimentInfo'
 
 const router = useRouter()
 
@@ -164,72 +159,66 @@ const searchForm = reactive({
   name: '',
   type: '',
   stage: '',
-  status: ''
+  status: '',
+  pageNum: 1,
+  pageSize: 10,
 })
 
-// 下拉选项
-const typeOptions = [
-  { value: '1', label: '虚拟实验' },
-  { value: '2', label: '实体实验' }
-]
-
-const stageOptions = [
-  { value: '1', label: '小学' },
-  { value: '2', label: '初中' },
-  { value: '3', label: '高中' }
-]
-
-const statusOptions = [
-  { value: '0', label: '待审核' },
-  { value: '1', label: '已通过' },
-  { value: '2', label: '已拒绝' }
-]
-
 // 模拟表格数据
-const tableData = ref([
-  {
-    id: 1,
-    name: '光的反射与折射实验',
-    type: '虚拟实验',
-    stage: '初中',
-    textbook: '人教版物理八年级上册',
-    status: '已通过'
-  },
-  {
-    id: 2,
-    name: '电磁感应实验',
-    type: '实体实验',
-    stage: '高中',
-    textbook: '人教版物理必修二',
-    status: '待审核'
-  },
-  {
-    id: 3,
-    name: '植物的光合作用',
-    type: '虚拟实验',
-    stage: '初中',
-    textbook: '人教版生物七年级下册',
-    status: '已通过'
-  },
-  {
-    id: 4,
-    name: '简单机械实验',
-    type: '实体实验',
-    stage: '小学',
-    textbook: '人教版科学六年级',
-    status: '已拒绝'
-  }
-])
+const tableData = ref([])
 
-// 设置总数据量为���拟数据的长度
+// 设置总数据量为拟数据的长度
 const total = ref(tableData.value.length)
 
-// 状态样式映射
-const statusTypeMap = {
-  '待审核': 'warning',
-  '已通过': 'success',
-  '已拒绝': 'danger'
+
+
+//获取列表数据
+const getListExperimentInfo = () => {
+  const query = {
+    name: searchForm.name,
+    type: searchForm.type,
+    stage: searchForm.stage,
+    status: searchForm.status,
+    pageNum: searchForm.pageNum,
+    pageSize: searchForm.pageSize
+  }
+  listExperimentInfo(query).then(response => {
+    tableData.value = response.rows
+    total.value = response.total
+  })
 }
+const { proxy } = getCurrentInstance();
+
+
+// 删除试验信息
+const handleDelete = (row) => {
+  ElMessageBox.confirm(
+    `确定要删除实验 ${row.experimentName} 吗？`,
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    // 实现删除逻辑
+    delExperimentInfo(row.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('删除成功')
+        getListExperimentInfo();
+      } else {
+        ElMessage.error('删除失败')
+      }
+    });
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+}
+
+
+getListExperimentInfo()
+
+
 
 // 控制搜索框显示隐藏
 const showSearch = ref(true)
@@ -255,7 +244,7 @@ const pageSize = ref(10)
 // 方法定义
 const handleSearch = () => {
   currentPage.value = 1  // 搜索时重置为第一页
-  getPageData()
+  getListExperimentInfo()
 }
 
 const resetSearch = () => {
@@ -264,11 +253,16 @@ const resetSearch = () => {
   })
   currentPage.value = 1  // 重置时回到第页
   total.value = tableData.value.length
-  getPageData()
+  getListExperimentInfo()
 }
 
 const handleAdd = () => {
-  router.push('/glxt/experiment/experiment_steps')
+  router.push({
+    path: '/glxt/experiment/experiment_steps',
+    query: {
+      mode: 'add'
+    }
+  })
 }
 
 const handlePreview = (row) => {
@@ -295,41 +289,18 @@ const handleAudit = (row) => {
   // 实现审核逻辑
 }
 
-const handleDelete = (row) => {
-  // 实现删除逻辑
-}
-
 // 处理分页方法的优化
 const handleSizeChange = (val) => {
   pageSize.value = val
   currentPage.value = 1  // 切换每页条数时重置为第一页
-  getPageData()
+  getListExperimentInfo()
 }
 
 const handleCurrentChange = (val) => {
   currentPage.value = val
-  getPageData()
+  getListExperimentInfo()
 }
 
-// 获取分页数据的方法
-const getPageData = () => {
-  // 先过滤数据
-  const filteredData = tableData.value.filter(item => {
-    const nameMatch = !searchForm.name || item.name.includes(searchForm.name)
-    const typeMatch = !searchForm.type || item.type === searchForm.type
-    const stageMatch = !searchForm.stage || item.stage === searchForm.stage
-    const statusMatch = !searchForm.status || item.status === searchForm.status
-    return nameMatch && typeMatch && stageMatch && statusMatch
-  })
-  
-  // 更新总数据量
-  total.value = filteredData.length
-  
-  // 计算当前页的数据
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredData.slice(start, end)
-}
 </script>
 
 <style scoped>

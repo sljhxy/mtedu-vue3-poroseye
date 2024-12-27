@@ -9,7 +9,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Document /></el-icon>
-                <span>步骤设置</span>
+                <span>步骤设置{{ experimentId }}</span>
               </div>
             </template>
             
@@ -96,7 +96,7 @@
       <div class="preview-content">
         <div v-for="(step) in flattenSteps" :key="step.id" 
              :style="{ paddingLeft: `${step.level * 20}px` }"
-             class="preview-step">
+            class="preview-step">
           <span class="preview-index">{{ step.number }}</span>
           <span class="preview-label">{{ step.label }}</span>
           <span class="preview-score">得分：{{ step.score }}</span>
@@ -217,7 +217,14 @@ const dialogType = ref('add')
 const currentParentNode = ref(null)
 const currentEditNode = ref(null)
 const previewDialogVisible = ref(false)
-
+// 接收父组件传递的数据
+const props = defineProps({
+  experimentId: {//实验id
+    type: String,
+    required: true,
+    default: () => []
+  },
+})
 const stepForm = ref({
   label: '',
   score: 0,

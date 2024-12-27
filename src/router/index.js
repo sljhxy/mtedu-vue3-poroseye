@@ -185,22 +185,22 @@ export const constantRoutes = [
 },
 //实验管理的路由配置文件
 {
-  path: '/glxt',
+  path: '/glxt/experiment',
   component: Layout,
-  redirect: '/glxt/experiment',
+  redirect: '/glxt/experiment/experiment_list',
   name: 'GLXT',
-  meta: { title: '实验管理', icon: 'system' },
+  meta: { title: '实验管理'},
   hidden: true,
   children: [
     {
-      path: 'experiment/experiment_list',
-      name: 'Experiment',
+      path: 'experiment_list',
+      name: 'experimentList',
       component: () => import('@/views/glxt/experiment/experiment_list.vue'),
       meta: { title: '实验管理', icon: 'experiment' }
     },
     {
-      path: 'experiment/experiment_steps',
-      name: 'ExperimentSteps',
+      path: 'experiment_steps',
+      name: 'experimentSteps',
       component: () => import('@/views/glxt/experiment/experiment_steps.vue'),
       meta: { title: '实验步骤', icon: 'experiment' }
     }

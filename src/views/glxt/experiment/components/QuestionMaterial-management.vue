@@ -11,7 +11,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Document /></el-icon>
-                <span>题库</span>
+                <span>题库{{ experimentId }}</span>
               </div>
             </template>
             <div class="search-wrapper">
@@ -341,7 +341,14 @@ import { Document, Folder } from '@element-plus/icons-vue'
 
 // Tab control
 const activeTab = ref('questions')
-
+// 接收父组件传递的数据
+const props = defineProps({
+  experimentId: {//实验id
+    type: String,
+    required: true,
+    default: () => []
+  },
+})
 // Search form
 const searchForm = reactive({
   content: '',

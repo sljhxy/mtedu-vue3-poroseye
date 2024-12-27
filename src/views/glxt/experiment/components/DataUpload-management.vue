@@ -9,7 +9,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Document /></el-icon>
-                <span>AB包</span>
+                <span>AB包{{ experimentId }}</span>
               </div>
             </template>
             <div class="compact-form">
@@ -141,6 +141,15 @@ import { ref, computed } from 'vue'
 
 // 当前激活的标签页
 const activeTab = ref('abPackage')
+
+// 接收父组件传递的数据
+const props = defineProps({
+  experimentId: {//实验id
+    type: String,
+    required: true,
+    default: () => []
+  },
+})
 
 // 列表数据
 const abPackageList = ref([])

@@ -2,20 +2,10 @@
   <div class="experiment-steps">
     <!-- Top Action Bar -->
     <div class="top-actions">
-      <div class="left-area">
-        <el-button 
-          @click="$emit('cancel')"
-          class="action-button cancel-button"
-          v-show="canSave"
-        >
-          <el-icon><Close /></el-icon>
-          取消
-        </el-button>
-      </div>
-      
+      <div class="left-area"/>
       <div class="center-area">
         <div class="title-wrapper">
-          <span class="title-prefix">实验名称</span>
+          <span class="title-prefix">实验名称{{ currentExperimentId }}</span>
           <h2 class="experiment-title">
             {{ experimentName || '新建实验' }}
           </h2>
@@ -23,19 +13,8 @@
         </div>
       </div>
 
-      <div class="right-area">
-        <el-button 
-          type="primary" 
-          @click="handleSave"
-          :disabled="!canSave"
-          v-show="canSave"
-        >
-          <el-icon><Check /></el-icon>
-          {{ saveButtonText }}
-        </el-button>
-      </div>
+      <div class="right-area"/>
     </div>
-
     <!-- Steps -->
     <el-steps 
       simple
@@ -54,33 +33,57 @@
 
     <!-- Steps Content -->
     <div class="steps-content">
-      <component 
+      <component
+        ref="currentComponentRef" 
         :is="currentComponent"
         v-model:experimentName="experimentName"
+        :experimentId="currentExperimentId"
         @canSave="updateCanSave"
       ></component>
+    
     </div>
 
     <!-- Bottom Action Buttons -->
-    <div class="steps-action">
-      <el-button 
-        v-if="activeStep === 0" 
-        @click="go_back"
-      >返回列表</el-button>
-      <el-button 
-        v-if="activeStep > 0" 
-        @click="prev"
-      >上一步</el-button>
-      <el-button 
-        type="primary" 
-        @click="next"
-        v-if="activeStep < 5"
-      >下一步</el-button>
-      <el-button 
-        type="primary" 
-        @click="submit"
-        v-if="activeStep === 5"
-      >提交</el-button>
+    <div class="page-footer">
+      <div class="footer-content">
+        <div class="button-group">
+          <el-button 
+            class="nav-button prev-button" 
+            v-if="activeStep === 0" 
+            @click="go_back"
+          >
+            <el-icon><ArrowLeft /></el-icon>
+            返回列表
+          </el-button>
+          <el-button 
+            class="nav-button prev-button" 
+            v-if="activeStep > 0" 
+            @click="prev"
+          >
+            <el-icon><ArrowLeft /></el-icon>
+            上一步
+          </el-button>
+          <div class="button-divider"></div>
+          <el-button 
+            class="nav-button next-button" 
+            type="primary" 
+            @click="next"
+            v-if="activeStep < 5"
+          >
+            下一步
+            <el-icon><ArrowRight /></el-icon>
+          </el-button>
+          <el-button 
+            class="nav-button next-button" 
+            type="primary" 
+            @click="submit"
+            v-if="activeStep === 5"
+          >
+            提交
+            <el-icon><Check /></el-icon>
+          </el-button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -89,7 +92,6 @@
 import { ref, computed, defineProps } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Close, Check } from '@element-plus/icons-vue'
 import BasicInfoManagement from './components/BasicInfo-management.vue'
 import ExtendInfoManagement from './components/ExtendInfo-management.vue'
 import QuestionMaterialManagement from './components/QuestionMaterial-management.vue'
@@ -121,12 +123,7 @@ const currentComponent = computed(() => {
   return steps[activeStep.value]
 })
 
-const next = () => {
-  if (activeStep.value < 5) {
-    activeStep.value++
-    canSave.value = false// 进入下一步时，保存按钮状态重置为false
-  }
-}
+
 
 const go_back = () => {
   router.push('/glxt/experiment/experiment_list')
@@ -154,119 +151,47 @@ const updateCanSave = (value) => {
   canSave.value = value
 }
 
-// 保存按钮文本计算属性
-const saveButtonText = computed(() => {
-  // 获取当前组件实例
-  const currentComponent = steps[activeStep.value]
-  
-  // 基础信息步骤
-  if (activeStep.value === 0) {
-    // 假设 BasicInfoManagement 组件暴露了 activeTab
-    return currentComponent?.exposed?.activeTab === 'basicInfo' 
-      ? '保存实验信息' 
-      : '保存实验说明'
-  }
-  
-  // 扩展信息步骤
-  if (activeStep.value === 1) {
-    // 假设 ExtendInfoManagement 组件暴露了 activeTab
-    const extendTab = currentComponent?.exposed?.activeTab
-    switch (extendTab) {
-      case 'principle':
-        return '保存实验原理'
-      case 'objective':
-        return '保存实验目标'
-      case 'equipment':
-        return '保存实验器具'
-      default:
-        return '保存扩展信息'
-    }
-  }
-  
-  // 其他步骤保持不变
-  switch (activeStep.value) {
-    case 2:
-      return '保存题库素材'
-    case 3:
-      return '保存步骤设置'
-    case 4:
-      return '保存数据表'
-    case 5:
-      return '提交审核'
-    default:
-      return '保存'
-  }
-})
 
-// 修改处理保存按钮点击方法
-const handleSave = async () => {
-  const currentComponentInstance = steps[activeStep.value]
-  
-  try {
-    if (currentComponentInstance?.exposed?.handleSubmit) {
-      await currentComponentInstance.exposed.handleSubmit()
-      
-      // 根据不同步骤和标签页显示不同的成功消息
-      let successMessage = ''
-      
-      // 基础信息步骤
+// Add experimentId ref
+const currentExperimentId = ref('')
+
+
+const currentComponentRef = ref(null)
+// Update the next method to include experimentId handling
+const next = async () => {
+  if (activeStep.value < 5) {
+    // Check if current component has validation method
+    if (currentComponentRef.value && currentComponentRef.value.validateForm) {
+      try {
+        // Attempt to validate the current form
+        await currentComponentRef.value.validateForm()
+        
+        // If validation passes, handle experimentId for first step
+        if (activeStep.value === 0) {
+          if (currentComponentRef.value.experimentId) {
+            currentExperimentId.value = currentComponentRef.value.experimentId
+          }
+        }
+        
+        // Proceed to next step
+        activeStep.value++
+        canSave.value = false
+      } catch (error) {
+        // Show validation error message
+        ElMessage.warning('请完成必填项后再进行下一步')
+        return
+      }
+    } else {
+      // If no validation method exists, proceed as normal
       if (activeStep.value === 0) {
-        successMessage = currentComponentInstance?.exposed?.activeTab === 'basicInfo'
-          ? '实验信息保存成功'
-          : '实验说明保存成功'
-      }
-      // 扩展信息步骤
-      else if (activeStep.value === 1) {
-        const extendTab = currentComponentInstance?.exposed?.activeTab
-        switch (extendTab) {
-          case 'principle':
-            successMessage = '实验原理保存成功'
-            break
-          case 'objective':
-            successMessage = '实验目标保存成功'
-            break
-          case 'equipment':
-            successMessage = '实验器具保存成功'
-            break
-          default:
-            successMessage = '扩展信息保存成功'
+        if (currentComponentRef.value?.experimentId) {
+          currentExperimentId.value = currentComponentRef.value.experimentId
         }
       }
-      // 其他步骤
-      else {
-        const successMessages = {
-          2: '题库素材保存成功',
-          3: '步骤设置保存成功',
-          4: '数据表保存成功',
-          5: '已提交审核'
-        }
-        successMessage = successMessages[activeStep.value]
-      }
-      
-      ElMessage.success(successMessage)
-      
-      // 如果不是最后一步，且当前标签页是最后一个，则自动进入下一步
-      if (activeStep.value < 5 && isLastTab(currentComponentInstance)) {
-        next()
-      }
+      activeStep.value++
+      canSave.value = false
     }
-  } catch (error) {
-    ElMessage.error({
-      message: '保存失败，请检查数据后重试',
-      duration: 3000
-    })
   }
-}
-
-// 判断是否是当前步骤的最后一个标签页
-const isLastTab = (componentInstance) => {
-  if (activeStep.value === 0) {
-    return componentInstance?.exposed?.activeTab === 'experimentDesc'
-  }
-  if (activeStep.value === 1) {
-    return componentInstance?.exposed?.activeTab === 'equipment'
-  }
-  return true
 }
 </script>
 
@@ -275,9 +200,10 @@ const isLastTab = (componentInstance) => {
   padding: 10px 20px;
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  // box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
   max-width: 99%;
   margin: 0 auto;
+  padding-bottom: 100px;
 
   .custom-steps {
     margin: 20px 0 15px;
@@ -355,9 +281,9 @@ const isLastTab = (componentInstance) => {
 
   
   .steps-content {
-    margin-top: 20px;
+    margin-top: 0;
     min-height: 400px;
-    padding: 20px;
+    padding: 0 20px;
     border-radius: 4px;
     width: 100%;
     box-sizing: border-box;
@@ -542,6 +468,109 @@ const isLastTab = (componentInstance) => {
         opacity: 0.6;
       }
     }
+  }
+}
+
+/* 底部导航样式 */
+.page-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  border-top: 2px solid rgba(64, 158, 255, 0.1);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+  z-index: 100;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 32px;
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.button-divider {
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(64, 158, 255, 0.2),
+    transparent
+  );
+}
+
+.nav-button {
+  min-width: 120px;
+  height: 40px;
+  border-radius: 22px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+}
+
+.prev-button {
+  background-color: #f8faff;
+  border: 1px solid rgba(64, 158, 255, 0.2);
+  color: #409EFF;
+  
+  &:hover {
+    background-color: #fff;
+    border-color: #409EFF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+    
+    .el-icon {
+      transform: translateX(-3px);
+    }
+  }
+}
+
+.next-button {
+  background: linear-gradient(135deg, #409EFF, #3a8ee6);
+  border: none;
+  color: #ffffff;
+  
+  &:hover {
+    background: linear-gradient(135deg, #66b1ff, #409EFF);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(64, 158, 255, 0.25);
+    
+    .el-icon {
+      transform: translateX(3px);
+    }
+  }
+}
+
+/* 适配移动端 */
+@media screen and (max-width: 768px) {
+  .footer-content {
+    padding: 16px;
+  }
+
+  .button-group {
+    gap: 16px;
+  }
+
+  .nav-button {
+    min-width: 100px;
+    height: 36px;
+    font-size: 14px;
+    padding: 0 16px;
   }
 }
 </style>
