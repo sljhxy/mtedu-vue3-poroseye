@@ -4,7 +4,7 @@
     <div class="main-content-wrapper">
       <!-- 标签页容器 -->
       <div class="tabs-wrapper">
-        <el-tabs v-model="activeTab" class="custom-tabs">
+        <el-tabs v-model="activeTab" class="custom-tabs"  @tab-click="handleTabChange">
           <el-tab-pane name="steps">
             <template #label>
               <div class="custom-tab-label">
@@ -15,8 +15,8 @@
             
             <!-- 步骤设置内容 -->
             <div class="action-buttons">
-              <el-button type="primary" plain @click="addStep(null)">
-                <el-icon><Plus /></el-icon>新建步骤
+              <el-button type="primary" plain @click="addStep(null)" v-hasPermi="['glxt:experimentInfoStep:add']">
+                <el-icon><Plus /></el-icon>新建一级步骤
               </el-button>
               <el-button type="success" plain @click="previewSteps" :disabled="steps.length === 0">
                 <el-icon><View /></el-icon>预览步骤
@@ -39,34 +39,26 @@
                       <span class="step-index">{{ getStepNumber(node) }}</span>
                       <span class="step-line"></span>
                       <span :class="['step-label', { 'first-level': getLevel(node) === 1 }]">
-                        {{ data.label }}
+                        {{ data.stepName }}
                       </span>
                       <el-tag size="small" type="success" class="ml-2">
-                        得分：{{ data.score }}
+                        分数：{{ data.stepScore }}
                       </el-tag>
                     </span>
                     <span class="operation-buttons">
-                      <el-button 
-                        type="primary"
-                        link
-                        @click.stop="handleOperation(data)"
-                      >
+                      <el-button plain type="info" color="#ff6f21" @click.stop="handleOperation(data)" >
                         关联操作
                       </el-button>
-                      <el-button 
-                        v-if="getLevel(node) < 5"
-                        link 
-                        type="primary" 
-                        @click.stop="addStep(data)"
-                      >
+                      <el-button v-if="getLevel(node) < 5" color="#4caf50" plain type="primary" @click.stop="addStep(data)" v-hasPermi="['glxt:experimentInfoStep:add']">
                         添加子步骤
                       </el-button>
-                      <el-button link type="primary" @click.stop="editStep(data)">
+                      <el-button plain type="success" @click.stop="editStep(data)" v-hasPermi="['glxt:experimentInfoStep:edit']">
                         编辑
                       </el-button>
-                      <el-button link type="danger" @click.stop="deleteStep(node, data)">
-                        删除
-                      </el-button>
+                        <el-button plain type="danger" @click.stop="deleteStep(node, data)" title="先删除子步骤再删除父级" v-hasPermi="['glxt:experimentInfoStep:remove']"
+                          :disabled="data.children && data.children.length > 0">
+                          删除
+                        </el-button>
                     </span>
                   </span>
                 </template>
@@ -98,8 +90,8 @@
              :style="{ paddingLeft: `${step.level * 20}px` }"
             class="preview-step">
           <span class="preview-index">{{ step.number }}</span>
-          <span class="preview-label">{{ step.label }}</span>
-          <span class="preview-score">得分：{{ step.score }}</span>
+          <span class="preview-label">{{ step.stepName }}</span>
+          <span class="preview-score">分数：{{ step.stepScore }}</span>
         </div>
       </div>
     </el-dialog>
@@ -109,13 +101,27 @@
       v-model="dialogVisible"
       :title="dialogType === 'add' ? '新增步骤' : '编辑步骤'"
       width="500px"
+      style="margin-top: 10% !important;"
     >
       <el-form :model="stepForm" label-width="100px">
+        <!-- v-show="dialogType === 'edit' -->
+        <el-form-item :label="dialogType === 'add' && dialogTypeIsParent == 2 ? '顶级步骤' : '子级步骤'" prop="parentId">
+              <el-tree-select
+                v-model="stepForm.parentId"
+                :data="stepOptions"
+                :props="{ value: 'id', label: 'stepName', children: 'children' }"
+                value-key="id"
+                placeholder="不选择则为顶级知识点"
+                check-strictly
+                disabled
+                clearable
+              />
+          </el-form-item>
         <el-form-item label="步骤名称">
-          <el-input v-model="stepForm.label" placeholder="请输入步骤名称" />
+          <el-input v-model="stepForm.stepName" placeholder="请输入步骤名称" />
         </el-form-item>
         <el-form-item label="得分权重">
-          <el-input-number v-model="stepForm.score" :min="0" :max="100" />
+          <el-input-number v-model="stepForm.stepScore" :min="0" :max="100"  style="width: 100%;"/>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -131,15 +137,15 @@
       v-model="operationDialogVisible"
       title="关联操作"
       width="600px"
+      style="margin-top: 8% !important;"
     >
       <el-form :model="operationForm" label-width="120px">
         <el-form-item label="步骤名称">
-          <span>{{ currentStep?.label }}</span>
+          <span><el-tag type="success">{{ currentStep?.stepName }}</el-tag></span>
         </el-form-item>
-        
         <el-form-item label="操作详情">
           <el-input
-            v-model="operationForm.details"
+            v-model="operationForm.operationDetails"
             type="textarea"
             :rows="3"
             placeholder="请输入操作详情"
@@ -148,7 +154,7 @@
         
         <el-form-item label="语音讲解">
           <el-input
-            v-model="operationForm.voiceGuide"
+            v-model="operationForm.voicePrompts"
             type="textarea"
             :rows="3"
             placeholder="请输入语音讲解内容"
@@ -157,7 +163,7 @@
         
         <el-form-item label="特效说明">
           <el-input
-            v-model="operationForm.effectDesc"
+            v-model="operationForm.specialEffectDesc"
             type="textarea"
             :rows="3"
             placeholder="请输入特效说明"
@@ -166,7 +172,7 @@
         
         <el-form-item label="关联页面">
           <el-select
-            v-model="operationForm.relatedPage"
+            v-model="operationForm.relevancePageId"
             placeholder="请选择关联页面"
           >
             <el-option
@@ -206,14 +212,25 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { Plus, View, Document, Edit } from '@element-plus/icons-vue'
+const { proxy } = getCurrentInstance();
 
+//导入实验步骤API
+import { getExperimentInfoStep, addExperimentInfoStep, updateExperimentInfoStep, delExperimentInfoStep, listExperimentInfoStep } from '@/api/glxt/experimentInfoStep'
+
+//导入实验步骤关联操作API
+import { getExperimentStepRelevance, addExperimentStepRelevance, updateExperimentStepRelevance, delExperimentStepRelevance, listExperimentStepRelevance } from '@/api/glxt/experimentStepRelevance'
+import { el } from 'element-plus/es/locales.mjs';
+
+
+const stepOptions = ref([]);//存父级下拉
 const activeTab = ref('steps')
-const steps = ref([])
+const steps = ref([])//存实验步骤数据
 const dialogVisible = ref(false)
 const dialogType = ref('add')
+const dialogTypeIsParent = ref(0)//控制弹框中的输入框名称
 const currentParentNode = ref(null)
 const currentEditNode = ref(null)
 const previewDialogVisible = ref(false)
@@ -225,10 +242,16 @@ const props = defineProps({
     default: () => []
   },
 })
+
+//步骤提交表单
 const stepForm = ref({
-  label: '',
-  score: 0,
-  operation: ''
+  id: null,
+  experimentInfoId: '',//实验id
+  parentId: '',//父级id
+  stepName: '',//步骤名称
+  stepNum: '',//步骤序号
+  stepScore: 0,//实验步骤分数
+  stepDescribe: '',//实验步骤描述
 })
 
 const defaultProps = {
@@ -239,18 +262,36 @@ const defaultProps = {
 // 关联操作相关数据
 const operationDialogVisible = ref(false)
 const currentStep = ref(null)
-const operationForm = reactive({
-  details: '',
-  voiceGuide: '',
-  effectDesc: '',
-  relatedPage: '',
+
+//步骤关联操作表单
+const operationForm = ref({
+  id:null,
+  experimentStepId:'',//实验步骤id
+  relevancePageId:'',//关联页面id
+  operationDetails: '',//操作详情
+  voicePrompts: '',//语音提示
+  specialEffectDesc: '',//特效说明
   observationPoints: []
 })
 
+//重置关联-操作表单
+const resetOperationForm = () => {
+  operationForm.value = {
+    id:null,
+    experimentStepId: null,//实验步骤id
+    relevancePageId: null,//关联页面id
+    operationDetails: null,//操作详情
+    voicePrompts: null,//语音提示
+    specialEffectDesc: null,//特效说明
+    observationPoints: []
+  }
+}
+
+
 // 模拟页面选项数据
 const pageOptions = [
-  { value: 'page1', label: '页面1' },
-  { value: 'page2', label: '页面2' },
+  { value: '1', label: '页面1' },
+  { value: '2', label: '页面2' },
   // ... 更多页面选项
 ]
 
@@ -275,6 +316,9 @@ const observationOptions = [
 
 // 获取节点层级
 const getLevel = (node) => {
+  if(null == node) {
+    return 0
+  }
   let level = 1
   let parent = node.parent
   while (parent && parent.level !== 0) {
@@ -300,84 +344,199 @@ const getStepNumber = (node) => {
   return numbers.join('.')
 }
 
+
+//重置步骤表单数据
+const resetStepForm = () => {
+  stepForm.value = {
+    id: null,
+    experimentInfoId: null,//实验id
+    parentId: null,//父级id
+    stepName: null,//步骤名称
+    stepNum: null,//步骤序号
+    stepScore: 0,//实验步骤分数
+    stepDescribe: null,//实验步骤描述
+  }
+}
+
+/** 查询步骤下拉树结构 */
+function getTreeselect() {
+  listExperimentInfoStep().then(response => {
+    stepOptions.value = [];
+    const data = { id: 0, stepName: '顶级节点', children: [] };
+    data.children = proxy.handleTree(response.rows, "id", "parentId");
+    stepOptions.value.push(data);
+  });
+}
+	
+
 // 添加步骤
 const addStep = (parentNode) => {
+  resetStepForm();//重置表单数据
   dialogType.value = 'add'
-  currentParentNode.value = parentNode
-  stepForm.value = {
-    label: '',
-    score: 0,
-    operation: ''
+
+  getTreeselect();//获取步骤下拉树结构
+  stepForm.value.experimentInfoId = props.experimentId//设置实验id
+  //如果节点不为空  则为父级节点
+  if (parentNode != null) {
+    stepForm.value.parentId = parentNode.id;
+    stepForm.value.stepNum = getStepNumber(parentNode)//设置步骤编号
+    dialogTypeIsParent.value = 1 // 有父级
+  } else {
+    stepForm.value.parentId = 0;
+    dialogTypeIsParent.value = 2 // 无父级
   }
+
+  currentParentNode.value = parentNode
+
   dialogVisible.value = true
 }
 
 // 编辑步骤
 const editStep = (node) => {
+
+  resetStepForm();//重置表单数据
+  getTreeselect();//获取步骤下拉树结构
   dialogType.value = 'edit'
-  currentEditNode.value = node
-  stepForm.value = {
-    label: node.label,
-    score: node.score,
-    operation: node.operation
+
+  console.log(node)
+
+  if (node != null) {
+    stepForm.value.parentId = node.parentId;
   }
+  //获取当前步骤的信息
+  getExperimentInfoStep(node.id).then(response => {
+    stepForm.value = response.data;
+  });
+
+  currentEditNode.value = node
   dialogVisible.value = true
 }
 
 // 处理步骤提交
 const handleStepSubmit = () => {
-  const newStep = {
-    id: Date.now(),
-    label: stepForm.value.label,
-    score: stepForm.value.score,
-    children: []
-  }
-
   if (dialogType.value === 'add') {
+    //新增父级步骤，当前节点为空的前提下
     if (currentParentNode.value === null) {
-      steps.value.push(newStep)
+      //新增步骤
+      addExperimentInfoStep(stepForm.value).then(response => {
+          proxy.$modal.msgSuccess("新增成功");
+          getStepsList();
+      });
     } else {
-      if (!currentParentNode.value.children) {
-        currentParentNode.value.children = []
-      }
-      currentParentNode.value.children.push(newStep)
+      // if (!currentParentNode.value.children) {
+      //   currentParentNode.value.children = []
+      // }
+      // currentParentNode.value.children.push(newStep)
+      //新增子级步骤
+      addExperimentInfoStep(stepForm.value).then(response => {
+          proxy.$modal.msgSuccess("新增成功");
+          getStepsList();
+      });
     }
   } else {
-    // 编辑模式
-    Object.assign(currentEditNode.value, {
-      label: stepForm.value.label,
-      score: stepForm.value.score,
-      operation: stepForm.value.operation
-    })
+    // 编辑步骤
+    updateExperimentInfoStep(stepForm.value).then(response => {
+        proxy.$modal.msgSuccess("修改成功");
+        getStepsList();
+    });
   }
 
   dialogVisible.value = false
   ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功')
 }
 
+const queryParams = ref({
+    pageNum: 1,
+    pageSize: 10000,
+    experimentInfoId:''
+
+  }
+)
+const loading = ref(true);
+const total = ref(0);
+/** 查询知识点列表 */
+function getStepsList() {
+  loading.value = true;
+  queryParams.value.experimentInfoId = props.experimentId
+  listExperimentInfoStep(queryParams.value).then(response => {
+    steps.value = proxy.handleTree(response.rows, "id", "parentId");
+    total.value = steps.value.length
+    loading.value = false;
+  });
+}
+
+
 // 删除步骤
 const deleteStep = (node, data) => {
-  ElMessageBox.confirm('确认删除该步骤吗？', '提示', {
+  console.log(node, data)
+  ElMessageBox.confirm('确定要删除该步骤吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    const parent = node.parent
-    const children = parent.data.children || parent.data
-    const index = children.findIndex(d => d.id === data.id)
-    children.splice(index, 1)
-    ElMessage.success('删除成功')
+    delExperimentInfoStep(data.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('删除成功')
+        getStepsList()
+      }else{
+        ElMessage.error('删除失败')
+      }
+    })
+  }).catch(() => {
+    ElMessage.info('取消删除')
   })
 }
 
 const handleNodeClick = (data) => {
-  console.log(data)
+  // console.log(data)
 }
+
+
+// 修改 tab 切换处理方法
+const handleTabChange = (tab) => {
+  activeTab.value = tab.props.name
+  // 清空搜索内容并重新加载数据
+  if (activeTab.value == 'steps') {
+    // 重新加载步骤
+    getStepsList()
+  } else if(activeTab.value == 'buttons') {
+    console.log('按钮定义')
+  }
+}
+
+
+
+// 对所有的tab进行校验，如果都没有操作则无法通过下一步
+const validateForm = async () => {
+  if (activeTab.value == 'steps') {
+    // Validate principle tab
+    if (steps.value.length === 0) {
+      throw new Error('请完成实验步骤的填写')
+    }
+  } else if (activeTab.value == 'buttons') {
+    // Validate target tab
+    // if (experimentSourceMaterialPageList.value.length === 0) {
+    //   throw new Error('请完成按钮定义的必填项')
+    // }
+    console.log('按钮定义')
+  }
+  return true
+}
+
+//暴漏给父组件
+defineExpose({
+  validateForm
+})
+
+//数据初始化
+onMounted(() => {
+  getStepsList();//实验-步骤列表
+})
 
 // 扁平化处理步骤数据，用于预览
 const flattenSteps = computed(() => {
   const result = []
-  
+
   const flatten = (nodes, level = 1, parentNumber = '') => {
     nodes.forEach((node, index) => {
       const currentNumber = parentNumber ? `${parentNumber}.${index + 1}` : `${index + 1}`
@@ -386,13 +545,13 @@ const flattenSteps = computed(() => {
         level,
         number: currentNumber
       })
-      
+
       if (node.children && node.children.length) {
         flatten(node.children, level + 1, currentNumber)
       }
     })
   }
-  
+
   flatten(steps.value)
   return result
 })
@@ -402,47 +561,73 @@ const previewSteps = () => {
   previewDialogVisible.value = true
 }
 
+const relevanceData = ref();
+
+const queryRelevanceParams = ref({
+    pageNum: 1,
+    pageSize: 10,
+    experimentStepId:''
+  }
+)
+//获取操作详情数据
+const getStepRelevance = () => {
+  queryRelevanceParams.value.experimentStepId = currentStep.value.id
+  listExperimentStepRelevance(queryRelevanceParams.value).then(response => {
+    if(response.code == 200) {
+      relevanceData.value =  response.rows;
+    } else {
+      ElMessage.error('关联操作数据获取失败')
+    }
+  });
+}
+
 // 处理关联操作按钮点击
 const handleOperation = (step) => {
+
+  
+  //拿到当前步骤信息
   currentStep.value = step
-  // 如果已有数据，加载已有数据
-  if (step.operation) {
-    operationForm.details = step.operation.details || ''
-    operationForm.voiceGuide = step.operation.voiceGuide || ''
-    operationForm.effectDesc = step.operation.effectDesc || ''
-    operationForm.relatedPage = step.operation.relatedPage || ''
-    operationForm.observationPoints = step.operation.observationPoints || []
-  } else {
-    // 重置表单
-    operationForm.details = ''
-    operationForm.voiceGuide = ''
-    operationForm.effectDesc = ''
-    operationForm.relatedPage = ''
-    operationForm.observationPoints = []
+  //获取数据
+  getStepRelevance();//获取该步骤是否有关联操作数据
+  if(relevanceData.value != undefined) {
+    operationForm.value = relevanceData.value[0];
   }
+  
+
   operationDialogVisible.value = true
 }
 
 // 处理关联操作提交
 const handleOperationSubmit = async () => {
   try {
-    // 这里添加你的提交逻辑，可以调用API
-    const params = {
-      experimentId: props.experimentId, // 假设通过props传入
-      stepId: currentStep.value.id,
-      ...operationForm
+    operationForm.value.experimentStepId = currentStep.value.id//当前操作步骤ID
+    if(relevanceData.value == undefined) {
+      resetOperationForm();//重置表单数据
+      addExperimentStepRelevance(operationForm.value).then(response => {
+        if(response.code == 200){
+          proxy.$modal.msgSuccess("新增成功");
+        } else {
+          ElMessage.error('新增失败')
+        }
+      });
+    } else {
+      updateExperimentStepRelevance(operationForm.value).then(response => {
+        if(response.code == 200){
+          proxy.$modal.msgSuccess("修改成功");
+        } else {
+          ElMessage.error('修改失败')
+        }
+      });
     }
-    // await submitOperation(params)
     
-    // 更新本地数据
-    currentStep.value.operation = { ...operationForm }
-    
-    ElMessage.success('保存成功')
-    operationDialogVisible.value = false
   } catch (error) {
-    ElMessage.error('保存失败')
+    ElMessage.error('操作失败')
+  }finally {
+    operationDialogVisible.value = false//关闭弹窗
   }
 }
+
+
 </script>
 
 <style scoped>
@@ -586,7 +771,7 @@ const handleOperationSubmit = async () => {
 /* 步骤线 */
 .step-line {
   border-top: 1px dashed #909399;
-  width: 100px;
+  width: 200px;
   margin: 0 8px;
 }
 
@@ -605,7 +790,8 @@ const handleOperationSubmit = async () => {
 
 .operation-buttons {
   display: flex;
-  gap: 8px;
+  
+  gap: 30px;
 }
 
 .preview-content {
@@ -654,5 +840,10 @@ const handleOperationSubmit = async () => {
 
 :deep(.el-textarea__inner) {
   font-family: inherit;
+}
+
+/* 设置步骤间距 */
+.el-tree {
+  --el-tree-node-content-height: 50px;
 }
 </style>

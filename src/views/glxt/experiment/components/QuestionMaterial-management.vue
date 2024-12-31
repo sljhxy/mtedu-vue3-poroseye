@@ -16,25 +16,14 @@
             </template>
             <div class="search-wrapper">
               <div class="search-section" v-show="isSearchVisible">
-                <el-form :inline="false" :model="searchForm">
+                <el-form :inline="false" :model="queryExperimentQuestionParams">
                   <el-row :gutter="20">
-                    <el-col :span="8">
-                      <el-form-item label="题干">
-                        <el-input v-model="searchForm.content" placeholder="请输入题干"></el-input>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="8">
-                      <el-form-item label="学科">
-                        <el-select v-model="searchForm.subject" placeholder="请选择学科" style="width: 100%">
-                          <el-option v-for="item in subjectOptions" :key="item.value" :label="item.label" :value="item.value">
-                          </el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="8">
-                      <el-form-item label="题目类型">
-                        <el-select v-model="searchForm.type" placeholder="请选择题目类型" style="width: 100%">
-                          <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value">
+                    <el-col :span="3">
+                      <el-form-item label="题型">
+                        <el-select v-model="queryExperimentQuestionParams.questionType" placeholder="请选择题型" 
+                        @change="handleQuestionSearch('questionType', queryExperimentQuestionParams.questionType)"
+                        clearable>
+                          <el-option v-for="item in mt_question_type" :key="item.value" :label="item.label" :value="item.value">
                           </el-option>
                         </el-select>
                       </el-form-item>
@@ -57,23 +46,44 @@
                     plain
                     circle 
                     icon="Refresh" 
-                    @click="handleRefresh"
+                    @click="handleQuestionRefresh"
                   />
                 </div>
               </div>
             </div>
 
             <!-- Question Table -->
-            <el-table :data="questionList" border>
-              <el-table-column type="index" label="序号" width="60"></el-table-column>
-              <el-table-column prop="content" label="题目题干"></el-table-column>
-              <el-table-column prop="stage" label="学段"></el-table-column>
-              <el-table-column prop="subject" label="学科"></el-table-column>
-              <el-table-column prop="type" label="题目类型"></el-table-column>
-              <el-table-column prop="difficulty" label="难度"></el-table-column>
+            <el-table :data="experimentQuestionPageList" border>
+              <el-table-column type="index" label="序号" width="60" fixed />
+              <el-table-column prop="schoolType" label="学校类型" align="center">
+                <template #default="scope">
+                      <dict-tag :options="mt_school_type" :value="scope.row.questionEditRequestVM.schoolType"/>
+                </template>
+              </el-table-column>
+              <el-table-column prop="academicStageType" label="学段" align="center">
+                <template #default="scope">
+                      <dict-tag v-if="scope.row.questionEditRequestVM.schoolType == '1'" :options="mt_academic_stage" :value="scope.row.questionEditRequestVM.academicStageType"/>
+                      <dict-tag v-else :options="mt_vocal_education_type" :value="scope.row.questionEditRequestVM.academicStageType"/>
+                  </template>
+              </el-table-column>
+              <el-table-column prop="title" label="题目题干" min-width="300" show-overflow-tooltip>
+                <template #default="scope">
+                  <div v-html="scope.row.questionEditRequestVM.title"></div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="questionType" label="题目类型"  align="center">
+                <template #default="scope">
+                      <dict-tag :options="mt_question_type" :value="scope.row.questionEditRequestVM.questionType"/>
+                  </template>
+              </el-table-column>
+              <el-table-column prop="difficult" label="难度" align="center">
+                <template #default="scope">
+                  {{ scope.row.questionEditRequestVM.difficult }}
+                </template>
+
+              </el-table-column>
               <el-table-column label="操作" width="150">
                 <template #default="scope">
-                  <el-button type="text" @click="previewQuestion(scope.row)">预览</el-button>
                   <el-button type="text" class="delete-btn" @click="deleteQuestion(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
@@ -82,14 +92,12 @@
             <!-- Pagination -->
             <div class="pagination-container">
               <el-pagination
-                v-model:current-page="pagination.currentPage"
-                v-model:page-size="pagination.pageSize"
+                v-model:page="queryExperimentQuestionParams.pageNum"
+                v-model:limit="queryExperimentQuestionParams.pageSize"
                 :page-sizes="[10, 20, 30, 50]"
-                :total="pagination.total"
+                :total="experimentQuestionTotal"
                 background
                 layout="total, sizes, prev, pager, next, jumper"
-                @size-change="handleSizeChange"
-                @current-change="handleCurrentChange"
               />
             </div>
           </el-tab-pane>
@@ -103,31 +111,48 @@
             </template>
             <div class="search-wrapper">
               <div class="search-section" v-show="isSearchVisible">
-                <el-form :inline="false" :model="materialSearchForm">
+                <el-form :inline="false" :model="queryExperimentSourceMaterialParams">
                   <el-row :gutter="20">
-                    <el-col :span="8">
-                      <el-form-item label="题干">
-                        <el-input v-model="materialSearchForm.content" placeholder="请输入题干" @input="handleMaterialSearch"></el-input>
+                    <el-col :span="3">
+                      <el-form-item label="文件名称">
+                        <el-input 
+                          v-model="queryExperimentSourceMaterialParams.fileName" 
+                          placeholder="请输入名称"
+                          @input="handleMaterialSearch('fileName', queryExperimentSourceMaterialParams.fileName)"
+                          clearable
+                        />
                       </el-form-item>
                     </el-col>
-                    <el-col :span="8">
-                      <el-form-item label="学科">
-                        <el-select v-model="materialSearchForm.subject" placeholder="请选择学科" style="width: 100%" @change="handleMaterialSearch">
-                          <el-option v-for="item in subjectOptions" :key="item.value" :label="item.label" :value="item.value">
-                          </el-option>
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="8">
+                    <el-col :span="3">
                       <el-form-item label="文件类型">
-                        <el-select v-model="materialSearchForm.fileType" placeholder="请选择文件类型" style="width: 100%" @change="handleMaterialSearch">
-                          <el-option v-for="item in fileTypeOptions" :key="item.value" :label="item.label" :value="item.value">
-                          </el-option>
+                        <el-input 
+                            v-model="queryExperimentSourceMaterialParams.fileType" 
+                            placeholder="请输入文件后缀"
+                            @input="handleMaterialSearch('fileType', queryExperimentSourceMaterialParams.fileType)"
+                            clearable
+                          />
+                      </el-form-item>
+                    </el-col>
+                    <el-col :span="3">
+                      <el-form-item label="素材类别">
+                        <el-select 
+                          style="width: 150px;" 
+                          v-model="queryExperimentSourceMaterialParams.sourceType" 
+                          placeholder="请选择素材类别"
+                          @change="handleMaterialSearch('sourceType', queryExperimentSourceMaterialParams.sourceType)"
+                          clearable>
+                          <el-option 
+                            v-for="item in mt_source_material_type" 
+                            :key="item.value" 
+                            :label="item.label" 
+                            :value="item.value"
+                          />
                         </el-select>
                       </el-form-item>
                     </el-col>
                   </el-row>
                 </el-form>
+
               </div>
               <div class="operation-bar">
                 <div class="left-buttons">
@@ -151,32 +176,48 @@
             </div>
 
             <!-- Materials Table -->
-            <el-table :data="materialsList" border>
-              <el-table-column type="index" label="题号" width="60"></el-table-column>
-              <el-table-column prop="content" label="题目题干"></el-table-column>
-              <el-table-column prop="stage" label="学段"></el-table-column>
-              <el-table-column prop="subject" label="学科"></el-table-column>
-              <el-table-column prop="fileType" label="文件类型"></el-table-column>
-              <el-table-column prop="category" label="类别"></el-table-column>
-              <el-table-column label="操作" width="150">
+            <el-table :data="experimentSourceMaterialPageList" border>
+              <el-table-column type="contentType" label="学校类型" align="center">
+              <template #default="scope">
+                <dict-tag :options="mt_school_type" :value="scope.row.sourceMaterial.contentType"/>
+              </template>
+            </el-table-column>
+            <el-table-column type="periodType" label="学段"  align="center">
+              <template #default="scope">
+                <dict-tag v-if="scope.row.sourceMaterial.contentType == '1'" :options="mt_academic_stage" :value="scope.row.sourceMaterial.periodType"/>
+                <dict-tag v-else :options="mt_vocal_education_type" :value="scope.row.sourceMaterial.periodType"/>
+              </template>
+            </el-table-column>
+            <el-table-column prop="fileName" label="文件名称" align="center">
+              <template #default="scope"> 
+                {{ scope.row.sourceMaterial.fileName }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="fileType" label="文件类型" align="center">
+              <template #default="scope"> 
+                {{ scope.row.sourceMaterial.fileType }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="sourceType" label="素材类别" align="center">
+              <template #default="scope">
+                <dict-tag :options="mt_source_material_type" :value="scope.row.sourceMaterial.sourceType"/>
+              </template>
+            </el-table-column>
+              <el-table-column label="操作" width="150" align="center">
                 <template #default="scope">
-                  <el-button type="text" @click="previewMaterial(scope.row)">预览</el-button>
-                  <el-button type="text" class="delete-btn" @click="deleteMaterial(scope.row)">删除</el-button>
+                  <el-button plain type="danger" class="delete-btn" @click="deleteMaterial(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
-
             <!-- Materials Pagination -->
             <div class="pagination-container">
               <el-pagination
-                v-model:current-page="materialPagination.currentPage"
-                v-model:page-size="materialPagination.pageSize"
+                v-model:page="queryExperimentSourceMaterialParams.pageNum"
+                v-model:limit="queryExperimentSourceMaterialParams.pageSize"
                 :page-sizes="[10, 20, 30, 50]"
-                :total="materialPagination.total"
+                :total="experimentSourceMaterialTotal"
                 background
                 layout="total, sizes, prev, pager, next, jumper"
-                @size-change="handleMaterialSizeChange"
-                @current-change="handleMaterialPageChange"
               />
             </div>
           </el-tab-pane>
@@ -188,40 +229,20 @@
     <el-dialog 
       v-model="dialogVisible" 
       title="选择题目" 
-      width="80%"
+      width="60%"
     >
       <!-- 搜索框保持不变 -->
       <div class="dialog-search">
         <el-form :inline="true" :model="dialogSearchForm">
-          <el-form-item label="题干">
-            <el-input 
-              v-model="dialogSearchForm.content" 
-              placeholder="请输入题干"
-              @input="handleDialogSearch"
-            />
-          </el-form-item>
-          <el-form-item label="学科">
-            <el-select 
-              v-model="dialogSearchForm.subject" 
-              placeholder="请选择学科"
-              @change="handleDialogSearch"
-            >
-              <el-option 
-                v-for="item in subjectOptions" 
-                :key="item.value" 
-                :label="item.label" 
-                :value="item.value"
-              />
-            </el-select>
-          </el-form-item>
           <el-form-item label="题目类型">
             <el-select 
-              v-model="dialogSearchForm.type" 
+              style="width: 150px;" 
+              v-model="dialogSearchForm.questionType" 
               placeholder="请选择题目类型"
-              @change="handleDialogSearch"
-            >
+              @change="handleQuestionDialogSearch('questionType', dialogSearchForm.questionType)"
+              clearable>
               <el-option 
-                v-for="item in typeOptions" 
+                v-for="item in mt_question_type" 
                 :key="item.value" 
                 :label="item.label" 
                 :value="item.value"
@@ -241,11 +262,28 @@
         >
           <el-table-column type="selection" width="55" fixed />
           <el-table-column type="index" label="序号" width="60" fixed />
-          <el-table-column prop="content" label="题目题干" min-width="300" show-overflow-tooltip />
-          <el-table-column prop="stage" label="学段" width="100" />
-          <el-table-column prop="subject" label="学科" width="100" />
-          <el-table-column prop="type" label="题目类型" width="120" />
-          <el-table-column prop="difficulty" label="难度" width="100" />
+          <el-table-column prop="schoolType" label="学校类型" align="center">
+            <template #default="scope">
+                  <dict-tag :options="mt_school_type" :value="scope.row.schoolType"/>
+              </template>
+          </el-table-column>
+          <el-table-column prop="academicStageType" label="学段" align="center">
+            <template #default="scope">
+                  <dict-tag v-if="scope.row.schoolType == '1'" :options="mt_academic_stage" :value="scope.row.academicStageType"/>
+                  <dict-tag v-else :options="mt_vocal_education_type" :value="scope.row.academicStageType"/>
+              </template>
+          </el-table-column>
+          <el-table-column prop="shortTitle" label="题目题干" min-width="300" show-overflow-tooltip >
+            <template #default="scope">
+                  <div v-html="scope.row.shortTitle"></div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="questionType" label="题目类型"  align="center">
+            <template #default="scope">
+                  <dict-tag :options="mt_question_type" :value="scope.row.questionType"/>
+              </template>
+          </el-table-column>
+          <el-table-column prop="difficult" label="难度" width="100" align="center"/>
         </el-table>
       </div>
 
@@ -262,40 +300,37 @@
     <el-dialog 
       v-model="materialDialogVisible" 
       title="选择素材" 
-      width="80%"
+      width="60%"
     >
       <!-- 搜索框保持不变 -->
       <div class="dialog-search">
         <el-form :inline="true" :model="materialDialogSearchForm">
-          <el-form-item label="题干">
+          <el-form-item label="文件名称">
             <el-input 
-              v-model="materialDialogSearchForm.content" 
-              placeholder="请输入题干"
-              @input="handleMaterialDialogSearch"
+              v-model="materialDialogSearchForm.fileName" 
+              placeholder="请输入名称"
+              @input="handleMaterialDialogSearch('fileName', materialDialogSearchForm.fileName)"
+              clearable
             />
           </el-form-item>
-          <el-form-item label="学科">
-            <el-select 
-              v-model="materialDialogSearchForm.subject" 
-              placeholder="请选择学科"
-              @change="handleMaterialDialogSearch"
-            >
-              <el-option 
-                v-for="item in subjectOptions" 
-                :key="item.value" 
-                :label="item.label" 
-                :value="item.value"
-              />
-            </el-select>
-          </el-form-item>
+      
           <el-form-item label="文件类型">
-            <el-select 
+            <el-input 
               v-model="materialDialogSearchForm.fileType" 
-              placeholder="请选择文件类型"
-              @change="handleMaterialDialogSearch"
-            >
+              placeholder="请输入文件后缀"
+              @input="handleMaterialDialogSearch('fileType', materialDialogSearchForm.fileType)"
+              clearable
+            />
+          </el-form-item>
+          <el-form-item label="素材类别">
+            <el-select 
+              style="width: 150px;" 
+              v-model="materialDialogSearchForm.sourceType" 
+              placeholder="请选择素材类别"
+              @change="handleMaterialDialogSearch('sourceType', materialDialogSearchForm.sourceType)"
+              clearable>
               <el-option 
-                v-for="item in fileTypeOptions" 
+                v-for="item in mt_source_material_type" 
                 :key="item.value" 
                 :label="item.label" 
                 :value="item.value"
@@ -314,12 +349,24 @@
           :max-height="calculateTableHeight(unselectedMaterials.length)"
         >
           <el-table-column type="selection" width="55" fixed />
-          <el-table-column type="index" label="题号" width="60" fixed />
-          <el-table-column prop="content" label="题目题干" min-width="300" show-overflow-tooltip />
-          <el-table-column prop="stage" label="学段" width="100" />
-          <el-table-column prop="subject" label="学科" width="100" />
-          <el-table-column prop="fileType" label="文件类型" width="100" />
-          <el-table-column prop="category" label="类别" width="120" />
+          <el-table-column type="contentType" label="学校类型">
+            <template #default="scope">
+                      <dict-tag :options="mt_school_type" :value="scope.row.contentType"/>
+            </template>
+          </el-table-column>
+          <el-table-column type="periodType" label="学段">
+            <template #default="scope">
+              <dict-tag v-if="scope.row.contentType == '1'" :options="mt_academic_stage" :value="scope.row.periodType"/>
+              <dict-tag v-else :options="mt_vocal_education_type" :value="scope.row.periodType"/>
+            </template>
+          </el-table-column>
+          <el-table-column prop="fileName" label="文件名称"  />
+          <el-table-column prop="fileType" label="文件类型" />
+          <el-table-column prop="sourceType" label="素材类别">
+            <template #default="scope">
+              <dict-tag :options="mt_source_material_type" :value="scope.row.sourceType"/>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
 
@@ -336,8 +383,23 @@
 
 <script setup>
 import { ref, reactive, computed, watchEffect, onMounted, watch } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, Folder } from '@element-plus/icons-vue'
+//获取题库
+import { listQuestion } from '@/api/glxt/question'
+const { proxy } = getCurrentInstance();
+//字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
+const { mt_question_type, mt_school_type, mt_vocal_education_type, mt_academic_stage, mt_source_material_type} = proxy.useDict('mt_question_type', 'mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_source_material_type');
+
+//导入实验-题库API
+import { insertBatchMtExperimentQuestion, listExperimentQuestion, delExperimentQuestion } from '@/api/glxt/experimentQuestion'
+
+
+//获取素材
+import { listSourceMaterial } from '@/api/glxt/sourceMaterial'
+
+//导入实验-素材API
+import { insertBatchMtExperimentSourceMaterial, listExperimentMaterial, delExperimentMaterial } from '@/api/glxt/experimentMaterial'
 
 // Tab control
 const activeTab = ref('questions')
@@ -356,277 +418,352 @@ const searchForm = reactive({
   type: ''
 })
 
-// Options for select
-const subjectOptions = [
-  // Add subject options
-]
-
-const typeOptions = [
-  // Add type options
-]
 
 // Table data
-const questionList = ref([]) // 当前显示的题目列表
-const allQuestions = ref([]) // 存储所有题目数据
-
-// Pagination
-const pagination = reactive({
-  currentPage: 1,
-  pageSize: 10,
-  total: 0
-})
+const allQuestions = ref({
+  experimentId:'',
+  questionList:[]
+}) // 存储所有题目数据
 
 // Dialog control
 const dialogVisible = ref(false)
 const materialDialogVisible = ref(false)
 
-// Dialog search form
-const dialogSearchForm = reactive({
-  content: '',
-  subject: '',
-  type: ''
-})
 
+//素材-弹框搜索参数
 const materialDialogSearchForm = reactive({
-  content: '',
-  subject: '',
-  fileType: ''
+  fileName: '',
+  periodType: '',
+  fileType: '',
+  sourceType:''
 })
 
-// Dialog pagination
-const dialogPagination = reactive({
-  currentPage: 1,
-  pageSize: 10,
-  total: 0
-})
-
-const materialDialogPagination = reactive({
-  currentPage: 1,
-  pageSize: 10,
-  total: 0
-})
-
-// 扩展模拟题目数据
-const mockUnselectedQuestions = [
-  {
-    id: 1,
-    content: '光合作用的基本原理是什么？',
-    stage: '高中',
-    subject: '生物',
-    type: '答题',
-    difficulty: '困难'
-  },
-  {
-    id: 2,
-    content: '请��释DNA的双螺旋结构',
-    stage: '高中',
-    subject: '生物',
-    type: '简答题',
-    difficulty: '中等'
-  },
-  {
-    id: 3,
-    content: '下列关于细胞的说法正确的是',
-    stage: '高中',
-    subject: '生物',
-    type: '单选题',
-    difficulty: '简单'
-  },
-  {
-    id: 4,
-    content: '计算下列化学方程式的系数',
-    stage: '高中',
-    subject: '化学',
-    type: '填空题',
-    difficulty: '中等'
-  },
-  {
-    id: 5,
-    content: '简述理想气体状态方程的应用条件',
-    stage: '高中',
-    subject: '化学',
-    type: '简答题',
-    difficulty: '困难'
-  },
-  {
-    id: 6,
-    content: '牛顿运动定律的应用题',
-    stage: '高中',
-    subject: '物理',
-    type: '计算题',
-    difficulty: '中等'
-  },
-  {
-    id: 7,
-    content: '浅析太阳系的形成过程',
-    stage: '高中',
-    subject: '物理',
-    type: '论述题',
-    difficulty: '困难'
-  },
-  {
-    id: 8,
-    content: '解一元二次方程的步骤',
-    stage: '初中',
-    subject: '数学',
-    type: '解答题',
-    difficulty: '简单'
-  },
-  {
-    id: 9,
-    content: '三角函数的基本关系',
-    stage: '高中',
-    subject: '数学',
-    type: '填空题',
-    difficulty: '中等'
-  },
-  {
-    id: 10,
-    content: '概率论基础知���应用',
-    stage: '高中',
-    subject: '数学',
-    type: '计算题',
-    difficulty: '困难'
-  },
-  {
-    id: 11,
-    content: '现代诗歌的艺术特色分析',
-    stage: '高中',
-    subject: '语文',
-    type: '分析题',
-    difficulty: '中等'
-  },
-  {
-    id: 12,
-    content: '议论文写作技巧探讨',
-    stage: '高中',
-    subject: '语文',
-    type: '作文',
-    difficulty: '困难'
-  },
-  {
-    id: 13,
-    content: '英语时态用法分析',
-    stage: '高中',
-    subject: '英语',
-    type: '语法题',
-    difficulty: '中等'
-  },
-  {
-    id: 14,
-    content: '英语作文范文赏析',
-    stage: '高中',
-    subject: '英语',
-    type: '写作题',
-    difficulty: '困难'
-  },
-  {
-    id: 15,
-    content: '地理环境对人类活动的影响',
-    stage: '高中',
-    subject: '地理',
-    type: '论述题',
-    difficulty: '中等'
+//实验题库选择题目列表请求参数
+const queryQuestionParams = ref({
+    pageNum: 1,
+    pageSize: 100000,
+    questionType:''
   }
-]
+)
+
+const loading = ref(true);
+const questionList = ref([]) // 当前显示的题目列表
+const questionTotal = ref(0);
+//获取未选择-题库数据
+function getQuestionList() {
+  loading.value = true;
+  listQuestion(queryQuestionParams.value).then(response => {
+    questionList.value = response.rows;
+    questionTotal.value = response.total;
+    loading.value = false;
+  });
+}
+
 
 const unselectedQuestions = computed(() => {
-  const selectedIds = new Set(questionList.value.map(q => q.id))
-  return mockUnselectedQuestions.filter(q => !selectedIds.has(q.id))
+  return questionList.value
 })
 
-const selectedRows = ref([])
+
+//选择的素材
 const selectedMaterials = ref([])
 
-// Methods
+// 点击选择题目按钮获取列表
 const selectQuestions = () => {
+  //调用题库列表
+  getQuestionList()
   dialogVisible.value = true
 }
 
-const previewQuestion = (row) => {
-  // Implement preview logic
-}
 
-const deleteQuestion = (row) => {
-  const index = questionList.value.findIndex(item => item.id === row.id)
-  if (index !== -1) {
-    questionList.value.splice(index, 1)
-    pagination.total = questionList.value.length
-    ElMessage.success('删除成功')
-  }
-}
-
-const handlePageChange = (page) => {
-  pagination.currentPage = page
-  // Fetch data for the new page
-}
-
-// Methods for dialog
+const selectedRows = ref([])
+// 选中的题目
 const handleSelectionChange = (selection) => {
   selectedRows.value = selection
 }
 
-const handleDialogSearch = () => {
-  const filteredData = mockUnselectedQuestions.filter(item => {
-    const contentMatch = !dialogSearchForm.content || 
-      item.content.toLowerCase().includes(dialogSearchForm.content.toLowerCase())
-    const subjectMatch = !dialogSearchForm.subject || 
-      item.subject === dialogSearchForm.subject
-    const typeMatch = !dialogSearchForm.type || 
-      item.type === dialogSearchForm.type
-    return contentMatch && subjectMatch && typeMatch
-  })
-  
-  unselectedQuestions.value = filteredData
-  dialogPagination.total = filteredData.length
-}
 
-const handleDialogSizeChange = (val) => {
-  dialogPagination.pageSize = val
-  handleDialogSearch()
-}
-
-const handleDialogPageChange = (val) => {
-  dialogPagination.currentPage = val
-  handleDialogSearch()
-}
-
-const resetDialogSearch = () => {
-  dialogSearchForm.content = ''
-  dialogSearchForm.subject = ''
-  dialogSearchForm.type = ''
-  handleDialogSearch()
-}
-
-const confirmSelection1 = () => {
+const confirmSelection = () => {
   if (selectedRows.value.length === 0) {
     ElMessage.warning('请至少选择一道题目')
     return
   }
 
   // 检查重复选择
-  const selectedIds = new Set(allQuestions.value.map(q => q.id))
-  const newQuestions = selectedRows.value.filter(q => !selectedIds.has(q.id))
+  // const selectedIds = new Set(allQuestions.value.map(q => q.id))
+  const newQuestions = selectedRows.value
 
-  if (newQuestions.length === 0) {
-    ElMessage.warning('所选题目已全部添加')
+  // if (newQuestions.length === 0) {
+  //   ElMessage.warning('所选题目已全部添加')
+  //   return
+  // }
+
+  // 添加新选择的题目
+  allQuestions.value.questionList = [...newQuestions]
+  
+    //进行将已经选择数据添加到实验题库列表
+    allQuestions.value.experimentId = props.experimentId//实验id
+    insertBatchMtExperimentQuestion(allQuestions.value).then(response => {
+    if(response.code == 200){
+        ElMessage.success(`成功添加 ${newQuestions.length} 道题目`)
+        // 关闭弹窗并清空选择
+        dialogVisible.value = false
+        selectedRows.value = []
+  
+        // 重新加载当前页数据
+        getExperimentQuestionList()
+      }else{
+        ElMessage.error('添加失败')
+      } 
+  });
+
+}
+
+//获取已选择的题库列表
+const queryExperimentQuestionParams = ref({
+    pageNum: 1,
+    pageSize: 10,
+    experimentInfoId: '',
+    questionType:''
+  }
+)
+
+//重置参数
+const queryExperimentQuestionParamsReset = () =>{
+  queryExperimentQuestionParams.value = {
+    questionType:''
+  }
+}
+
+
+const experimentQuestionPageList = ref([])
+const experimentQuestionTotal = ref(0);
+//获取已经选择的题目列表
+function getExperimentQuestionList() {
+  loading.value = true;
+  queryExperimentQuestionParams.value.experimentInfoId = props.experimentId//实验id
+  listExperimentQuestion(queryExperimentQuestionParams.value).then(response => {
+    experimentQuestionPageList.value = response.rows;
+    experimentQuestionTotal.value = response.total;
+    loading.value = false;
+  });
+}
+
+
+//删除题库
+const deleteQuestion = (row) => {
+  ElMessageBox.confirm('确定要删除该题目吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    delExperimentQuestion(row.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('删除成功')
+        getExperimentQuestionList()
+      }else{
+        ElMessage.error('删除失败')
+      }
+    })
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+}
+
+// 题目弹框搜索参数
+const dialogSearchForm = reactive({
+  questionType: '',
+})
+//弹框搜索参数处理
+const handleQuestionDialogSearch = (type, value) => {
+  let questionTypeTmp = ''//题目类型
+  if(type == 'questionType') {
+    queryQuestionParams.value.questionType = value
+    questionTypeTmp = value
+    getQuestionList();
+  }else {
+    queryQuestionParams.value.questionType = questionTypeTmp
+    getQuestionList();
+  }
+}
+
+
+//已选中的题库搜索框参数处理
+const handleQuestionSearch = (type, value) => {
+  let questionTypeTmp = ''//题目类型
+  if(type == 'questionType') {
+    queryExperimentQuestionParams.value.questionType = value
+    questionTypeTmp = value
+    getExperimentQuestionList();
+  }else {
+    queryExperimentQuestionParams.value.questionType = questionTypeTmp
+    getExperimentQuestionList();
+  }
+}
+
+
+//题库筛选
+const handleQuestionRefresh = () => {
+  // 重置搜索条件
+  queryExperimentQuestionParamsReset()
+  // 重新加载数据
+  getExperimentQuestionList()
+  ElMessage.success('刷新成功')
+}
+
+//======================================================素材相关=============================================================
+
+//实验器具选择器具列表请求参数
+const queryourceMaterialParams =ref({
+    pageNum: 1,
+    pageSize: 100000,
+    fileName:'',
+    fileType:'',
+    sourceType:''
+  }
+)
+
+
+const sourceMaterialList = ref([]) // 当前显示的题目列表
+const sourceMaterialTotal = ref(0);
+//获取未选择-题库数据
+function getSourceMaterialList() {
+  loading.value = true;
+  listSourceMaterial(queryourceMaterialParams.value).then(response => {
+    sourceMaterialList.value = response.rows;
+    sourceMaterialTotal.value = response.total;
+    loading.value = false;
+  });
+}
+
+// 未选择的素材计算属性
+const unselectedMaterials = computed(() => {
+  return sourceMaterialList.value
+})
+
+// 添加选择素材的方法
+const selectMaterials = () => {
+  materialDialogVisible.value = true
+  // 初始化弹窗数据
+  getSourceMaterialList()
+}
+
+// 修改素材选择处理方法
+const handleMaterialSelectionChange = (selection) => {
+  selectedMaterials.value = selection
+}
+
+ // 存储所有素材数据
+const allMaterials = ref({
+  experimentId:'',
+  sourceMaterialList:[]
+})
+
+
+// 修改确认选择素材方法
+const confirmMaterialSelection = () => {
+  if (selectedMaterials.value.length === 0) {
+    ElMessage.warning('请至少选择一个素材')
     return
   }
 
-  // 添加新选择的题目
-  allQuestions.value = [...allQuestions.value, ...newQuestions]
-  handleSearch() // 重新加载当前页数据
+  // 检查重复选择
+  const newMaterials = selectedMaterials.value
+
+  // 添加新选择的素材
+  allMaterials.value.sourceMaterialList = [ ...newMaterials]
   
-  // 关闭弹窗并清空选择
-  dialogVisible.value = false
-  selectedRows.value = []
-  
-  ElMessage.success(`成功添加 ${newQuestions.length} 道题目`)
+  //进行将已经选择数据添加到实验题库列表
+  allMaterials.value.experimentId = props.experimentId//实验id
+    insertBatchMtExperimentSourceMaterial(allMaterials.value).then(response => {
+    if(response.code == 200){
+        // 关闭弹窗并清空选择
+        materialDialogVisible.value = false
+        selectedMaterials.value = []
+        ElMessage.success(`成功添加 ${newMaterials.length} 个素材`)
+        // 重新加载当前页数据
+        getExperimentSourceMaterialList()
+      }else{
+        ElMessage.error('添加失败')
+      } 
+  });
+
 }
 
-// 修改 dialogPagination 的 total
-watchEffect(() => {
-  dialogPagination.total = unselectedQuestions.value.length
+
+//获取已选择的素材列表
+const queryExperimentSourceMaterialParams = ref({
+    pageNum: 1,
+    pageSize: 10,
+    experimentInfoId: '',
+    fileName:'',
+    fileType:'',
+    sourceType:''
+  }
+)
+
+const queryExperimentSourceMaterialParamsReset = () => {
+  queryExperimentSourceMaterialParams.value = {
+    fileName:'',
+    fileType:'',
+    sourceType:''
+  }
+}
+const experimentSourceMaterialPageList = ref([])
+const experimentSourceMaterialTotal = ref(0);
+//获取已经选择的器具列表
+function getExperimentSourceMaterialList() {
+  loading.value = true;
+  queryExperimentSourceMaterialParams.value.experimentInfoId = props.experimentId//实验id
+  listExperimentMaterial(queryExperimentSourceMaterialParams.value).then(response => {
+    experimentSourceMaterialPageList.value = response.rows;
+    experimentSourceMaterialTotal.value = response.total;
+    loading.value = false;
+  });
+}
+
+
+
+// 删除素材
+const deleteMaterial = (row) => {
+  ElMessageBox.confirm('确定要删除该素材吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    delExperimentMaterial(row.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('删除成功')
+        getExperimentSourceMaterialList()
+      }else{
+        ElMessage.error('删除失败')
+      }
+    })
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+}
+
+
+// 对所有的tab进行校验，如果都没有操作则无法通过下一步
+const validateForm = async () => {
+  if (activeTab.value == 'questions') {
+    // Validate principle tab
+    if (experimentQuestionPageList.value.length === 0) {
+      throw new Error('请完成实验题目的必填项')
+    }
+  } else if (activeTab.value == 'materials') {
+    // Validate target tab
+    if (experimentSourceMaterialPageList.value.length === 0) {
+      throw new Error('请完成实验素材的必填项')
+    }
+  }
+  return true
+}
+
+//暴漏给父组件
+defineExpose({
+  validateForm
 })
 
 // 搜索栏显示状态
@@ -637,391 +774,77 @@ const toggleSearch = () => {
   isSearchVisible.value = !isSearchVisible.value
 }
 
-// 刷新列表
-const refreshList = () => {
-  // 实现刷新逻辑
-  ElMessage.success('刷新成功')
-}
 
-// 添加需要的图标导入
-import { 
-  Plus, 
-  ArrowUp, 
-  ArrowDown, 
-  Refresh 
-} from '@element-plus/icons-vue'
-
-// 添加��新方法
+// 材新刷新方法
 const handleRefresh = () => {
   // 重置搜索条件
-  resetSearch()
+  queryExperimentSourceMaterialParamsReset()
+  getExperimentSourceMaterialList()
   // 重新加载数据
-  handleSearch()
+  // handleSearch()
   ElMessage.success('刷新成功')
 }
 
-// 新增素材相关的数据和方法
-const materialSearchForm = reactive({
-  content: '',
-  subject: '',
-  fileType: ''
-})
-
-const fileTypeOptions = [
-  { value: 'PDF', label: 'PDF' },
-  { value: 'Word', label: 'Word' },
-  { value: 'PPT', label: 'PPT' },
-  { value: '图片', label: '图片' },
-  { value: '视频', label: '视频' },
-  { value: '音频', label: '音频' }
-]
-
-// 扩展模拟素材数据
-const mockMaterials = [
-  {
-    id: 1,
-    content: '光的反射实验教学PPT',
-    stage: '初中',
-    subject: '物理',
-    fileType: 'PPT',
-    category: '教学课件'
-  },
-  {
-    id: 2,
-    content: '生物细胞结构图解',
-    stage: '高中',
-    subject: '生物',
-    fileType: '图片',
-    category: '教学素材'
-  },
-  {
-    id: 3,
-    content: '化学实验安全教程',
-    stage: '高中',
-    subject: '化学',
-    fileType: 'PDF',
-    category: '实验指导'
-  },
-  {
-    id: 4,
-    content: '物理力学实验视频',
-    stage: '高中',
-    subject: '物理',
-    fileType: '视频',
-    category: '实验演示'
-  },
-  {
-    id: 5,
-    content: '数学函数图像分析',
-    stage: '高中',
-    subject: '数学',
-    fileType: 'Word',
-    category: '教学资料'
-  },
-  {
-    id: 6,
-    content: '英语听力练习材料',
-    stage: '初中',
-    subject: '英语',
-    fileType: '音频',
-    category: '练习材料'
-  },
-  {
-    id: 7,
-    content: '地理地形图解析',
-    stage: '高中',
-    subject: '地理',
-    fileType: '图片',
-    category: '教学素材'
-  },
-  {
-    id: 8,
-    content: '历史文献资料集',
-    stage: '高中',
-    subject: '历史',
-    fileType: 'PDF',
-    category: '参考资料'
-  },
-  {
-    id: 9,
-    content: '生物实验操作视频',
-    stage: '高中',
-    subject: '生物',
-    fileType: '视频',
-    category: '实验演示'
-  },
-  {
-    id: 10,
-    content: '化学分子结构3D模型',
-    stage: '高中',
-    subject: '化学',
-    fileType: '模型',
-    category: '教学素材'
-  },
-  {
-    id: 11,
-    content: '物理电学实验指导',
-    stage: '高中',
-    subject: '物理',
-    fileType: 'PDF',
-    category: '实验指导'
-  },
-  {
-    id: 12,
-    content: '数学几何证明课件',
-    stage: '高中',
-    subject: '数学',
-    fileType: 'PPT',
-    category: '教学课件'
-  },
-  {
-    id: 13,
-    content: '语文古诗文赏析',
-    stage: '高中',
-    subject: '语文',
-    fileType: 'Word',
-    category: '教学资料'
-  },
-  {
-    id: 14,
-    content: '英语口语训练音频',
-    stage: '高中',
-    subject: '英语',
-    fileType: '音频',
-    category: '练习材料'
-  },
-  {
-    id: 15,
-    content: '地理气候类型图集',
-    stage: '高中',
-    subject: '地理',
-    fileType: '图片',
-    category: '教学素材'
-  }
-]
-
-// 初始化素材列表
-const materialsList = ref([]) // 当前显示的素材列表
-const allMaterials = ref([]) // 存储所有素材数据
-
-// 未选择的素材计算属性
-const unselectedMaterials = computed(() => {
-  const selectedIds = new Set(materialsList.value.map(m => m.id))
-  return mockMaterials.filter(m => !selectedIds.has(m.id))
-})
-
-// 素材分页配置
-const materialPagination = reactive({
-  currentPage: 1,
-  pageSize: 10,
-  total: mockMaterials.length
-})
-
-// 修改搜索方法
-const handleSearch = () => {
-  // 先根据搜索条件过滤数据
-  const filteredData = allQuestions.value.filter(item => {
-    const contentMatch = !searchForm.content || 
-      item.content.toLowerCase().includes(searchForm.content.toLowerCase())
-    const subjectMatch = !searchForm.subject || 
-      item.subject === searchForm.subject
-    const typeMatch = !searchForm.type || 
-      item.type === searchForm.type
-    return contentMatch && subjectMatch && typeMatch
-  })
-  
-  // 更新总数
-  pagination.total = filteredData.length
-  
-  // 根据分页设置截取当前页数据
-  const start = (pagination.currentPage - 1) * pagination.pageSize
-  const end = start + pagination.pageSize
-  questionList.value = filteredData.slice(start, end)
-}
-
-// 修改素材搜索方法
-const handleMaterialSearch = () => {
-  // 先根据搜索条件过滤数据
-  const filteredData = allMaterials.value.filter(item => {
-    const contentMatch = !materialSearchForm.content || 
-      item.content.toLowerCase().includes(materialSearchForm.content.toLowerCase())
-    const subjectMatch = !materialSearchForm.subject || 
-      item.subject === materialSearchForm.subject
-    const fileTypeMatch = !materialSearchForm.fileType || 
-      item.fileType === materialSearchForm.fileType
-    return contentMatch && subjectMatch && fileTypeMatch
-  })
-  
-  // 更新总数
-  materialPagination.total = filteredData.length
-  
-  // 根据分页设置截取当前页数据
-  const start = (materialPagination.currentPage - 1) * materialPagination.pageSize
-  const end = start + materialPagination.pageSize
-  materialsList.value = filteredData.slice(start, end)
-}
-
-// 修改分页方法
-const handleSizeChange = (val) => {
-  pagination.pageSize = val
-  handleSearch()
-}
-
-const handleCurrentChange = (val) => {
-  pagination.currentPage = val
-  handleSearch()
-}
-
-const handleMaterialSizeChange = (val) => {
-  materialPagination.pageSize = val
-  handleMaterialSearch()
-}
-
-const handleMaterialPageChange = (val) => {
-  materialPagination.currentPage = val
-  handleMaterialSearch()
-}
 
 // 初始化数据
 onMounted(() => {
-  handleSearch() // 初始化题库列表
-  handleMaterialSearch() // 初始化素材列表
+  getExperimentQuestionList() // 初始化题库列表
+  getExperimentSourceMaterialList() // 初始化素材列表
 })
 
-// 监听搜索表单变化
-watch(
-  [
-    () => searchForm.content,
-    () => searchForm.subject,
-    () => searchForm.type
-  ],
-  () => {
-    pagination.currentPage = 1 // 重置页码
-    handleSearch()
-  }
-)
 
-// 监听素材搜索表单变���
-watch(
-  [
-    () => materialSearchForm.content,
-    () => materialSearchForm.subject,
-    () => materialSearchForm.fileType
-  ],
-  () => {
-    materialPagination.currentPage = 1 // 重置页码
-    handleMaterialSearch()
 
-  }
-)
-
-// 修改确认选择方法
-const confirmSelection = () => {
-  if (selectedRows.value.length === 0) {
-    ElMessage.warning('请至少选择一道题目')
-    return
-  }
-
-  // 检查重复选择
-  const selectedIds = new Set(allQuestions.value.map(q => q.id))
-  const newQuestions = selectedRows.value.filter(q => !selectedIds.has(q.id))
-
-  if (newQuestions.length === 0) {
-    ElMessage.warning('所选题目已全部添加')
-    return
-  }
-
-  // 添加新选择的题目
-  allQuestions.value = [...allQuestions.value, ...newQuestions]
-  handleSearch() // 重新加载当前页数据
-  
-  // 关闭弹窗并清空选择
-  dialogVisible.value = false
-  selectedRows.value = []
-  
-  ElMessage.success(`成功添加 ${newQuestions.length} 道题目`)
-}
-
-// 修改确认选择素材方法
-const confirmMaterialSelection = () => {
-  if (selectedMaterials.value.length === 0) {
-    ElMessage.warning('请至少选择一个素材')
-    return
-  }
-
-  // 检查重复选择
-  const selectedIds = new Set(allMaterials.value.map(m => m.id))
-  const newMaterials = selectedMaterials.value.filter(m => !selectedIds.has(m.id))
-
-  if (newMaterials.length === 0) {
-    ElMessage.warning('所选素材已全部添加')
-    return
-  }
-
-  // 添加新选择的素材
-  allMaterials.value = [...allMaterials.value, ...newMaterials]
-  handleMaterialSearch() // 重新加载当前页数据
-  
-  // 关闭弹窗并清空选择
-  materialDialogVisible.value = false
-  selectedMaterials.value = []
-  
-  ElMessage.success(`成功添加 ${newMaterials.length} 个素材`)
-}
-
-// 删除素材
-const deleteMaterial = (row) => {
-  const index = materialsList.value.findIndex(item => item.id === row.id)
-  if (index !== -1) {
-    materialsList.value.splice(index, 1)
-    materialPagination.total = materialsList.value.length
-    ElMessage.success('删除成功')
+// 素材-弹窗搜索餐宿方法
+const handleMaterialDialogSearch = (type,value) => {
+  let fileNameTmp = ''//文件名称
+  let fileTypeIdTmp = ''//文件类型
+  let sourceTypeIdTmp = ''//素材类别
+  if(type == 'fileName') {
+    queryourceMaterialParams.value.fileName = value
+    fileNameTmp = value
+    getSourceMaterialList();
+  } else if(type == 'fileType') {
+    queryourceMaterialParams.value.fileType = value
+    fileTypeIdTmp = value
+    getSourceMaterialList();
+  }else if(type == 'sourceType') {
+    queryourceMaterialParams.value.sourceType = value
+    sourceTypeIdTmp = value
+    getSourceMaterialList();
+  }else {
+    queryourceMaterialParams.value.fileName = fileNameTmp
+    queryourceMaterialParams.value.fileType = fileTypeIdTmp
+    queryourceMaterialParams.value.sourceType = sourceTypeIdTmp
+    getSourceMaterialList();
   }
 }
 
-// 预览素材
-const previewMaterial = (row) => {
-  ElMessage.info(`预览素材：${row.content}`)
+// 素材已经选择-搜索方法
+const handleMaterialSearch = (type, value) => {
+  let fileNameTmp = ''//文件名称
+  let fileTypeIdTmp = ''//文件类型
+  let sourceTypeIdTmp = ''//素材类别
+  if(type == 'fileName') {
+    queryExperimentSourceMaterialParams.value.fileName = value
+    fileNameTmp = value
+    getExperimentSourceMaterialList();
+  } else if(type == 'fileType') {
+    queryExperimentSourceMaterialParams.value.fileType = value
+    fileTypeIdTmp = value
+    getExperimentSourceMaterialList();
+  }else if(type == 'sourceType') {
+    queryExperimentSourceMaterialParams.value.sourceType = value
+    sourceTypeIdTmp = value
+    getExperimentSourceMaterialList();
+  }else {
+    queryExperimentSourceMaterialParams.value.fileName = fileNameTmp
+    queryExperimentSourceMaterialParams.value.fileType = fileTypeIdTmp
+    queryExperimentSourceMaterialParams.value.sourceType = sourceTypeIdTmp
+    getExperimentSourceMaterialList();
+  }
 }
 
-// 弹窗搜索方法
-const handleMaterialDialogSearch = () => {
-  const filteredData = mockMaterials.filter(item => {
-    const contentMatch = !materialDialogSearchForm.content || 
-      item.content.toLowerCase().includes(materialDialogSearchForm.content.toLowerCase())
-    const subjectMatch = !materialDialogSearchForm.subject || 
-      item.subject === materialDialogSearchForm.subject
-    const fileTypeMatch = !materialDialogSearchForm.fileType || 
-      item.fileType === materialDialogSearchForm.fileType
-    return contentMatch && subjectMatch && fileTypeMatch
-  })
-  
-  unselectedMaterials.value = filteredData
-  materialDialogPagination.total = filteredData.length
-}
 
-// 弹窗分页方法
-const handleMaterialDialogSizeChange = (val) => {
-  materialDialogPagination.pageSize = val
-  handleMaterialDialogSearch()
-}
-
-const handleMaterialDialogPageChange = (val) => {
-  materialDialogPagination.currentPage = val
-  handleMaterialDialogSearch()
-}
-
-// 添加选择素材的方法
-const selectMaterials = () => {
-  materialDialogVisible.value = true
-  // 初始化弹窗数据
-  handleMaterialDialogSearch()
-}
-
-// 修改素材选择处理方法
-const handleMaterialSelectionChange = (selection) => {
-  selectedMaterials.value = selection
-}
 
 // 添加计算表格高度的方法
 const calculateTableHeight = (dataLength) => {
@@ -1046,27 +869,29 @@ const calculateTableHeight = (dataLength) => {
 }
 
 // 修改 tab 切换处理方法
-const handleTabChange = () => {
+const handleTabChange = (tab) => {
+  activeTab.value = tab.props.name
   // 隐藏搜索框
   isSearchVisible.value = false
-  
   // 清空搜索内容并重新加载数据
-  if (activeTab.value === 'questions') {
+  if (activeTab.value == 'questions') {
     // 清空题库搜索表单
     searchForm.content = ''
     searchForm.subject = ''
     searchForm.type = ''
     // 重新加载题库数据
-    handleSearch()
-  } else {
+    getExperimentQuestionList()
+  } else if(activeTab.value == 'materials') {
     // 清空素材搜索表单
-    materialSearchForm.content = ''
-    materialSearchForm.subject = ''
-    materialSearchForm.fileType = ''
+    queryourceMaterialParams.content = ''
+    queryourceMaterialParams.subject = ''
+    queryourceMaterialParams.fileType = ''
     // 重新加载素材数据
-    handleMaterialSearch()
+    getExperimentSourceMaterialList()
   }
 }
+
+
 </script>
 
 <style scoped>
@@ -1158,10 +983,10 @@ const handleTabChange = () => {
 }
 
 .search-section {
-  background: #f8fafc;
+  /* background: #f8fafc; */
   border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 16px;
+  /* padding: 20px; */
+  /* margin-bottom: 1px; */
 }
 
 /* 操作栏样式 */
@@ -1203,8 +1028,8 @@ const handleTabChange = () => {
 
 :deep(.el-dialog__footer) {
   padding: 16px 24px;
-  border-top: 1px solid #e4e7ed;
-  background: #f8fafc;
+  /* border-top: 1px solid #e4e7ed;
+  background: #f8fafc; */
 }
 
 /* 按钮样式统一 */

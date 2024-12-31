@@ -74,7 +74,7 @@
                       <div class="target-text" v-html="principle.text"></div>
                     </div>
                     <div class="target-footer">
-                      <el-tag size="small" effect="plain" type="info">
+                      <el-tag size="small" plain type="info">
                         <el-icon class="clock-class"><Clock /></el-icon>
                         <span>创建时间: {{ formatDate(principle.createTime) }}</span>
                       </el-tag>
@@ -162,7 +162,7 @@
                       <div class="target-text" v-html="target.text"></div>
                     </div>
                     <div class="target-footer">
-                      <el-tag size="small" effect="plain" type="info">
+                      <el-tag size="small" plain type="info">
                         <el-icon class="clock-class"><Clock /></el-icon>
                         <span>创建时间: {{ formatDate(target.createTime) }}</span>
                       </el-tag>
@@ -197,17 +197,19 @@
             <div v-if="activeTab === 'equipment'" class="tab-content">
               <div class="search-wrapper">
               <div class="search-section" v-show="isSearchVisible">
-                <el-form :inline="false" :model="searchForm">
+                <el-form :inline="false" :model="queryExperimentWarehouseParams">
                   <el-row :gutter="20">
                     <el-col :span="5">
                       <el-form-item label="器具名称">
-                        <el-input v-model="searchForm.content" placeholder="请输入器具名称" style="width: 200px;"></el-input>
+                        <el-input v-model="queryExperimentWarehouseParams.equipmentName" placeholder="请输入器具名称" style="width: 200px;"
+                        @input="handleExperimentWarehouseSearch('equipmentName', queryExperimentWarehouseParams.equipmentName)"></el-input>
                       </el-form-item>
                     </el-col>
                     <el-col :span="8">
                       <el-form-item label="器材类型">
-                        <el-select v-model="searchForm.subject" placeholder="请选择器材类型" style="width: 200px">
-                          <el-option v-for="item in subjectOptions" :key="item.value" :label="item.label" :value="item.value">
+                        <el-select v-model="queryExperimentWarehouseParams.equipmentTypeId" placeholder="请选择器材类型" style="width: 200px"
+                        @change="handleExperimentWarehouseSearch('equipmentTypeId', queryExperimentWarehouseParams.equipmentTypeId)" clearable>
+                          <el-option v-for="item in equipment_type" :key="item.value" :label="item.label" :value="item.value">
                           </el-option>
                         </el-select>
                       </el-form-item>
@@ -237,34 +239,66 @@
             </div>
 
             <!-- Question Table -->
-            <el-table :data="equipmentWarehouseList" border>
+            <el-table :data="experimentWarehousePageList" border>
               <el-table-column type="index" label="序号" width="60"></el-table-column>
-              <el-table-column prop="content" label="缩略图" align="center"></el-table-column>
-              <el-table-column prop="content" label="器具名称" align="center"></el-table-column>
-              <el-table-column prop="stage" label="器具类型" align="center"></el-table-column>
-              <el-table-column prop="subject" label="操作说明" align="center"></el-table-column>
-              <el-table-column prop="type" label="是否封装" align="center"></el-table-column>
-              <el-table-column label="操作" width="150">
+              <el-table-column prop="content" label="缩略图" align="center">
                 <template #default="scope">
-                  <el-button type="text" @click="previewQuestion(scope.row)">预览</el-button>
-                  <el-button type="text" class="delete-btn" @click="deleteQuestion(scope.row)">删除</el-button>
+                  <image-preview :src="scope.row.equipmentWarehouse.thumbnailImg" alt="thumbnail" style="width: 50px; height: 50px;"/>
                 </template>
               </el-table-column>
+              <el-table-column prop="content" label="器具名称" align="center">
+                <template #default="scope">
+                  {{scope.row.equipmentWarehouse.equipmentName}}
+                </template>
+              </el-table-column>
+              <el-table-column prop="stage" label="器具类型" align="center">
+                <template #default="scope">
+                  <dict-tag :options="equipment_type" :value="scope.row.equipmentWarehouse.equipmentTypeId"/>
+                </template>
+              </el-table-column>
+              <el-table-column prop="subject" label="操作说明" align="center">
+                <template #default="scope">
+                  {{scope.row.equipmentWarehouse.equipmentAttr}}
+                </template>
+              </el-table-column>
+              <el-table-column prop="equipmentCount" label="器具数量" align="center">
+                <template #default="scope">
+                  {{scope.row.equipmentCount}}
+                </template>
+              </el-table-column>
+              <el-table-column prop="type" label="是否封装" align="center">
+                <template #default="scope">
+                  <el-tag :type="scope.row.equipmentWarehouse.isPackage == 1 ? 'success' : 'danger'" 
+                  plan>{{ scope.row.equipmentWarehouse.isPackage == 1 ? '已封装' : '未封装' }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="150" align="center">
+                <template #default="scope">
+                  <el-button plain type="danger" class="delete-btn" @click="deleteExperimentWarehouseHandler(scope.row)" 
+                    v-hasPermi="['glxt:experimentWarehouse:remove']">删除</el-button>
+                </template>
+              </el-table-column>
+              <pagination
+              v-show="experimentWarehouseTotal > 0"
+              :total="experimentWarehouseTotal"
+              v-model:page="queryExperimentWarehouseParams.pageNum"
+              v-model:limit="queryExperimentWarehouseParams.pageSize"
+              @pagination="getExperimentWarehouseList"
+            />
             </el-table>
 
             <!-- Pagination -->
-            <div class="pagination-container">
+            <!-- <div class="pagination-container">
               <el-pagination
-                v-model:current-page="pagination.currentPage"
-                v-model:page-size="pagination.pageSize"
-                :page-sizes="[10, 20, 30, 50]"
-                :total="pagination.total > 0"
-                background
+                v-model:page="queryExperimentWarehouseParams.pageNum"
+                v-model:limit="queryExperimentWarehouseParams.pageSize"
+                :total="experimentWarehouseTotal"
+                
                 layout="total, sizes, prev, pager, next, jumper"
                 @size-change="handleSizeChange"
                 @current-change="handleCurrentChange"
               />
-            </div>
+            </div> -->
 
               <!-- 选择题目弹窗 -->
               <el-dialog 
@@ -325,8 +359,7 @@
                     <el-table-column prop="equipmentAttr" label="器材属性" align="center"/>
                     <el-table-column prop="isPackage" label="是否封装" align="center">
                       <template #default="scope">
-                        <el-tag :type="scope.row.isPackage == 1 ? 'success' : 'danger'" effect="plan">{{ scope.row.isPackage == 1 ? '已封装' : '未封装' }}</el-tag>
-                        <!-- {{ scope.row.isPackage == 1 ? '已封装' : '未封装' }} -->
+                        <el-tag :type="scope.row.isPackage == 1 ? 'success' : 'danger'" plan>{{ scope.row.isPackage == 1 ? '已封装' : '未封装' }}</el-tag>
                       </template>
                     </el-table-column>
                   </el-table>
@@ -352,9 +385,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import Tinymce from "@/components/Tinymce/index.vue"
-import { Edit, Delete, Clock } from '@element-plus/icons-vue'
 const { proxy } = getCurrentInstance();
 
 const { equipment_type } = proxy.useDict('equipment_type');
@@ -368,11 +400,10 @@ import { addExperimentTarget, updateExperimentTarget, delExperimentTarget, listE
 import {listWarehouse} from '@/api/glxt/warehouse'
 
 //导入实验warehouseAPI
-import {getExperimentWarehouse, addExperimentWarehouse, updateExperimentWarehouse, delExperimentWarehouse, listExperimentWarehouse} from '@/api/glxt/experimentWarehouse'
+import {insertBatchMtExperimentWarehouse, delExperimentWarehouse, listExperimentWarehouse} from '@/api/glxt/experimentWarehouse'
 
 
 import principleImage from "@/assets/icons/svg/原理.svg";
-import { el } from 'element-plus/es/locales.mjs'
 
 const route = useRoute()
 const experimentId = ref(route.params.experimentId)
@@ -522,9 +553,6 @@ function getPrincipleList() {
   });
 }
 
-//初始化实验原理数据
-getPrincipleList()
-
 
 
 //提交实验目标
@@ -582,7 +610,7 @@ function getTargetList() {
 }
 
 
-//实验原理请求参数
+//实验器具选择器具列表请求参数
 const queryWarehouseParams =ref({
     pageNum: 1,
     pageSize: 100000,
@@ -629,6 +657,26 @@ const handleDialogSearch = (type,value) =>{
 }
 
 
+//已选中的器具搜索
+const handleExperimentWarehouseSearch = (type,value) =>{
+  let equipmentNameTmp = ''
+  let equipmentTypeIdTmp = ''
+  if(type == 'equipmentName') {
+    queryExperimentWarehouseParams.value.equipmentName = value
+    equipmentNameTmp = value
+    getExperimentWarehouseList();
+  } else if(type == 'equipmentTypeId') {
+    queryExperimentWarehouseParams.value.equipmentTypeId = value
+    equipmentTypeIdTmp = value
+    getExperimentWarehouseList();
+  } else {
+    queryExperimentWarehouseParams.value.equipmentName = equipmentNameTmp
+    queryExperimentWarehouseParams.value.equipmentTypeId = equipmentTypeIdTmp
+    getExperimentWarehouseList();
+  }
+  
+}
+
 
 // Pagination
 const pagination = reactive({
@@ -671,7 +719,7 @@ const handleRefresh = () => {
   // 重置搜索条件
   resetSearch()
   // 重新加载数据
-  handleSearch()
+  getWarehouseList()
   ElMessage.success('刷新成功')
 }
 
@@ -689,75 +737,106 @@ const unselectedQuestions = computed(() => {
   // return mockUnselectedQuestions.filter(q => !selectedIds.has(q.id))
   return warehouseList.value;
 })
-const allQuestions = ref([]) // 存储所有题目数据
+const allWarehouses = ref({
+  experimentId:'',
+  experimentWarehouseList:[]
+}) 
+
+
+// 存储所有题目数据
 const selectedRows = ref([])
 
 // Methods for dialog
 const handleSelectionChange = (selection) => {
   selectedRows.value = selection
+  console.log(selectedRows.value)
+  console.log(selection)
 }
 // 修改确认选择方法
 const confirmSelection = () => {
   if (selectedRows.value.length === 0) {
-    ElMessage.warning('请至少选择一道题目')
+    ElMessage.warning('请至少选择一个器具')
     return
   }
 
   // 检查重复选择
-  const selectedIds = new Set(allQuestions.value.map(q => q.id))
-  const newQuestions = selectedRows.value.filter(q => !selectedIds.has(q.id))
+ // const selectedIds = new Set(allWarehouses.value.map(q => q.id))
+  // const newQuestions = selectedRows.value.filter(q => !selectedIds.has(q.id))
+  const newQuestions = selectedRows.value
 
-  if (newQuestions.length === 0) {
-    ElMessage.warning('所选题目已全部添加')
-    return
-  }
+  // if (newQuestions.length === 0) {
+  //   ElMessage.warning('所选题目已全部添加')
+  //   return
+  // }
 
   // 添加新选择的题目
-  allQuestions.value = [...allQuestions.value, ...newQuestions]
-  handleSearch() // 重新加载当前页数据
+  allWarehouses.value.experimentWarehouseList = [...newQuestions]
+  console.log('allWarehouses.value')
+  console.log(allWarehouses.value.experimentWarehouseList)
+  console.log('allWarehouses.value')
+
+  //进行将已经选择数据添加到实验器具列表
+  allWarehouses.value.experimentId = props.experimentId//实验id
+  insertBatchMtExperimentWarehouse(allWarehouses.value).then(response => {
+    if(response.code == 200){
+        ElMessage.success(`成功添加 ${newQuestions.length} 个器具`)
+        // 关闭弹窗并清空选择
+        dialogVisible.value = false
+        selectedRows.value = []
+        // 重新加载当前页数据
+        getExperimentWarehouseList()
+      }else{
+        ElMessage.error('添加失败')
+      } 
+  });
+
+  // handleSearch() // 重新加载当前页数据
   
-  // 关闭弹窗并清空选择
-  dialogVisible.value = false
-  selectedRows.value = []
-  
-  ElMessage.success(`成功添加 ${newQuestions.length} 道题目`)
 }
 
-
-// 修改搜索方法
-const handleSearch = () => {
-  // 先根据搜索条件过滤数据
-  const filteredData = allQuestions.value.filter(item => {
-    const contentMatch = !searchForm.content || 
-      item.content.toLowerCase().includes(searchForm.content.toLowerCase())
-    const subjectMatch = !searchForm.subject || 
-      item.subject === searchForm.subject
-    const typeMatch = !searchForm.type || 
-      item.type === searchForm.type
-    return contentMatch && subjectMatch && typeMatch
-  })
-  
-  // 更新总数
-  pagination.total = filteredData.length
-  
-  // 根据分页设置截取当前页数据
-  const start = (pagination.currentPage - 1) * pagination.pageSize
-  const end = start + pagination.pageSize
-  equipmentWarehouseList.value = filteredData.slice(start, end)
-}
-
-// 获取实验数据
-const fetchExperimentData = async () => {
-  try {
-    // 调用API获取实验数据
-    const response = await getExperimentById(experimentId.value)
-    experimentData.value = response.data
-    // 填充表单数据
-    Object.assign(formPrincipleData, response.data.extendInfo || {})
-  } catch (error) {
-    ElMessage.error('获取实验数据失败')
+//获取已选择的列表
+const queryExperimentWarehouseParams =ref({
+    pageNum: 1,
+    pageSize: 10,
+    experimentInfoId: '',
+    equipmentName:'',
+    equipmentTypeId:''
   }
+)
+const experimentWarehousePageList = ref([])
+const experimentWarehouseTotal = ref(0);
+//获取已经选择的器具列表
+function getExperimentWarehouseList() {
+  loading.value = true;
+  queryExperimentWarehouseParams.value.experimentInfoId = props.experimentId//实验id
+  listExperimentWarehouse(queryExperimentWarehouseParams.value).then(response => {
+    experimentWarehousePageList.value = response.rows;
+    experimentWarehouseTotal.value = response.total;
+    loading.value = false;
+  });
 }
+
+//删除器具
+const deleteExperimentWarehouseHandler = (row) => {
+  ElMessageBox.confirm('确定要删除该器具吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    delExperimentWarehouse(row.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('删除成功')
+        getExperimentWarehouseList()
+      }else{
+        ElMessage.error('删除失败')
+      }
+    })
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+
+}
+
 
 // 计算当前标签页名称
 const getActiveTabName = computed(() => {
@@ -769,19 +848,7 @@ const getActiveTabName = computed(() => {
   return tabNames[activeTab.value]
 })
 
-// 保存数据
-const handleSubmit = async () => {
-  try {
-    await saveExtendInfo({
-      experimentId: experimentId.value,
-      type: activeTab.value,
-      content: formPrincipleData[activeTab.value]
-    })
-    ElMessage.success(`${getActiveTabName.value}保存成功`)
-  } catch (error) {
-    ElMessage.error('保存失败，请稍后重试')
-  }
-}
+
 
 // 处理标签页点击
 const handleTabClick = (tab) => {
@@ -795,14 +862,15 @@ const handleTabClick = (tab) => {
     getTargetList()
   } else if(activeTab.value == 'equipment') {
     //调用器具
-    getWarehouseList();
+    getExperimentWarehouseList();
   }
 }
 
+//初始化数据
 onMounted(() => {
-  if (experimentId.value) {
-    fetchExperimentData()
-  }
+  getPrincipleList()//实验原理
+  getTargetList()//实验目标
+  getExperimentWarehouseList()//实验器具
 })
 
 // 对所有的tab进行校验，如果都没有操作则无法通过下一步
@@ -819,7 +887,7 @@ const validateForm = async () => {
     }
   } else if (activeTab.value == 'equipment') {
     // Validate equipment tab
-    if (equipmentWarehouseList.value.length === 0) {
+    if (experimentWarehousePageList.value.length === 0) {
       throw new Error('请至少添加一个实验器具')
     }
   }
@@ -829,7 +897,6 @@ const validateForm = async () => {
 // Expose the validation method
 defineExpose({
   activeTab,
-  handleSubmit,
   validateForm
 })
 
@@ -880,6 +947,9 @@ const handleDeletePrinciple = async (principle) => {
     console.error('删除失败:', error)
   }
 }
+
+
+
 </script>
 
 <style lang="scss" scoped>

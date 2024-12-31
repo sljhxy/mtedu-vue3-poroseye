@@ -83,7 +83,7 @@
       </el-table-column>
       <el-table-column label="操作说明" align="center" prop="equipmentAttr" />
       <el-table-column label="注意事项" align="center" prop="usageAttention" />
-      <el-table-column label="是否封" align="center" prop="isPackage" >
+      <el-table-column label="是否封装" align="center" prop="isPackage" >
         <template #default="scope">
           <el-tag :type="scope.row.isPackage == 1 ? 'success' : 'danger'" effect="plan">{{ scope.row.isPackage == 1 ? '已封装' : '未封装' }}</el-tag>
           <!-- {{ scope.row.isPackage == 1 ? '已封装' : '未封装' }} -->

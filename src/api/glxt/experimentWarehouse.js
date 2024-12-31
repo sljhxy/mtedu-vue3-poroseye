@@ -25,6 +25,14 @@ export function addExperimentWarehouse(data) {
     data: data
   })
 }
+// 批量新增实验-器具
+export function insertBatchMtExperimentWarehouse(data) {
+  return request({
+    url: '/glxt/experimentWarehouse/insertBatchMtExperimentWarehouse',
+    method: 'post',
+    data: data
+  })
+}
 
 // 修改实验-器具
 export function updateExperimentWarehouse(data) {
