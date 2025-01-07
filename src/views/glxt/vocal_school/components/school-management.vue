@@ -16,7 +16,7 @@
                 </el-button>
               </div>
               <span class="status-tag" :class="{ 'active': formData.isActive }">
-                {{ formData.isActive ? '已生效' : '未生效' }}
+                {{ Boolean(formData.isActive) ? '已生效' : '未生效' }}
               </span>
             </div>
           </div>
@@ -115,7 +115,7 @@
       class="school-dialog"
     >
       <el-form 
-        ref="schoolForm"
+        ref="schoolFormRef"
         :model="formData"
         :rules="rules"
         label-width="100px"
@@ -129,19 +129,7 @@
           </div>
           <div class="form-content">
             <el-form-item label="学校logo:" class="logo-item">
-              <el-upload
-                class="avatar-uploader"
-                action="/api/upload"
-                :show-file-list="false"
-                :on-success="handleLogoSuccess"
-                :before-upload="beforeLogoUpload"
-              >
-                <img v-if="formData.logo" :src="formData.logo" class="avatar" />
-                <div v-else class="upload-placeholder">
-                  <el-icon><Plus /></el-icon>
-                  <span>上传logo</span>
-                </div>
-              </el-upload>
+              <image-upload v-model="formData.logo"/>
             </el-form-item>
             <el-form-item label="学校名称:" prop="schoolName">
               <el-input v-model="formData.schoolName" placeholder="请输入学校名称"  @input="generate(formData.schoolName)"/>
@@ -214,7 +202,7 @@
                   <el-select v-model="formData.educationLevel" placeholder="职教类型" disabled>
                     <el-option v-for="item in educationLevels" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
-                  {{ formData.educationLevel }}
+                  <!-- {{ formData.educationLevel }} -->
                 </div>
               </el-form-item>
             </div>
@@ -282,7 +270,7 @@ const router = useRouter()
 import { getAreaTree } from "@/api/glxt/area";
 
 //引入学校相关接口
-import { listSchool, addSchool, updateSchool, getSchool, delSchool, checkSchool} from "@/api/glxt/vocal_school";
+import { vacalListSchool, addSchool, updateSchool, getSchool, delSchool, checkSchool} from "@/api/glxt/vocal_school";
 
 //学校网址接口引入
 import { generateLetter } from '@/api/glxt/base_school'
@@ -293,7 +281,7 @@ import { useRoute } from 'vue-router'
 import { get } from '@vueuse/core';
 const route = useRoute()
 const emit = defineEmits(['next-step'])
-const schoolForm = ref(null)
+const schoolFormRef = ref(null)
 const schoolId = ref(null)
 const formData = ref({
   id: null,
@@ -310,7 +298,7 @@ const formData = ref({
   educationLevelName: '',//类型名称
   isCollege: '0',//是否有学院
   isSystem: '0',//是否有系
-  isActive: false
+  isActive: true
 })
 
 const rules = {
@@ -369,23 +357,6 @@ const rules = {
 
 
 
-// 处理logo上传
-const handleLogoSuccess = (res, file) => {
-  formData.logo = URL.createObjectURL(file.raw)
-}
-
-const beforeLogoUpload = (file) => {
-  const isJPG = file.type === 'image/jpeg' || file.type === 'image/jpg' || file.type === 'image/png'
-  const isLt2M = file.size / 1024 / 1024 < 2
-
-  if (!isJPG) {
-    ElMessage.error('上传头像图片只能是 JPG/PNG 格式!')
-  }
-  if (!isLt2M) {
-    ElMessage.error('上传头像图片大小不能超过 2MB!')
-  }
-  return isJPG && isLt2M
-}
 
 // 下一步
 const handleNext = async () => {
@@ -559,7 +530,7 @@ onMounted(() => {
 // 暴露方法给父组件使用
 defineExpose({
   formData,
-  schoolForm
+  schoolFormRef
 })
 
 // 初始化省份选择
@@ -588,7 +559,7 @@ function reset() {
     isSystem: null,
     isActive: false
   };
-  proxy.resetForm("schoolForm");
+  proxy.resetForm("schoolFormRef");
 }
 
 
@@ -645,7 +616,7 @@ const handleEdit = async (id) => {
 const handleCancel = () => {
   dialogVisible.value = false
   isEdit.value = false // 重置编辑状态
-  schoolForm.value?.resetFields()
+  schoolFormRef.value?.resetFields()
 
   //新增的时候不走获取学校数据
   if (formData.value.id) {
@@ -671,7 +642,7 @@ const showAddDialog = () => {
 // 确定钮处理函数
 const handleConfirm = async () => {
   try {
-    proxy.$refs["schoolForm"].validate(valid => {
+    proxy.$refs["schoolFormRef"].validate(valid => {
       if (valid) {
         const submitData = { ...formData.value };
         
@@ -767,7 +738,6 @@ const getBaseEducationType = (educationType) => {
 
 //获取操作类型
 const operateType = ref('')
-console.log(operateType.value + '<-操作类型' + route.query.type)
 // 修改 onMounted 钩子
 onMounted(async () => {
   await initAreaData()

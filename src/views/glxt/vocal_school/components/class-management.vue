@@ -35,7 +35,7 @@
               class="grade-tag"
               @click="handleSpecialityClick(speciality)"
             >
-              {{ speciality.specialityName }}-{{ speciality.id }}
+              {{ speciality.specialityName }}
             </el-tag>
           </div>
         </div>
@@ -102,9 +102,7 @@
               {{ currentSpeciality?.specialityName }}
             </el-table-column>
             <el-table-column prop="className" label="班级名称" align="center"/>
-            <el-table-column prop="className" label="班级名称" align="center"/>
-            <el-table-column prop="className" label="班级名称" align="center"/>
-            <el-table-column label="操作" width="200" align="center">
+            <el-table-column label="操作" align="center">
               <template #default="scope">
                 <el-button type="primary" link @click="editVocalClass(scope.row)" v-permission="['glxt:class:edit']">
                   <el-icon><Edit /></el-icon>编辑

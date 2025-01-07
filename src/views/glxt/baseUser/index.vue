@@ -54,6 +54,7 @@
       <el-col :span="1.5">
         <el-button
           type="success"
+          color="#6EDC93"
           plain
           icon="Edit"
           :disabled="single"
@@ -108,7 +109,7 @@
         <template #default="scope">
           <el-button plain type="info" v-show="scope.row.userType == '1'" icon="Setting" @click="handleConfig(scope.row)" v-hasPermi="['glxt:baseUser:edit']">配置</el-button>
           <el-button plain type="warning" v-show="scope.row.userType == '2'" class="ml-2" icon="Edit">占位</el-button>
-          <el-button plain type="success" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:baseUser:edit']">编辑</el-button>
+          <el-button plain type="success" icon="Edit" color="#6EDC93" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:baseUser:edit']">编辑</el-button>
           <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:baseUser:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -135,14 +136,13 @@
             ></el-option>
           </el-select>
         </el-form-item>
-        {{ form.userType }}
         <el-form-item label="学校" prop="schoolId">
           <el-select v-model="form.schoolId" placeholder="请选择学校" clearable style="width: 100%">
             <el-option
-              v-for="dict in mt_user_type"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
+              v-for="school in schoolList"
+              :key="school.id"
+              :label="school.schoolName"
+              :value="school.id"
             ></el-option>
           </el-select>
         </el-form-item>
@@ -234,55 +234,66 @@
             </el-button>
           </div>
           <div class="config-content">
-            <el-table :data="subjectList" border>
+            <el-table :data="subjectList" empty-text="请点击配置科目按钮进行配置" border>
+              <!-- 添加空标签 -->
+              <!-- <template #empty>
+                <el-empty description="点击配置科目进行相关配置" :image-size="100"></el-empty>
+              </template> -->
               <el-table-column type="index" label="序号" width="60" align="center" />
-              <el-table-column label="科目" align="center">
-                <template #default="scope">
-                  <el-select 
-                    v-model="scope.row.subject" 
-                    placeholder="请选择科目" 
-                    @change="handleSubjectChange(scope.row)"
-                  >
-                    <el-option
-                      v-for="item in subjectOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
-                  </el-select>
-                </template>
-              </el-table-column>
               <el-table-column label="年级" align="center">
                 <template #default="scope">
+                  {{ scope.row.grade }}
                   <el-select 
                     v-model="scope.row.grade" 
                     placeholder="请选择年级" 
                     @change="handleGradeChange(scope.row)"
+                    clearable
                   >
                     <el-option
-                      v-for="item in gradeOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
+                      v-for="grade in gradeOptions"
+                      :key="grade.id"
+                      :label="grade.name"
+                      :value="grade.id"
                     />
                   </el-select>
                 </template>
               </el-table-column>
               <el-table-column label="班级" align="center">
                 <template #default="scope">
+                  {{ scope.row.selectedClass }}
                   <el-select 
                     v-model="scope.row.selectedClass" 
-                    multiple 
                     placeholder="请选择班级" 
                     style="width: 200px"
                     :disabled="!scope.row.grade"
                     @change="handleClassChange(scope.row)"
+                    clearable
                   >
                     <el-option
-                      v-for="item in scope.row.classList"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
+                      v-for="item in classListOptions"
+                      :key="item.id"
+                      :label="item.name"
+                      :value="item.id"
+                    />
+                  </el-select>
+                </template>
+              </el-table-column>
+              <el-table-column label="科目" align="center">
+                <template #default="scope">
+                  {{ scope.row.subject }}
+                  <el-select
+                    multiple 
+                    v-model="scope.row.subject" 
+                    placeholder="请选择科目" 
+                    :disabled="!scope.row.selectedClass"
+                    @change="handleSubjectChange(scope.row)"
+                    clearable
+                  >
+                    <el-option
+                      v-for="item in courseListOptions"
+                      :key="item.id"
+                      :label="item.name"
+                      :value="item.id"
                     />
                   </el-select>
                 </template>
@@ -314,6 +325,10 @@
 
         <el-tab-pane label="已配置科目" name="list">
           <el-table :data="configList" border style="width: 100%">
+            <!-- 添加空标签 -->
+            <template #empty>
+              <el-empty description="暂无内容" :image-size="100"></el-empty>
+            </template>
             <el-table-column type="index" label="序号" width="60" align="center" />
             <el-table-column label="科目" align="center">
               <template #default="scope">
@@ -348,6 +363,18 @@ import { listBaseUser, getBaseUser, delBaseUser, addBaseUser, updateBaseUser } f
 const { proxy } = getCurrentInstance();
 const { mt_user_type, sys_user_sex } = proxy.useDict('mt_user_type', 'sys_user_sex');
 
+//导入学校API
+import { baseListSchool } from "@/api/glxt/base_school";
+
+//导入年级API
+import { listGrade } from "@/api/glxt/base_grade";
+
+//导入班级API
+import { listClass } from "@/api/glxt/base_class";
+
+//导入科目API
+import { listCourse } from "@/api/glxt/base_course";
+
 const baseUserList = ref([]);
 const open = ref(false);
 const loading = ref(true);
@@ -374,11 +401,20 @@ const subjectOptions = ref([
   { value: '5', label: '化学' },
 ]);
 
-const gradeOptions = ref([
-  { value: '1', label: '一年级' },
-  { value: '2', label: '二年级' },
-  { value: '3', label: '三年级' },
-]);
+
+//存配置科目中的年级列表
+const gradeOptions = ref([]);
+
+
+//存年级
+const schoolList = ref([]);
+//根据选择的学校类型获取学校列表
+function schoolSelectChange() {
+  schoolList.value = []
+  baseListSchool({ pageNum: 1, pageSize: 10000 }).then(response => {
+      schoolList.value = response.rows;
+  });
+}
 
 // 获取标签显示文本的方法
 const getSubjectLabel = (value) => {
@@ -396,6 +432,7 @@ const getClassLabels = (values) => {
   return values.join(', ');
 };
 
+//确认密码校验
 const equalToPassword = (rule, value, callback) => {
   if (form.value.password !== value) {
     callback(new Error("两次输入的密码不一致"));
@@ -514,6 +551,8 @@ function handleSelectionChange(selection) {
 
 /** 新增按钮操作 */
 function handleAdd() {
+  //调用学校列表
+  schoolSelectChange()
   reset();
   open.value = true;
   title.value = "添加用户";
@@ -576,6 +615,8 @@ function handleConfig(row) {
   configForm.value = { ...row };
   activeTab.value = 'config';
   
+  console.log(row)
+  console.log(configForm.value)
   // 获取已有配置
   Promise.all([
     getTeacherConfig(row.id),
@@ -588,28 +629,46 @@ function handleConfig(row) {
 
 // 检查行是否完整填写
 const isRowComplete = (row) => {
-  return row.subject && row.grade && row.selectedClass && row.selectedClass.length > 0;
+  return row.subject && row.grade && row.selectedClass && row.selectedClass;
 };
+
+
+
+//存科目
+const courseListOptions = ref([]);
 
 // 处理班级选择变更
 const handleClassChange = (row) => {
+
+  //获取科目列表
+  // 分页相关
+  const queryParams = {
+      pageNum: 1,
+      pageSize: 1000,
+      gradeId: row.grade
+  }
+  listCourse(queryParams).then(response => {
+    courseListOptions.value = response.rows;
+  });
+
   // 触发视图更新
   row.isComplete = isRowComplete(row);
+
 };
 
 // 处理单行配置保存
 const handleSaveConfig = (row) => {
   const params = {
     teacherId: configForm.value.id,
-    configs: [{
-      subject: row.subject,
-      grade: row.grade,
-      classes: row.selectedClass
-    }]
+    gradeId: row.grade,//年级
+    classId: row.selectedClass, //班级
+    courseList: row.subject,//课程
+    contentType: '1'//普教
   };
 
   // 调用保存接口
   saveTeacherConfig(params).then(() => {
+    console.log('save config', params);
     proxy.$modal.msgSuccess("配置保存成功");
     // 刷新配置列表
     getTeacherConfigList(configForm.value.id).then(response => {
@@ -621,21 +680,33 @@ const handleSaveConfig = (row) => {
 
 // 修改科目变更处理
 const handleSubjectChange = (row) => {
-  row.grade = '';
-  row.selectedClass = [];
-  row.classList = [];
+  console.log('subject change', row);
+  // row.grade = '';
+  // row.selectedClass = [];
+  // row.classList = [];
   row.isComplete = false;
 };
 
+//存年级
+const classListOptions = ref([]);
 // 修改年级变更处理
 const handleGradeChange = (row) => {
-  row.selectedClass = [];
+  
+  console.log('grade change', row.grade);
+
+   //获取班级级列表
+  // 分页相关
+  const queryParams = {
+      pageNum: 1,
+      pageSize: 1000,
+      gradeId: row.grade
+  }
+  listClass(queryParams).then(response => {
+      classListOptions.value = response.rows;
+  });
+
+  // row.selectedClass = [];
   // 模拟获取班级列表
-  row.classList = [
-    { value: '1', label: '一班' },
-    { value: '2', label: '二班' },
-    { value: '3', label: '三班' },
-  ];
   row.isComplete = false;
 };
 
@@ -647,6 +718,16 @@ const handleAddSubject = () => {
     selectedClass: [],
     classList: [],
     isComplete: false
+  });
+  //获取年级列表
+  // 分页相关
+  const queryParams = {
+      pageNum: 1,
+      pageSize: 1000,
+      schoolId: configForm.value.schoolId
+    }
+    listGrade(queryParams).then(response => {
+      gradeOptions.value = response.rows;
   });
 };
 
@@ -738,13 +819,13 @@ getList();
 .el-select {
   width: 100%;
 }
-.config-content {
+/* .config-content {
   min-height: 300px;
-}
+} */
 /* 设置tabs下的表格容器最小高度 */
-.el-tab-pane {
-  min-height: 350px;
-}
+/* .el-tab-pane {
+  min-height: 100px;
+} */
 
 .config-content .el-select {
   width: 100%;

@@ -49,7 +49,7 @@
         <div class="button-group">
           <el-button 
             class="nav-button prev-button" 
-            v-if="activeStep === 0" 
+            v-if="activeStep == 0" 
             @click="go_back"
           >
             <el-icon><ArrowLeft /></el-icon>
@@ -85,7 +85,18 @@
         </div>
       </div>
     </div>
+
   </div>
+
+
+    <!-- 添加新的悬浮返回按钮 -->
+    <!-- <div class="floating-return">
+      <div class="return-content" @click="handleBack">
+        <div class="return-arrow"></div>
+        <span class="return-text">返回列表</span>
+      </div>
+    </div> -->
+
 </template>
 
 <script setup>
@@ -126,7 +137,13 @@ const currentComponent = computed(() => {
 
 
 const go_back = () => {
-  router.push('/glxt/experiment/experiment_list')
+  router.push({
+    path: '/glxt/experiment/experiment_list',
+    query: { 
+      _t: Date.now() // 添加时间戳参数强制刷新列表
+    }
+  })
+
 }
 
 const prev = () => {
@@ -193,6 +210,11 @@ const next = async () => {
     }
   }
 }
+
+// 添加返回方法
+const handleBack = () => {
+  router.go(-1)
+}
 </script>
 
 <style lang="scss" scoped>
@@ -201,7 +223,7 @@ const next = async () => {
   background-color: #fff;
   border-radius: 8px;
   // box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
-  max-width: 99%;
+  max-width: 75%;
   margin: 0 auto;
   padding-bottom: 100px;
 
@@ -495,6 +517,7 @@ const next = async () => {
   align-items: center;
   justify-content: center;
   gap: 24px;
+  margin-left: 292px;//居中对齐
 }
 
 .button-divider {
@@ -571,6 +594,60 @@ const next = async () => {
     height: 36px;
     font-size: 14px;
     padding: 0 16px;
+  }
+}
+/* 新的悬浮返回按钮样式 */
+.floating-return {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 999;
+
+  .return-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px 15px 10px 10px;
+    background: #f4f4f5;
+    border-radius: 20px 0 0 20px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #4facfe;
+      padding-right: 85px;
+
+      .return-text {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
+    .return-arrow {
+      width: 12px;
+      height: 12px;
+      border-top: 2px solid #909399;
+      border-right: 2px solid #909399;
+      transform: rotate(225deg);
+      margin-right: 5px;
+    }
+
+    .return-text {
+      position: absolute;
+      right: 15px;
+      color: #fff;
+      opacity: 0;
+      visibility: hidden;
+      white-space: nowrap;
+      transition: all 0.3s ease;
+    }
+
+    &:hover {
+      .return-arrow {
+        border-color: #fff;
+      }
+    }
   }
 }
 </style>

@@ -26,7 +26,7 @@
                 <el-icon class="welcome-icon"><Sunny /></el-icon>
                 <h2>欢迎来到【实验】配置管理</h2>
                 <p>开始创建您的实验相关信息</p>
-                <el-button type="primary" class="add-button" @click="showDialog">
+                <el-button type="primary" class="add-button" @click="showDialog('add', 0)">
                   <el-icon><Plus /></el-icon>
                   添加实验信息
                 </el-button>
@@ -44,26 +44,25 @@
                   <div class="title-group">
                     <div class="title-row">
                       <h3>{{ experimentData?.experimentName || '' }}</h3>
-                      <span class="version-tag">v{{ experimentData?.version || '1.0' }}</span>
+                      <el-tag size="small" effect="plain" type="success"> 
+                        V{{ experimentData?.version || '1.0' }}
+                      </el-tag>
                     </div>
                     <div class="experiment-tags">
                       <el-tag size="small" effect="plain" type="info">
-                        <el-icon><Collection /></el-icon>
-                        {{ getAttrName(experimentData?.attrType || '') }}
+                        <dict-tag :options="mt_experiment_attr_type" :value="experimentData?.attrType"/>
                       </el-tag>
-                      <el-tag size="small" effect="plain" type="success">
-                        <el-icon><School /></el-icon>
-                        {{ getSchoolTypeName(experimentData?.schoolType || '') }}
-                      </el-tag>
+                      <!-- <el-tag size="small" effect="plain"> -->
+                        <dict-tag :options="mt_school_type" :value="experimentData?.schoolType"/>
+                      <!-- </el-tag> -->
                       <el-tag size="small" effect="plain" type="warning">
-                        <el-icon><Reading /></el-icon>
-                        {{ getAcademicstageName(experimentData?.academicStageType || '') }}
+                        <dict-tag :options="mt_academic_stage" :value="experimentData?.academicStageType"/>
                       </el-tag>
                     </div>
                   </div>
                 </div>
                 <div class="header-actions">
-                  <el-button type="primary" class="edit-button" @click="showDialog">
+                  <el-button type="primary" class="edit-button" @click="showDialog('edit', experimentId)">
                     <el-icon><Edit /></el-icon>
                     编辑实验信息
                   </el-button>
@@ -81,15 +80,8 @@
                         <span>实验示意图</span>
                       </div>
                       <div class="thumbnail-wrapper">
-                        <img 
-                          :src="experimentData?.thumbnail || defaultThumbnail"
-                          :alt="experimentData?.experimentName || '实验示意图'"
-                          class="thumbnail-image"
-                        >
-                        <div class="thumbnail-overlay">
-                          <el-icon><ZoomIn /></el-icon>
-                        </div>
-                      </div>
+                        <image-preview :src="experimentData?.thumbnail || defaultThumbnail" />
+                      </div> 
                     </div>
                   </el-col>
 
@@ -100,7 +92,7 @@
                       <div class="info-section">
                         <div class="section-header">
                           <el-icon><Document /></el-icon>
-                          <span>实验概述</span>
+                          <span>实验简介</span>
                         </div>
                         <div class="section-content">
                           <p class="description-text">{{ experimentData?.blurb || '暂无实验概述' }}</p>
@@ -120,14 +112,35 @@
                                 <el-icon><User /></el-icon>
                                 开发者
                               </div>
-                              <div class="item-value">{{ getDeveloperName(experimentData?.developerType || '') }}</div>
+                              <div class="item-value">
+                                <dict-tag :options="mt_developer_type" :value="experimentData?.developerType"/>
+                              </div>
                             </div>
                             <div class="info-item">
                               <div class="item-label">
                                 <el-icon><Collection /></el-icon>
                                 版本教材体系
                               </div>
-                              <div class="item-value">{{ experimentData?.courseSystems || '暂无' }}</div>
+                              <!-- <div class="item-value">{{ experimentData?.courseSystems || '暂无' }}</div> -->
+                              <div class="item-value">
+                                <el-cascader
+                                  v-model="basicForm.courseSystems"
+                                  :options="courseSystemOptions"
+                                  :show-all-levels="false"
+                                  :props="{ 
+                                      expandTrigger: 'hover',
+                                      multiple: true,
+                                      emitPath: true
+                                  }"
+                                  placeholder="请选择课程体系"
+                                  clearable
+                                  collapse-tags-tooltip
+                                  class="w-full"
+                                  @change="handleCourseSystemChange"
+                                  disabled
+                                />
+                              </div>
+                              
                             </div>
                             <div class="info-item">
                               <div class="item-label">
@@ -160,20 +173,7 @@
                 <el-row class="thumbnail-row" :gutter="20">
                   <el-col :span="24">
                     <el-form-item label="缩略图" prop="thumbnail">
-                      <el-upload
-                        class="avatar-uploader"
-                        action="/api/upload"
-                        :show-file-list="false"
-                        :on-success="handleThumbnailSuccess"
-                        :before-upload="beforeThumbnailUpload">
-                        <div class="upload-area">
-                          <img v-if="basicForm.thumbnail" :src="basicForm.thumbnail" class="thumbnail" />
-                          <div v-else class="upload-placeholder">
-                            <el-icon class="upload-icon"><Plus /></el-icon>
-                            <span>点击上传缩略图</span>
-                          </div>
-                        </div>
-                      </el-upload>
+                      <image-upload v-model="basicForm.thumbnail"/>
                     </el-form-item>
                   </el-col>
                 </el-row>
@@ -197,7 +197,7 @@
                               <el-option 
                                   v-for="item in mt_experiment_attr_type" 
                                   :key="item.value" 
-                                  :value="item.value.toString()" 
+                                  :value="item.value" 
                                   :label="item.label"
                               ></el-option>
                           </el-select>
@@ -349,15 +349,18 @@
             </template>
 
             <div v-show="experimentDescribeList.length && experimentId ">
-              {{ descDialogVisible}}
               <el-button plain type="primary" icon="Plus" @click="showDescDialog" style="margin-bottom: 10px;" v-hasPermi="['glxt:experimentInfoDescribe:add']">添加</el-button>
               <el-table v-loading="loading" :data="experimentDescribeList">
                 <el-table-column label="序号" width="55" type="index" align="center" />
                 <el-table-column label="页码标题" align="center" prop="title" />
-                <el-table-column label="内容" align="center" prop="text" />
+                <el-table-column label="内容" align="center" prop="text">
+                  <template #default="scope">
+                    <div v-html="scope.row.text"></div>
+                  </template>
+                </el-table-column>
                 <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
                   <template #default="scope">
-                    <el-button plain type="success" icon="Edit" @click="handleDescUpdate(scope.row)" v-hasPermi="['glxt:experimentInfoDescribe:edit']">修改</el-button>
+                    <el-button plain type="success" icon="Edit" color="#6EDC93" @click="handleDescUpdate(scope.row)" v-hasPermi="['glxt:experimentInfoDescribe:edit']">修改</el-button>
                     <el-button plain type="danger" icon="Delete" @click="handleDesDelete(scope.row)" v-hasPermi="['glxt:experimentInfoDescribe:remove']">删除</el-button>
                   </template>
               </el-table-column>
@@ -394,7 +397,6 @@
                   width="50%"
                   :before-close="handleDescClose">
                   <el-form :model="descForm" ref="descFormRef" :rules="descFormRules" >
-                    {{ experimentId }}
                       <el-form-item label="页码标题" class="title-input" prop="title">
                         <el-input v-model="descForm.title" placeholder="请输入标题"/>
                       </el-form-item>
@@ -448,8 +450,14 @@ const handleTabClick = (tab) => {
     return;
   }
   
-  //获取实验说明列表
-  getExperimentInfoDescribeList()
+  if(tab.props.name == 'experimentDesc') {
+    //获取实验说明列表
+    getExperimentInfoDescribeList()
+  }
+  if(tab.props.name == 'basicInfo') {
+    //获取实验信息
+    loadExperimentData(experimentId.value)
+  }
 }
 
 // 标签页激活状态
@@ -458,8 +466,11 @@ const activeTab = ref('basicInfo')
 // 表单引用
 const basicFormRef = ref(null)
 
+
+
 // 基础信息表单数据
 const basicForm = ref({
+  id: null,
   thumbnail: '',//缩略图
   experimentName: '',//实验名称
   attrType:'',//属性类型
@@ -471,6 +482,26 @@ const basicForm = ref({
   remark:'',//实验备注
   courseSystems: [[]]//课程体系
 })
+
+
+//重置表单数据
+const resetBasicForm = () => {
+     // 重置表单数据
+    basicForm.value = {
+      id: null,
+      thumbnail: null,//缩略图
+      experimentName: null,//实验名称
+      attrType:null,//属性类型
+      schoolType:null,//学校类型
+      academicStageType:null,//学段类型
+      developerType:null,//开发者类型
+      blurb:null,//简介
+      version:null,//实验版本号
+      version:null,//实验版本号
+      courseSystems: [[]]//课程体系
+    }
+  
+}
 
 const experimentDescribeList = ref([])
 // 实验说明表单数据
@@ -511,13 +542,12 @@ const academicStageChange = (value) => {
 
 const courseSystemOptions = ref([])//获取挂载课程
 const getCourseSystemOptionList = (schoolType, academicStage) => {
-
-getCourseSystemOptions(schoolType, academicStage).then(response => {
-    courseSystemOptions.value = response.data
-    courseSystemOptions.value.forEach(item => {
-    item.label = getSubjectName(item.value);
-    })
-})
+  getCourseSystemOptions(schoolType, academicStage).then(response => {
+      courseSystemOptions.value = response.data
+      courseSystemOptions.value.forEach(item => {
+      item.label = getSubjectName(item.value);
+      })
+  })
 }
 
 
@@ -526,7 +556,7 @@ const handleCourseSystemChange = (values) => {
 // 挂载课程系统
   if (!values || values.length === 0) {
     basicForm.value.courseSystems = []
-  return
+    return
   }
 
 }
@@ -537,58 +567,19 @@ const getSubjectName = (subjectType) => {
     return mt_school_subject.value ?.find(item => item.value === subjectType).label
 }
 
-//获取学段类型
-const getAcademicstageName = (academicType) => {
-    return mt_academic_stage.value?.find(item => item.value === academicType)?.label || ''
-}
-//获取学校
-const getSchoolTypeName = (schoolType) => {
-    return mt_school_type.value?.find(item => item.value === schoolType)?.label || ''
-}
-//获取开发者
-const getDeveloperName = (developerType) => {
-    return mt_developer_type.value?.find(item => item.value === developerType)?.label || ''
-}
-//获取属性类型
-const getAttrName = (attrType) => {
-    return mt_experiment_attr_type.value?.find(item => item.value === attrType.toString())?.label || ''
-}
-
 // 实验基本信息表单验证规则
 const rules = {
   name: [{ required: true, message: '请输入实验名称', trigger: 'blur' }],
   description: [{ required: true, message: '请输入实验简介', trigger: 'blur' }],
-  // 其他验证规则...
-}
-
+  // 其他验规则...
+}    
 //实验说明表单验证规则
 const descFormRules = {
   title: [{ required: true, message: '请输入实验标题', trigger: 'blur' }],
 }
 
-// 缩略图上传相关方法
-const handleThumbnailSuccess = (res, file) => {
-  basicForm.thumbnail = URL.createObjectURL(file.raw)
-  ElMessage.success('上传成功')
-}
-
-const beforeThumbnailUpload = (file) => {
-  const isImage = file.type.startsWith('image/')
-  const isLt2M = file.size / 1024 / 1024 < 2
-
-  if (!isImage) {
-    ElMessage.error('上传文件只能是图片格式!')
-    return false
-  }
-  if (!isLt2M) {
-    ElMessage.error('上传图片大小不能超过 2MB!')
-    return false
-  }
-  return true
-}
-
-// 新增实验ID
-const experimentId = ref('')
+// 实验ID
+const experimentId = ref()
 
 // 添加 emit 定义
 const emit = defineEmits(['update:experimentName', 'canSave'])
@@ -600,28 +591,21 @@ watch(() => basicForm.name, (newName) => {
 
 // 修改表单验证方法   TODO： 优化为动态获取
 const validateForm = async () => {
-  // if (!basicFormRef.value) return false
-  // try {
-  //   await basicFormRef.value.validate()
-  //   emit('canSave', true)
-  //   return true
-  // } catch (error) {
-  //   emit('canSave', false)
-  //   return false
-  // }
   if (activeTab.value === 'basicInfo') {
     // Validate principle tab
     if (!basicForm.value.experimentName || !basicForm.value.schoolType) {
-      throw new Error('请完成实验基本信息的必填项')
+      // throw new Error('请完成实验基本信息的必填项')
+      return false
     }
   } else if (activeTab.value === 'experimentDesc') {
     // Validate target tab
-    if (!descForm.value.title || !descForm.value.experimentInfoId) {
-      throw new Error('请完成实验说明的必填项')
+    if (experimentDescribeList.value.length == 0) {
+      // throw new Error('请完成实验说明的必填项')
+      return false
     }
   }
 
-
+  return true
 }
 
 // 监听表单变化
@@ -629,67 +613,30 @@ watch(basicForm, async () => {
   await validateForm()
 }, { deep: true })
 
-// 修改 handleSubmit 方法
-const handleSubmit = async () => {
-  if (activeTab.value === 'basicInfo') {
-    const isValid = await validateForm()
-    if (isValid) {
-      try {
-        const response = await saveBasicInfo(basicForm)
-        if (response.data?.id) {
-          experimentId.value = response.data.id
-          ElMessage.success('基础信息保存成功')
-          activeStep.value = 1
-        } else {
-          throw new Error('保存失败')
-        }
-      } catch (error) {
-        ElMessage.error({
-          message: '保存失败，请检查网络连接后重试',
-          duration: 3000
-        })
-      }
-    }
-  } else {
-    // 保存实验说明
-    try {
-      await saveExperimentDesc({
-        experimentId: experimentId.value,
-        descriptions: descForm.descriptions
-      })
-      ElMessage.success('实验说明保存成功')
-    } catch (error) {
-      ElMessage.error({
-        message: '保存失败，请检查网络连接后重试',
-        duration: 3000
-      })
-    }
-  }
-}
-
 // 添加响应式变量
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 
-// 添加 mode 和 experimentId 响应式变量
-const mode = ref('add')
-
 // 在组件挂载时获取路由参数
-onMounted(() => {
-  // 获取 mode 参数
-  mode.value = route.query.mode || 'add'
+//获取操作类型
+const operateType = ref('')
+// 修改 onMounted 钩子
+onMounted(async () => {
   
-  // 获取 id 参数
-  if (route.query.id) {
-    experimentId.value = route.query.id
-    // 如果是编辑模式，加载实验数据
-    if (mode.value === 'edit') {
-      loadExperimentData(experimentId.value)
-    }
+  // 从路由参数判断操作类型和学校ID
+  const { type, id } = route.query
+  
+  operateType.value = type
+  if (type === 'edit' && id) {
+    // 编辑模式
+    experimentId.value = id
+    await loadExperimentData(id)
+    hasExperiments.value = type
+  } else {
+    // 新增模式
+    // 重置表单数据
+    resetBasicForm()
   }
-
-  // 根据模式设置 hasExperiments
-  hasExperiments.value = mode.value === 'edit'
 })
 
 
@@ -698,7 +645,16 @@ const loadExperimentData = async (id) => {
   try {
     // TODO: 调用获取实验详情的 API
     const response = await getExperimentInfo(id)
-    experimentData.value = response.data
+    experimentData.value = {...response.data};
+    
+    //属性转字符串
+    experimentData.value.attrType = experimentData.value.attrType + ''
+
+    //获取学段
+    schoolTypeChange(experimentData.value.academicStageType)
+
+    //加载挂载科目体系
+    getCourseSystemOptionList(experimentData.value.schoolType, experimentData.value.academicStageType)
     
     // 更新表单数据
     basicForm.value = {
@@ -722,69 +678,59 @@ const hasExperiments = ref(false) // 默认为 false
 
 
 // 修改 showDialog 方法
-const showDialog = () => {
-  if (mode.value === 'edit') {
+const showDialog = (value, id) => {
+  resetBasicForm()//重置表单
+  dialogVisible.value = true
+  if (value == 'edit') {
     isEdit.value = true
     // 使用已加载的数据填充表单
-    loadExperimentData(route.query.id)
-  } else {
-    isEdit.value = false
-    // 重置表单数据
-    basicForm.value = {
-      thumbnail: null,//缩略图
-      experimentName: null,//实验名称
-      attrType:null,//属性类型
-      schoolType:null,//学校类型
-      academicStageType:null,//学段类型
-      developerType:null,//开发者类型
-      blurb:null,//简介
-      version:null,//实验版本号
-      version:null,//实验版本号
-      courseSystems: [[]]//课程体系
-    }
-  }
-  
-  // isEdit.value = true
-    // 使用已加载的数据填充表单
-    // loadExperimentData(route.query.id)
-  dialogVisible.value = true
+    loadExperimentData(id)
+  } 
 }
 
 // 修改提交表单方法
 const submitForm = async () => {
-  if (!basicFormRef.value) return
-  
   try {
-    await basicFormRef.value.validate()
-    if (mode.value === 'edit') {
-      // 调用编辑 API
-      const res = await updateExperimentInfo(basicForm.value)
-      if (res.code === 200) {
-        ElMessage.success('修改成功')
-        //获取实验数据
-        loadExperimentData(res.data)
-        hasExperiments.value = true // 修改成功后显示实验信息
-      } else {
-        ElMessage.error('修改失败')
+    proxy.$refs["basicFormRef"].validate(valid => {
+      if (valid) {
+        if (basicForm.id != null) {
+          updateExperimentInfo(basicForm.value).then(response => {
+            proxy.$modal.msgSuccess("修改成功");
+             //获取实验数据
+            loadExperimentData(response.data)
+          });
+        } else {
+          addExperimentInfo(basicForm.value).then(response => {
+            proxy.$modal.msgSuccess("新增成功");
+            //获取实验数据
+            experimentId.value = response.data
+
+            loadExperimentData(response.data)
+            // hasExperiments.value = true // 添加成功后显示实验信息
+          });
+        }
       }
-    } else {
-      // 调用新增 API
-      const res = await addExperimentInfo(basicForm.value)
-      if (res.code === 200) {
-        ElMessage.success('添加成功')
-         //获取实验数据
-        loadExperimentData(res.data)
-        hasExperiments.value = true // 添加成功后显示实验信息
-      } else {
-        ElMessage.error('添加失败')
-      }
-    }
+    });
   } catch (error) {
-    ElMessage.error(mode.value === 'edit' ? '编辑失败' : '添加失败')
+    ElMessage.error('操作失败，请重试')
+    return
   } finally {
     dialogVisible.value = false
+    hasExperiments.value = true // 修改成功后显示实验信息
   }
 }
+
+// 添加关闭弹框的方法
+const handleClose = () => {
+  resetBasicForm()
+  dialogVisible.value = false
+  
+  //加载挂载科目体系
+  if(experimentData.value.schoolType && experimentData.value.academicStageType) {
+    getCourseSystemOptionList(experimentData.value.schoolType, experimentData.value.academicStageType)
+  }
+}
+//===================================================================实验说明===================================================================
 
 // 添加实验说明对话框的控制变量
 const descDialogVisible = ref(false)
@@ -828,13 +774,6 @@ const showDescDialog = () => {
   descDialogVisible.value = true
 }
 
-// 添加关闭弹框的方法
-const handleClose = () => {
-  dialogVisible.value = false
-  if (basicFormRef.value) {
-    basicFormRef.value.resetFields()
-  }
-}
 
 
 // 暴露 activeTab 给父组件
@@ -895,9 +834,10 @@ function getExperimentInfoDescribeList() {
     loading.value = false;
   });
 
+
 }
 
-
+//===================================================================实验说明====END===============================================================
 
 </script>
 
@@ -1828,7 +1768,7 @@ p {
     border-radius: 12px;
     
     .experiment-icon {
-      font-size: 32px;
+      font-size: 12px;
       color: #409EFF;
     }
   }
@@ -1902,7 +1842,7 @@ p {
     margin-top: 16px;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    // box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     
     &:hover {
       .thumbnail-overlay {

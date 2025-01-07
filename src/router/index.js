@@ -188,7 +188,7 @@ export const constantRoutes = [
   path: '/glxt/experiment',
   component: Layout,
   redirect: '/glxt/experiment/experiment_list',
-  name: 'GLXT',
+  name: 'experiment',
   meta: { title: '实验管理'},
   hidden: true,
   children: [
@@ -207,6 +207,7 @@ export const constantRoutes = [
     // ... 其他路由
   ]
 }
+
 ]
 
 // 动态路由，基于用户权限动态去加载

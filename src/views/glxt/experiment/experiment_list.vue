@@ -3,45 +3,38 @@
     <!-- 搜索区域 -->
     <div v-show="showSearch" class="search-form" shadow="never">
       <el-form :inline="true" :model="searchForm">
+        <el-form-item label="类型" prop="contentType">
+        <el-select v-model="searchForm.contentType" placeholder="请选择" style="width: 100px;" clearable  @change="schoolTypeChange">
+          <el-option
+            v-for="dict in mt_school_type"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="学段" prop="periodType">
+        <el-select v-model="searchForm.periodType" placeholder="请选择" style="width: 150px;" clearable>
+          <el-option
+            v-for="dict in educationStage.value"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
         <el-form-item label="实验名称">
-          <el-input v-model="searchForm.name" placeholder="请输入实验名称" />
-        </el-form-item>
-        <el-form-item label="类型">
-          <el-select 
-            v-model="searchForm.type" 
-            placeholder="请选择类型"
-            style="width: 150px"
-          >
-            <el-option
-              v-for="item in typeOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="学段">
-          <el-select 
-            v-model="searchForm.stage" 
-            placeholder="请选择学段"
-            style="width: 150px"
-          >
-            <el-option
-              v-for="item in stageOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
+          <el-input v-model="searchForm.name" placeholder="请输入实验名称" clearable/>
         </el-form-item>
         <el-form-item label="审核状态">
           <el-select 
             v-model="searchForm.status" 
             placeholder="请选择审核状态"
             style="width: 150px"
+            clearable
           >
             <el-option
-              v-for="item in statusOptions"
+              v-for="item in mt_experiment_audit_status"
               :key="item.value"
               :label="item.label"
               :value="item.value"
@@ -84,11 +77,23 @@
         :header-cell-style="{ background: '#f5f7fa' }"
       >
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="experimentName" label="实验名称" min-width="100" align="center" show-overflow-tooltip />
-        <el-table-column prop="schoolType" label="类型" width="150" align="center" />
-        <el-table-column prop="academicStageType" label="学段" width="200" align="center" />
-        <el-table-column prop="status" label="审核状态" width="200" align="center"/>
-        <el-table-column label="操作" width="380" fixed="right">
+        <el-table-column prop="experimentName" label="实验名称" align="center"/>
+        <el-table-column prop="schoolType" label="类型"  align="center" >
+          <template #default="scope">
+          <dict-tag :options="mt_school_type" :value="scope.row.schoolType"/>
+        </template>
+        </el-table-column>
+        <el-table-column prop="academicStageType" label="学段"  align="center">
+          <template #default="scope">
+          <dict-tag :options="mt_school_type == '1' ? mt_academic_stage : mt_vocal_education_type" :value="scope.row.schoolType"/>
+        </template>
+        </el-table-column>
+        <el-table-column prop="auditStatus" label="审核状态" align="center">
+          <template #default="scope">
+          <dict-tag :options="mt_experiment_audit_status" :value="scope.row.auditStatus"/>
+        </template>
+        </el-table-column>
+        <el-table-column label="操作" width="500" align="center">
           <template #default="scope">
             <div class="operation-buttons">
               <el-button 
@@ -101,6 +106,7 @@
               </el-button>
               <el-button 
                 type="primary" 
+                color="#6EDC93"
                 plain
                 @click="handleEdit(scope.row)"
               >
@@ -131,13 +137,12 @@
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
+          v-model:page="searchForm.pageNum"
+          v-model:limit="searchForm.pageSize"
           :page-sizes="[10, 20, 30, 50]"
           :total="total"
           background
           layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
         />
       </div>
@@ -152,17 +157,49 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 //导入实验信息API
 import { listExperimentInfo,delExperimentInfo } from '@/api/glxt/experimentInfo'
 
+const { proxy } = getCurrentInstance();
+const { mt_academic_stage, mt_school_type, mt_vocal_education_type, mt_experiment_audit_status } = proxy.useDict('mt_academic_stage', 'mt_school_type','mt_vocal_education_type', 'mt_experiment_audit_status');
+
 const router = useRouter()
+//学段
+const educationStage = ref([])
+
+//学校类型改变时，学段改变
+const schoolTypeChange = (value) => {
+  //清空学段的数据
+  searchForm.value.periodType = '' 
+    if(value == '1'){
+        educationStage.value = mt_academic_stage
+    }else{
+        educationStage.value = mt_vocal_education_type
+    }
+}
 
 // 搜索表单数据
-const searchForm = reactive({
+const searchForm = ref({
   name: '',
   type: '',
   stage: '',
   status: '',
+  contentType:'',
+  periodType:'',
   pageNum: 1,
   pageSize: 10,
 })
+
+//重置搜索表单数据
+const resetFormSearch = () => {
+  searchForm.value = {
+    name: '',
+    type: '',
+    stage: '',
+    status: '',
+    contentType:'',
+    periodType:'',
+    pageNum: 1,
+    pageSize: 10,
+  }
+}
 
 // 模拟表格数据
 const tableData = ref([])
@@ -174,20 +211,11 @@ const total = ref(tableData.value.length)
 
 //获取列表数据
 const getListExperimentInfo = () => {
-  const query = {
-    name: searchForm.name,
-    type: searchForm.type,
-    stage: searchForm.stage,
-    status: searchForm.status,
-    pageNum: searchForm.pageNum,
-    pageSize: searchForm.pageSize
-  }
-  listExperimentInfo(query).then(response => {
+  listExperimentInfo(searchForm.value).then(response => {
     tableData.value = response.rows
     total.value = response.total
   })
 }
-const { proxy } = getCurrentInstance();
 
 
 // 删除试验信息
@@ -215,9 +243,7 @@ const handleDelete = (row) => {
   })
 }
 
-
 getListExperimentInfo()
-
 
 
 // 控制搜索框显示隐藏
@@ -237,22 +263,14 @@ const handleRefresh = () => {
   ElMessage.success('刷新成功')
 }
 
-// 分页相关的响应式数据
-const currentPage = ref(1)
-const pageSize = ref(10)
 
 // 方法定义
 const handleSearch = () => {
-  currentPage.value = 1  // 搜索时重置为第一页
   getListExperimentInfo()
 }
 
 const resetSearch = () => {
-  Object.keys(searchForm).forEach(key => {
-    searchForm[key] = ''
-  })
-  currentPage.value = 1  // 重置时回到第页
-  total.value = tableData.value.length
+  resetFormSearch()
   getListExperimentInfo()
 }
 
@@ -260,7 +278,7 @@ const handleAdd = () => {
   router.push({
     path: '/glxt/experiment/experiment_steps',
     query: {
-      mode: 'add'
+      type: 'add'
     }
   })
 }
@@ -270,7 +288,7 @@ const handlePreview = (row) => {
     path: '/glxt/experiment/experiment_steps',
     query: {
       id: row.id,
-      mode: 'preview'
+      type: 'preview'
     }
   })
 }
@@ -280,7 +298,7 @@ const handleEdit = (row) => {
     path: '/glxt/experiment/experiment_steps',
     query: {
       id: row.id,
-      mode: 'edit'
+      type: 'edit'
     }
   })
 }
@@ -289,15 +307,9 @@ const handleAudit = (row) => {
   // 实现审核逻辑
 }
 
-// 处理分页方法的优化
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  currentPage.value = 1  // 切换每页条数时重置为第一页
-  getListExperimentInfo()
-}
-
+//当前页面
 const handleCurrentChange = (val) => {
-  currentPage.value = val
+  searchForm.value.pageNum = val
   getListExperimentInfo()
 }
 

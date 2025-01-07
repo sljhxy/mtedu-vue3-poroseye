@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 查询普教-学校列表
-export function listSchool(query) {
+export function baseListSchool(query) {
   return request({
     url: '/glxt/school/list',
     method: 'get',

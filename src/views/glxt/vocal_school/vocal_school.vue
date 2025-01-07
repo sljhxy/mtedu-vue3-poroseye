@@ -86,7 +86,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" min-width="180">
         <template #default="scope">
           <div class="operation-buttons">
-            <el-button plain type="success" icon="Edit" @click="handleEdit(scope.row)" v-hasPermi="['glxt:vocalSchool:edit']">修改</el-button>
+            <el-button plain type="success" color="#6EDC93" icon="Edit" @click="handleEdit(scope.row)" v-hasPermi="['glxt:vocalSchool:edit']">修改</el-button>
             <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:vocalSchool:remove']">删除</el-button>
           </div>
         </template>
@@ -113,7 +113,7 @@ const {mt_vocal_education_system_type, mt_vocal_education_type } = proxy.useDict
 // 导入分页组件
 import Pagination from '@/components/Pagination'
 //导入学校列表
-import { listSchool, delSchool } from '@/api/glxt/vocal_school'
+import { vacalListSchool, delSchool } from '@/api/glxt/vocal_school'
 // 导入区域接口
 import { getAreaTree } from "@/api/glxt/area";
 
@@ -257,7 +257,7 @@ const baseSchoolList = ref([]);
 function getList() {
   console.log(searchForm.value)
   loading.value = true;
-  listSchool(searchForm.value).then(response => {
+  vacalListSchool(searchForm.value).then(response => {
     baseSchoolList.value = response.rows;
     total.value = response.total;
     loading.value = false;

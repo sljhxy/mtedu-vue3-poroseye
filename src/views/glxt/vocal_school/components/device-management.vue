@@ -24,13 +24,6 @@
               <span class="value">{{ schoolInfo.educationLevelName }}</span>
             </div>
           </div>
-          <!-- <div class="info-divider"></div>
-          <div class="info-item">
-            <div class="info-row">
-              <span class="label">学段：</span>
-              <span class="value">{{ schoolInfo.schoolTypeName }}</span>
-            </div>
-          </div> -->
         </div>
       </div>
 
@@ -57,22 +50,22 @@
         </div>
         <div class="device-content">
           <el-table :data="deviceList" style="width: 100%" v-loading="loading">
-            <el-table-column prop="deviceNo" label="设备号" width="180" align="center"/>
-            <el-table-column prop="isBinding" label="绑定状态" width="100" align="center">
+            <el-table-column prop="deviceNo" label="设备号"  align="center"/>
+            <el-table-column prop="isBinding" label="绑定状态" align="center">
               <template #default="scope">
                 <el-tag :type="scope.row.isBinding === '1' ? 'success' : 'info'">
                   {{ scope.row.isBinding === '1' ? '已绑定' : '未绑定' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="isStateActivation" label="激活状态" width="100" align="center">
+            <el-table-column prop="isStateActivation" label="激活状态"  align="center">
               <template #default="scope">
                 <el-tag :type="scope.row.isStateActivation === '1' ? 'success' : 'info'">
                   {{ scope.row.isStateActivation === '1' ? '已激活' : '未激活' }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="isStart" label="启动状态" width="100" align="center">
+            <el-table-column prop="isStart" label="启动状态" align="center">
               <template #default="scope">
                 <el-tag :type="scope.row.isStart === '1' ? 'success' : 'info'">
                   {{ scope.row.isStart === '1'? '已启动' : '未启动' }}

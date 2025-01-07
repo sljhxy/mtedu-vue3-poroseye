@@ -38,6 +38,7 @@
       <el-col :span="1.5">
         <el-button
           type="success"
+          color="#6EDC93"
           plain
           icon="Edit"
           :disabled="single"
@@ -91,7 +92,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button plain type="success" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:warehouse:edit']">修改</el-button>
+          <el-button plain type="success" color="#6EDC93" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:warehouse:edit']">修改</el-button>
           <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:warehouse:remove']">删除</el-button>
         </template>
       </el-table-column>

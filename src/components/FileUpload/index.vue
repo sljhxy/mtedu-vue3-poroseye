@@ -15,7 +15,9 @@
       ref="fileUpload"
     >
       <!-- 上传按钮 -->
-      <el-button type="primary">选取文件</el-button>
+      <el-tooltip content="点击进行上传" placement="right" effect="light">
+        <el-button type="warning" size="small" round>选取文件</el-button>
+      </el-tooltip>
     </el-upload>
     <!-- 上传提示 -->
     <div class="el-upload__tip" v-if="showTip">
@@ -46,17 +48,23 @@ const props = defineProps({
   // 数量限制
   limit: {
     type: Number,
-    default: 5,
+    default: 1,
   },
   // 大小限制(MB)
   fileSize: {
     type: Number,
-    default: 5,
+    default: 50,
+  },
+  //文件后缀
+  fileSuffix:{
+    type: String,
+    default: ''
   },
   // 文件类型, 例如['png', 'jpg', 'jpeg']
   fileType: {
     type: Array,
-    default: () => ["doc", "xls", "ppt", "txt", "pdf"],
+    // default: () => ["doc", "xls", "ppt", "txt", "pdf"],
+    default: [],
   },
   // 是否显示提示
   isShowTip: {
@@ -75,6 +83,34 @@ const fileList = ref([]);
 const showTip = computed(
   () => props.isShowTip && (props.fileType || props.fileSize)
 );
+
+
+//对后缀进行判断 动态的判断上传的文件类型
+watch(() => props.fileSuffix, (newSuffix) => {
+  // debugger
+  if (newSuffix == 'ab') {
+    //验证文件名规则：命名规范：实验名_框架版本号_SDK版本号_内容版本号.assetbundle，仅限.aseetbundle扩展名，必须符合这个规则
+    props.fileType.splice(0, props.fileType.length);//先清空之前的
+    props.fileType.push('assetbundle');
+  } else if (newSuffix == 'webgl') {
+    props.fileType.splice(0, props.fileType.length);//先清空之前的
+    props.fileType.push('zip');
+  } else if (newSuffix == 'video') {
+    props.fileType.splice(0, props.fileType.length);//先清空之前的
+    //视频格式有很多种，常见的包括avi、mpeg、mp4、wmv、flv、mov、mkv、rmvb、3gp等。
+    let videoArr = ["mp4", "mpeg", "flv"]
+    videoArr.forEach(item => {
+      props.fileType.push(item);
+    });
+  } else {
+    props.fileType.splice(0, props.fileType.length);//先清空之前的
+    let fileTempArr = ["doc", "docx", "xls", "xlsx","ppt", "pptx", "txt", "pdf"]
+    fileTempArr.forEach(item => {
+      props.fileType.push(item);
+    });
+  }
+}, {immediate: true });
+
 
 watch(() => props.modelValue, val => {
   if (val) {
@@ -128,12 +164,20 @@ function handleExceed() {
 // 上传失败
 function handleUploadError(err) {
   proxy.$modal.msgError("上传文件失败");
+  // proxy.$modal.closeLoading(); // 添加此行以停止加载状态
 }
 
 // 上传成功回调
 function handleUploadSuccess(res, file) {
   if (res.code === 200) {
     uploadList.value.push({ name: res.data.url, url: res.data.url });
+
+    //计算文件大小 保留两位小数
+    let resFileSize = (res.data.fileSize / 1024 / 1024).toFixed(2);
+    res.data.fileSize = resFileSize.concat("MB");
+    //将res数据传到父组件中
+    emit("fileData", res.data);
+
     uploadedSuccessfully();
   } else {
     number.value--;
@@ -157,6 +201,7 @@ function uploadedSuccessfully() {
     uploadList.value = [];
     number.value = 0;
     emit("update:modelValue", listToString(fileList.value));
+    proxy.$modal.msgSuccess("上传成功");
     proxy.$modal.closeLoading();
   }
 }

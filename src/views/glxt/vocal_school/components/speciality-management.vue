@@ -10,12 +10,12 @@
         <div class="info-content">
           <div class="info-item">
             <span class="label">学校名称：</span>
-            <span class="value">{{ schoolInfo?.name }}-{{ schoolInfo?.id }}</span>
+            <span class="value">{{ schoolInfo?.name }}</span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
             <span class="label">学校类型：</span>
-            <span class="value">{{ schoolInfo.educationLevelName }}-{{ schoolInfo.educationLevel }}</span>
+            <span class="value">{{ schoolInfo.educationLevelName }}</span>
           </div>
           <!-- <div class="info-divider"></div> -->
           <!-- <div class="info-item">
@@ -35,7 +35,7 @@
               class="grade-tag"
               @click="handleSystemClick(system)"
             >
-              {{ system.systemName }}-{{ system.id }}
+              {{ system.systemName }}
             </el-tag>
           </div>
         </div>
@@ -89,7 +89,7 @@
             </el-table-column> -->
             <el-table-column prop="specialityAbbreviation" label="专业简称" align="center"/>
             <el-table-column prop="specialityDesc" label="专业描述" align="center"/>
-            <el-table-column label="操作" width="200" align="center">
+            <el-table-column label="操作"  align="center">
               <template #default="scope">
                 <el-button type="primary" link @click="editSpeciality(scope.row)" v-permission="['glxt:speciality:edit']">
                   <el-icon><Edit /></el-icon>编辑
@@ -143,6 +143,15 @@
     >
       <el-form :model="specialityForm" label-width="80px" :rules="rules" ref="specialityFormRef">
         
+        <el-form-item label="系" prop="vocalEduSystemId">
+          <el-select v-model="specialityForm.vocalEduSystemId" placeholder="请选择系" class="w-full" disabled>
+            <el-option
+              v-for="system in systems"
+              :key="system.id"
+              :label="system.systemName"
+              :value="system.id"/>
+          </el-select>
+        </el-form-item>
         <el-form-item label="学段" prop="schoolPeriod">
           <el-select v-model="specialityForm.schoolPeriod" placeholder="请选择学段" clearable>
               <el-option v-for="item in mt_vocal_education_type" :key="item.value" :label="item.label" :value="item.value" />
@@ -151,15 +160,6 @@
         <el-form-item label="学制" prop="schoolYear">
           <el-select v-model="specialityForm.schoolYear" placeholder="请选择学制" clearable>
               <el-option v-for="item in mt_vocal_education_system_type" :key="item.value" :label="item.label" :value="item.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="系" prop="vocalEduSystemId">
-          <el-select v-model="specialityForm.vocalEduSystemId" placeholder="请选择系" class="w-full" disabled>
-            <el-option
-              v-for="system in systems"
-              :key="system.id"
-              :label="system.systemName"
-              :value="system.id"/>
           </el-select>
         </el-form-item>
         <el-form-item label="专业名称" prop="specialityName">
@@ -200,12 +200,6 @@ const { proxy } = getCurrentInstance();
 // 专业字典引入
 const { mt_vocal_speciality_type, mt_vocal_education_type, mt_vocal_education_system_type} = proxy.useDict('mt_vocal_speciality_type', 'mt_vocal_education_type', 'mt_vocal_education_system_type');
 
-//获取专业
-const getSpecialityDictLabel = (specialityType) => {
-  if (!specialityType || !mt_vocal_speciality_type.value) return '';
-  const res = mt_vocal_speciality_type.value.find(item => item.value === specialityType);
-  return res ? res.label : '';
-}
 
 
 //获取学段

@@ -6,19 +6,18 @@
         <!-- 学校基本信息 -->
         <div class="card-header">
           <div class="school-title">
-            <img :src="formData.logo || '/path/to/default-logo.png'" class="school-logo" />
+            <img :src="formEditData.logo || '/path/to/default-logo.png'" class="school-logo" />
             <div class="title-content">
               <div class="title-row">
-                <h3>{{ formData.schoolName }}</h3>
+                <h3>{{ formEditData.schoolName }}</h3>
                 <el-button type="primary" link class="edit-btn" @click="handleEdit(schoolId)">
                   <el-icon><Edit /></el-icon>
                   编辑学校信息
                 </el-button>
               </div>
-              <span class="status-tag" :class="{ 'active': Boolean(formData.isActive) }">
-                {{ Boolean(formData.isActive) ? '已生效' : '未生效' }}
+              <span class="status-tag" :class="{ 'active': formEditData.isActive }">
+                {{ Boolean(formEditData.isActive) ? '已生效' : '未生效' }}
               </span>
-              {{ formData.isActive }}
             </div>
           </div>
         </div>
@@ -34,14 +33,11 @@
             <div class="info-content">
               <div class="info-item">
                 <label>所在地区：</label>
-                <span>{{ getLocationLabel(formData.province) }}-{{ getLocationLabel(formData.city) }}-{{ getLocationLabel(formData.district) }}</span>
+                <span>{{ getLocationLabel(formEditData.province) }}-{{ getLocationLabel(formEditData.city) }}-{{ getLocationLabel(formEditData.district) }}</span>
               </div>
-              {{ formData.province }}
-              {{ formData.city }}
-              {{ formData.district }}
               <div class="info-item">
                 <label>详细地址：</label>
-                <span>{{ formData.detailAddress }}</span>
+                <span>{{ formEditData.detailAddress }}</span>
               </div>
             </div>
           </div>
@@ -55,15 +51,15 @@
             <div class="info-content">
               <div class="info-item">
                 <label>联系人：</label>
-                <span>{{ formData.contactName }}</span>
+                <span>{{ formEditData.contactName }}</span>
               </div>
               <div class="info-item">
                 <label>联系电话：</label>
-                <span>{{ formData.contactPhone }}</span>
+                <span>{{ formEditData.contactPhone }}</span>
               </div>
               <div class="info-item">
                 <label>学校网址：</label>
-                <span>{{ formData.website }}</span>
+                <span>{{ formEditData.website }}</span>
               </div>
             </div>
           </div>
@@ -77,15 +73,21 @@
             <div class="info-content">
               <div class="info-item">
                 <label>类型：</label>
-                <span>{{ getBaseEducationType(formData.educationLevel) }}</span>
+                <span>
+                  <dict-tag :options="mt_school_type" :value="formEditData.educationLevel"/>
+                </span>
               </div>
               <div class="info-item">
                 <label>学段：</label>
-                <span>{{ getSchoolType(formData.schoolType) }}</span>
+                <span>
+                  <dict-tag :options="mt_academic_stage" :value="formEditData.schoolType"/>
+                </span>
               </div>
               <div class="info-item">
                 <label>学制：</label>
-                <span>{{ getSchoolSystem(formData.schoolSystem) }}</span>
+                <span>
+                  <dict-tag :options="mt_base_education_type" :value="formEditData.schoolSystem"/>
+                </span>
               </div>
             </div>
           </div>
@@ -130,19 +132,7 @@
           </div>
           <div class="form-content">
             <el-form-item label="学校logo:" class="logo-item">
-              <el-upload
-                class="avatar-uploader"
-                action="/api/upload"
-                :show-file-list="false"
-                :on-success="handleLogoSuccess"
-                :before-upload="beforeLogoUpload"
-              >
-                <img v-if="formData.logo" :src="formData.logo" class="avatar" />
-                <div v-else class="upload-placeholder">
-                  <el-icon><Plus /></el-icon>
-                  <span>上传logo</span>
-                </div>
-              </el-upload>
+              <image-upload v-model="formData.logo"/>
             </el-form-item>
             <el-form-item label="学校名称:" prop="schoolName">
               <el-input v-model="formData.schoolName" placeholder="请输入学校名称"  @input="generate(formData.schoolName)"/>
@@ -278,11 +268,10 @@ const router = useRouter()
 import { getAreaTree } from "@/api/glxt/area";
 
 //引入学校相关接口
-import { listSchool, addSchool, updateSchool, getSchool, delSchool, generateLetter, checkSchool} from "@/api/glxt/base_school";
-import { id } from 'element-plus/es/locales.mjs';
+import { baseListSchool, addSchool, updateSchool, getSchool, delSchool, generateLetter, checkSchool} from "@/api/glxt/base_school";
 // 添加路由相关引入
 import { useRoute } from 'vue-router'
-import { get } from '@vueuse/core';
+
 const route = useRoute()
 const emit = defineEmits(['next-step'])
 const schoolForm = ref(null)
@@ -508,6 +497,8 @@ function reset() {
 // 添加编辑状态标识
 const isEdit = ref(false)
 
+//编辑查看的数据
+const formEditData = ref({})
 // 修改编辑按钮处理函数
 const handleEdit = async (id) => {
   reset();//表单重置
@@ -520,7 +511,7 @@ const handleEdit = async (id) => {
     const response = await getSchool(id);
     formData.value = {
       ...response.data,
-      isActive: Boolean(response.data.isActive),
+      isActive: response.data.isActive === 'true' || response.data.isActive === true,
       educationLevel: '1',  // 固定为普教
       schoolType: response.data.schoolType.toString(),
       schoolSystem: response.data.schoolSystem.toString(),
@@ -529,6 +520,8 @@ const handleEdit = async (id) => {
       city: response.data.city,
       district: response.data.district,
     };
+
+    formEditData.value = {...formData.value}
 
     // 设置编辑状态
     isEdit.value = true;
@@ -620,15 +613,16 @@ const getSchoolData = async (id) => {
   try {
     const response = await getSchool(id);
     formData.value = {...response.data};
-    console.log(response.data)
-    console.log(formData.value)
-    console.log(response.data.isActive)
-    formData.value.isActive = Boolean(response.data.isActive);
+    // 确保 isActive 是布尔值
+    formData.value.isActive = response.data.isActive === 'true' || response.data.isActive === true;
+    
     // 添加空值检查
     formData.value.schoolTypeName = response.data.schoolType ? getSchoolType(response.data.schoolType) : '';
     formData.value.schoolSystemName = response.data.schoolSystem ? getSchoolSystem(response.data.schoolSystem) : '';
     formData.value.educationLevelName = response.data.educationLevel ? getBaseEducationType(response.data.educationLevel) : '';
 
+    console.log('formData.value:', formData.value);
+    formEditData.value = {...formData.value}
   } catch (error) {
     ElMessage.error('获取学校数据失败');
   }

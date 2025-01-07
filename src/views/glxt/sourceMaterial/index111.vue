@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="学校类型" prop="contentType">
-        <el-select v-model="queryParams.contentType" placeholder="请选择" style="width: 100px;" clearable  @change="schoolTypeChange">
+        <el-select v-model="queryParams.contentType" placeholder="请选择学校类型" clearable>
           <el-option
             v-for="dict in mt_school_type"
             :key="dict.value"
@@ -12,19 +12,9 @@
         </el-select>
       </el-form-item>
       <el-form-item label="学段" prop="periodType">
-        <el-select v-model="queryParams.periodType" placeholder="请选择" style="width: 150px;" clearable>
+        <el-select v-model="queryParams.periodType" placeholder="请选择学段" clearable>
           <el-option
-            v-for="dict in educationStage.value"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="素材类别" prop="sourceType">
-        <el-select v-model="queryParams.sourceType" style="width: 100px;" placeholder="请选择" clearable>
-          <el-option
-            v-for="dict in mt_source_material_type"
+            v-for="dict in mt_academic_stage"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -36,18 +26,27 @@
           v-model="queryParams.fileName"
           placeholder="请输入文件名称"
           clearable
-          @input="handleQuery"
+          @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <!-- <el-form-item label="文件类型" prop="fileType">
+      <el-form-item label="文件类型" prop="fileType">
         <el-input
           v-model="queryParams.fileType"
           placeholder="请输入文件类型"
           clearable
           @keyup.enter="handleQuery"
         />
-      </el-form-item> -->
-  
+      </el-form-item>
+      <el-form-item label="素材类别" prop="sourceType">
+        <el-select v-model="queryParams.sourceType" placeholder="请选择素材类别" clearable>
+          <el-option
+            v-for="dict in mt_source_material_type"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -67,7 +66,6 @@
       <el-col :span="1.5">
         <el-button
           type="success"
-          color="#6EDC93"
           plain
           icon="Edit"
           :disabled="single"
@@ -99,7 +97,7 @@
 
     <el-table v-loading="loading" :data="sourceMaterialList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="序号" width="55" type="index" align="center" />
+      <el-table-column label="主键id" align="center" prop="id" />
       <el-table-column label="学校类型" align="center" prop="contentType">
         <template #default="scope">
           <dict-tag :options="mt_school_type" :value="scope.row.contentType"/>
@@ -107,11 +105,11 @@
       </el-table-column>
       <el-table-column label="学段" align="center" prop="periodType">
         <template #default="scope">
-          <dict-tag :options="scope.row.contentType == '1' ? mt_academic_stage : mt_vocal_education_type" :value="scope.row.periodType"/>
+          <dict-tag :options="mt_academic_stage" :value="scope.row.periodType"/>
         </template>
       </el-table-column>
       <el-table-column label="文件名称" align="center" prop="fileName" />
-      <!-- <el-table-column label="文件URL" align="center" prop="fileUrl" /> -->
+      <el-table-column label="文件URL" align="center" prop="fileUrl" />
       <el-table-column label="文件类型" align="center" prop="fileType" />
       <el-table-column label="素材类别" align="center" prop="sourceType">
         <template #default="scope">
@@ -119,11 +117,11 @@
         </template>
       </el-table-column>
       <el-table-column label="来源说明" align="center" prop="sourceDesc" />
-      <!-- <el-table-column label="是否选择" align="center" prop="isSelect" /> -->
+      <el-table-column label="是否选择 0否1是默认未选择" align="center" prop="isSelect" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button plain type="success" icon="Edit" color="#6EDC93" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:sourceMaterial:edit']">修改</el-button>
-          <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:sourceMaterial:remove']">删除</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:sourceMaterial:edit']">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:sourceMaterial:remove']">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -133,55 +131,59 @@
       :total="total"
       v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize"
-      @pagination="getList"/>
+      @pagination="getList"
+    />
 
     <!-- 添加或修改素材对话框 -->
-    <el-dialog :title="title" v-model="open" width="800px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="sourceMaterialRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="素材" prop="fileUrl">
-          <file-upload v-model="form.fileUrl" @fileData="fileSuccessData"/>
-        </el-form-item>
-        <el-form-item label="类型" prop="contentType">
-          <el-radio-group v-model="form.contentType" >
-            <el-radio
-              @change="schoolTypeChange(dict.value)"
+        <el-form-item label="学校类型" prop="contentType">
+          <el-select v-model="form.contentType" placeholder="请选择学校类型">
+            <el-option
               v-for="dict in mt_school_type"
               :key="dict.value"
+              :label="dict.label"
               :value="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
+            ></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="学段" prop="periodType">
-          <el-radio-group v-model="form.periodType">
-            <el-radio
-              v-for="dict in educationStage.value"
+          <el-select v-model="form.periodType" placeholder="请选择学段">
+            <el-option
+              v-for="dict in mt_academic_stage"
               :key="dict.value"
+              :label="dict.label"
               :value="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
+            ></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="文件名称" prop="fileName">
-          <el-input v-model="form.fileName" placeholder="请输入文件名称" disabled/>
+          <el-input v-model="form.fileName" placeholder="请输入文件名称" />
         </el-form-item>
-        <el-form-item label="文件路径" prop="fileUrl">
-          <el-input v-model="form.fileUrl" placeholder="请输入文件URL" disabled/>
+        <el-form-item label="文件URL" prop="fileUrl">
+          <el-input v-model="form.fileUrl" placeholder="请输入文件URL" />
         </el-form-item>
         <el-form-item label="文件类型" prop="fileType">
-          <el-input v-model="form.fileType" placeholder="请输入文件类型" disabled/>
+          <el-input v-model="form.fileType" placeholder="请输入文件类型" />
         </el-form-item>
-        <el-form-item label="文件类别" prop="sourceType">
-          <el-radio-group v-model="form.sourceType">
-            <el-radio
+        <el-form-item label="素材类别" prop="sourceType">
+          <el-select v-model="form.sourceType" placeholder="请选择素材类别">
+            <el-option
               v-for="dict in mt_source_material_type"
               :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
+              :label="dict.label"
+              :value="dict.value"
+            ></el-option>
+          </el-select>
         </el-form-item>
         <el-form-item label="来源说明" prop="sourceDesc">
           <el-input v-model="form.sourceDesc" placeholder="请输入来源说明" />
+        </el-form-item>
+        <el-form-item label="是否选择 0否1是默认未选择" prop="isSelect">
+          <el-input v-model="form.isSelect" placeholder="请输入是否选择 0否1是默认未选择" />
+        </el-form-item>
+        <el-form-item label="逻辑删除字段" prop="delFlag">
+          <el-input v-model="form.delFlag" placeholder="请输入逻辑删除字段" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -196,8 +198,9 @@
 
 <script setup name="SourceMaterial">
 import { listSourceMaterial, getSourceMaterial, delSourceMaterial, addSourceMaterial, updateSourceMaterial } from "@/api/glxt/sourceMaterial";
+
 const { proxy } = getCurrentInstance();
-const { mt_academic_stage, mt_source_material_type, mt_school_type, mt_vocal_education_type } = proxy.useDict('mt_academic_stage', 'mt_source_material_type', 'mt_school_type','mt_vocal_education_type');
+const { mt_academic_stage, mt_source_material_type, mt_school_type } = proxy.useDict('mt_academic_stage', 'mt_source_material_type', 'mt_school_type');
 
 const sourceMaterialList = ref([]);
 const open = ref(false);
@@ -243,30 +246,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-//接收到子组件的数据
-const fileSuccessData = (data) => {
-  
-  form.value.fileName = data.name
-  form.value.fileUrl = data.url
-  form.value.fileType = data.name.split(".")[1]
-
-}
-
-//学段
-const educationStage = ref([])
-
-//学校类型改变时，学段改变
-const schoolTypeChange = (value) => {
-  //清空学段的数据
-    form.value.periodType = '1'
-    if(value == '1'){
-        educationStage.value = mt_academic_stage
-    }else{
-        educationStage.value = mt_vocal_education_type
-    }
-}
-
 
 /** 查询素材列表 */
 function getList() {
@@ -327,8 +306,6 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset();
-  form.value.contentType = '1'//默认学校为普教
-  schoolTypeChange('1')//调用普教下的学段
   open.value = true;
   title.value = "添加素材";
 }
@@ -368,7 +345,7 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.confirm('是否确认删除？').then(function() {
+  proxy.$modal.confirm('是否确认删除素材编号为"' + _ids + '"的数据项？').then(function() {
     return delSourceMaterial(_ids);
   }).then(() => {
     getList();

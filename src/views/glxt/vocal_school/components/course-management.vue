@@ -29,16 +29,49 @@
         </div>
         <div class="grade-section">
           <div class="grade-header">
-            <span class="label">年级列表</span>
+            <span class="label">专业列表</span>
           </div>
           <div class="grade-tags">
             <el-tag
-              v-for="grade in grades"
-              :key="grade.id"
-              :type="currentGrade?.name === grade.name ? 'primary' : 'info'"
+              size="small"
+              v-for="speciality in specialities"
+              :key="speciality.id"
+              :type="currentSpeciality?.specialityName === speciality.specialityName ? 'primary' : 'info'"
               class="grade-tag"
-              @click="handleGradeClick(grade)">
-              {{ grade.name }}
+              @click="handleSpecialityClick(speciality)"
+            >
+              {{ speciality.specialityName }}
+            </el-tag>
+          </div>
+        </div>
+
+        <!-- 添加年级列表部分 -->
+        <div class="grade-section" v-if="currentSpeciality">
+          <div class="grade-header">
+            <div class="header-left">
+              <span class="label">年级列表</span>
+            </div>
+            <div class="current-specialty">
+              <el-tag 
+                size="small"
+                type="primary" 
+                effect="success" 
+                class="specialty-indicator" round
+              >
+                当前专业：{{ currentSpeciality.specialityName }}
+              </el-tag>
+            </div>
+          </div>
+          <div class="grade-tags">
+            <el-tag
+              size="small"
+              v-for="grade in filteredGrades"
+              :key="grade.id"
+              :type="currentGrade?.gradeName === grade.gradeName ? 'success' : 'info'"
+              class="grade-tag"
+              @click="handleGradeClick(grade)"
+            >
+              {{ grade.gradeName }}
             </el-tag>
           </div>
         </div>
@@ -74,7 +107,7 @@
         <div class="table-container">
           <el-table :data="courseList" style="width: 100%" v-loading="loading" element-loading-text="Loading..."> 
             <el-table-column prop="gradeName" label="年级" align="center">
-              {{ currentGrade?.name }}
+              {{ currentGrade?.gradeName }}
             </el-table-column>
             <!-- <el-table-column prop="enrollmentYear" label="入学时间" align="center"/> -->
             <el-table-column prop="name" label="科目" align="center"/>
@@ -130,12 +163,22 @@
       destroy-on-close
     >
       <el-form :model="courseForm" label-width="100px" v-loading="loading" :rules="rules" ref="courseFormRef">
-        <el-form-item label="年级" prop="gradeId">
-          <el-select v-model="courseForm.gradeId" placeholder="请选择年级" class="w-full" disabled>
+        <el-form-item label="专业" prop="vocalEduSpecialityId">
+          <el-select v-model="courseForm.vocalEduSpecialityId" placeholder="请选择专业" class="w-full" disabled>
             <el-option
-              v-for="grade in grades"
-              :key="grade.name"
-              :label="grade.name"
+              v-for="speciality in specialities"
+              :key="speciality.id"
+              :label="speciality.specialityName"
+              :value="speciality.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="年级" prop="vocalEduGradeId">
+          <el-select v-model="courseForm.vocalEduGradeId" placeholder="请选择年级" class="w-full" disabled>
+            <el-option
+              v-for="grade in filteredGrades"
+              :key="grade.id"
+              :label="grade.gradeName"
               :value="grade.id"
             />
           </el-select>
@@ -143,7 +186,7 @@
         <!-- <el-form-item label="入学时间" prop="enrollmentYear">
           <el-input v-model="courseForm.enrollmentYear" disabled />
         </el-form-item> -->
-        <el-form-item label="科目" prop="subject">
+        <el-form-item label="科目" prop="subjectId">
           <el-select v-model="courseForm.subjectId" placeholder="请选择科目" class="w-full">
             <el-option
               v-for="item in subjectOptions"
@@ -153,7 +196,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="课程体系" required>
+        <el-form-item label="课程体系" prop="courseSystems" required>
           <el-cascader
             v-model="courseForm.courseSystems"
             :options="courseSystemOptions"
@@ -212,12 +255,17 @@
 <script setup>
 import { ref, reactive, watch, computed } from 'vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
-import { listCourse, addCourse, updateCourse, delCourse, getCourse } from '@/api/glxt/base_course'
+import { listVocalCourse, addVocalCourse, updateVocalCourse, delVocalCourse, getVocalCourse } from '@/api/glxt/vocal_course'
 import { initSubject, getCourseSystemOptions } from '@/api/glxt/subject'
 const { proxy } = getCurrentInstance();
 const { mt_school_subject } = proxy.useDict('mt_school_subject');
 //获取教材版本
 import {getLibrary, getVolumeDetail } from '@/api/glxt/library';
+
+//引入年级api
+import { listVocalGrade } from '@/api/glxt/vocal_grade'
+
+const currentSpeciality = ref(null)
 const loading = ref(false);
 const props = defineProps({
   grades: {
@@ -230,11 +278,16 @@ const props = defineProps({
     required: true,
     default: () => ({})
   },
-  classList: {
-    type: Array,
-    required: true,
-    default: () => []
-  }
+  // classList: {
+  //   type: Array,
+  //   required: true,
+  //   default: () => []
+  // },
+  specialities: {//专业列表
+      type: Array,
+      required: true,
+      default: () => []
+    },
 })
 
 const currentGrade = ref(null)
@@ -245,8 +298,8 @@ const courseFormRef = ref(null)
 
 // 表单校验规则
 const rules = {
-  // subject: [{ required: true, message: '请选择科目', trigger: 'change' }],
-  // textbookSubject: [{ required: true, message: '请选择科目', trigger: 'change' }],
+  subjectId: [{ required: true, message: '请选择科目', trigger: 'blur' }],
+  courseSystems: [{ required: true, message: '请选择课程体系', trigger: 'blur' }],
   // textbookVersion: [{ required: true, message: '请选择教材版本', trigger: 'change' }],
   // textbookVolume: [{ required: true, message: '请选择分册', trigger: 'change' }],
   // teacher: [{ required: true, message: '请选择任课教师', trigger: 'change' }]
@@ -259,9 +312,9 @@ const courseList = ref([]);
 const queryParams = ref({
   pageNum: 1,
   pageSize: 10,
-  gradeId: '',
+  vocalEduGradeId: '',
   name: '',
-  schoolId: props.schoolInfo.id,//学校id
+  schoolId: '',//学校id
   schoolType: props.schoolInfo.educationLevel,//学校类型
 });
 
@@ -269,7 +322,8 @@ const courseForm = ref({
   id: null,
   schoolId: props.schoolInfo.id,
   schoolType: props.schoolInfo.educationLevel,//学校类型
-  gradeId: '',
+  vocalEduGradeId: '',
+  vocalEduSpecialityId:'',
   subjectId: '',
   name: '',
   courseSystems: [[]],
@@ -278,11 +332,74 @@ const courseForm = ref({
 const reset = () => {
   courseForm.value = {
     id: null,
-    gradeId: currentGrade.value.id,
     subjectId: null,
+    vocalEduGradeId: null,
+    vocalEduSpecialityId: null,
     name: null,
     courseSystems: [[]],
   }
+}
+
+
+//专业下 的年级列表
+const filteredGrades = ref([])
+//根据专业获取年级
+const getGradesBySpeciality = (params) => {
+  listVocalGrade(params).then(response => {
+    if(response.code == 200){
+      filteredGrades.value = response.rows
+      if (filteredGrades.value.length === 0) {
+        ElMessage.warning(`${speciality.specialityName}专业下暂无年级数据`)
+      }
+    }else{
+      ElMessage.error('获取年级数据失败')
+    }
+  })
+}
+
+// 处理专业点击
+const handleSpecialityClick = (speciality) => {
+  currentSpeciality.value = speciality
+  currentGrade.value = null // 清空当前选中的年级
+  // classList.value = [] // 清空班级列表
+  let params = {
+    pageNum: 1,
+    pageSize: 1000000,
+    vocalEduSpecialityId: speciality.id
+  }
+  getGradesBySpeciality(params)
+  
+}
+
+// 初始化时默认选中第一个专业
+const initDefaultSpeciality = () => {
+  if (props.specialities && props.specialities.length > 0) {
+    handleSpecialityClick(props.specialities[0])
+  }
+}
+
+// 监听专业数据变化
+watch(() => props.specialities, (newSpecialities) => {
+  if (newSpecialities && newSpecialities.length > 0) {
+    initDefaultSpeciality()
+  }
+}, { immediate: true })
+
+
+// 添加年级点击处理函数
+const handleGradeClick = (grade) => {
+  currentGrade.value = grade
+  // 获取该年级下的班级列表
+  queryParams.value = {
+    ...queryParams.value,
+    schoolId: props.schoolInfo.id,
+    schoolType: props.schoolInfo.educationLevel,
+    vocalEduGradeId: currentGrade.value.id,
+    vocalEduSpecialityId: currentSpeciality.value.id,
+    pageNum: 1
+  }
+  getList(queryParams.value)
+  ElMessage.success(`已切换到${currentGrade.value.gradeName}课程列表`)
 }
 
 
@@ -301,16 +418,6 @@ const handleSizeChange = (val) => {
 }
 
 
-// 修改 handleGradeClick 函数
-const handleGradeClick = (grade) => {
-  currentGrade.value = grade
-  
-  getCoursesByGrade(grade);
-
-  ElMessage.success(`已切换到${grade.name}课程列表`)
-
-}
-
 
 // 根据年级id获取班级列表的方法，添加分页逻辑
 const getCoursesByGrade = (grade) => {
@@ -323,7 +430,7 @@ const getCoursesByGrade = (grade) => {
 // 获取课程列表
 const getList = (params) => {
   loading.value = true;
-  listCourse(params).then(response => {
+  listVocalCourse(params).then(response => {
     courseList.value = response.rows;
     total.value = response.total;
     loading.value = false;
@@ -348,7 +455,7 @@ watch(queryParams.value.name, () => {
 const subjectOptions = ref([])
 const initSubjectList = () => {
   try{
-    initSubject({schoolType: '1'}).then(response => {
+    initSubject({schoolType: '2'}).then(response => {
       if(response.code == 200){
         subjectOptions.value = response.rows
         //获取科目名称
@@ -367,20 +474,28 @@ const getSubjectName = (subjectType) => {
   return mt_school_subject.value ?.find(item => item.value === subjectType).label
 }
 
-// 修改 addCourse 函数
+// 修改 addVocalCourse 函数
 const clickAddCourse = () => {
-   //重置表单
-  reset();
-  //调用初始化科目下拉列表
-  initSubjectList();
-  //获取挂载课程
-  getCourseSystemOptionList(props.schoolInfo.educationLevel, props.schoolInfo.schoolType);
-
-  if (!currentGrade.value) {
-    ElMessage.warning('请先选择年级')
+    // 检查是否选择了专业
+    if (!currentSpeciality.value) {
+    ElMessage.warning('请先选择专业')
     return
   }
   
+  if(filteredGrades.value.length === 0){
+    ElMessage.warning('当前专业下暂无年级数据，请先添加年级')
+    return
+  }
+   //重置表单
+  reset();
+  // 给专业和年级赋值
+  courseForm.value.vocalEduSpecialityId = currentSpeciality.value.id;
+  courseForm.value.vocalEduGradeId = currentGrade.value.id;
+  //调用初始化科目下拉列表
+  initSubjectList();
+  //获取挂载课程 schoolPeriod
+  getCourseSystemOptionList(props.schoolInfo.educationLevel, currentSpeciality.value.schoolPeriod);
+
   dialogType.value = 'add'
   dialogVisible.value = true
 }
@@ -392,10 +507,10 @@ const editCourse = (row) => {
    //调用初始化科目下拉列表
   initSubjectList();
   //获取挂载课程  学校类型   学段
-  getCourseSystemOptionList(props.schoolInfo.educationLevel, props.schoolInfo.schoolType);
+  getCourseSystemOptionList(props.schoolInfo.educationLevel, currentSpeciality.value.schoolPeriod);
   dialogType.value = 'edit'
   //获取课程信息
-  getCourse(row.id, props.schoolInfo.id, props.schoolInfo.educationLevel).then(response => {
+  getVocalCourse(row.id, props.schoolInfo.id, props.schoolInfo.educationLevel).then(response => {
     courseForm.value = response.data
     //开启弹框
     dialogVisible.value = true
@@ -411,7 +526,7 @@ const deleteCourse = (row) => {
     type: 'warning'
   }).then(() => {
     loading.value = true
-    delCourse(row.id).then(response => {
+    delVocalCourse(row.id).then(response => {
       if(response.code == 200){
         ElMessage.success('删除成功')
         getCoursesByGrade(currentGrade.value)
@@ -431,12 +546,12 @@ const cancel = () => {
 
 // 修改 saveCourse 函数
 const saveCourse = () => {
-  if (!courseFormRef.value) return
+  // if (!courseFormRef.value) return
   try{
     courseFormRef.value.validate((valid) => {
     if (valid) {
       if (courseForm.value.id != null) {
-        updateCourse(courseForm.value).then(response => {
+        updateVocalCourse(courseForm.value).then(response => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("修改成功");
             queryParams.value.gradeId = courseForm.value.gradeId
@@ -449,7 +564,7 @@ const saveCourse = () => {
         courseForm.value.name = name;
         courseForm.value.schoolId = props.schoolInfo.id;
         courseForm.value.schoolType = props.schoolInfo.educationLevel;
-        addCourse(courseForm.value).then(response => {
+        addVocalCourse(courseForm.value).then(response => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("新增成功");
             queryParams.value.gradeId = courseForm.value.gradeId
@@ -494,17 +609,6 @@ const handleNextStep = () => {
   }
   emit('next-step', courseList.value)
 }
-
-// 学段文本转换方法
-const getEducationLevelText = (level) => {
-  const levelMap = {
-    primary: '小学',
-    junior: '初中',
-    senior: '高中'
-  }
-  return levelMap[level] || level
-}
-
 
 
 const courseSystemOptions = ref([])
@@ -727,13 +831,16 @@ const handleCourseSystemChange = (values) => {
 
 
 .grade-section {
-  margin-top: 20px;
-  padding: 20px;
+  padding: 0 20px 20px;
   border-top: 1px solid #ebeef5;
+  margin: 0 20px;
 }
 
 .grade-header {
-  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
 }
 
 .grade-header .label {
@@ -1140,4 +1247,9 @@ const handleCourseSystemChange = (values) => {
 .content-wrapper {
   padding-bottom: 100px;
 }
+
+.current-specialty {
+  margin-left: auto;
+}
+
 </style> 

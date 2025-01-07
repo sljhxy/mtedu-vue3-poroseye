@@ -1,18 +1,20 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="知识点" prop="knowledge">
-        <el-input
-          v-model="queryParams.knowledge"
-          placeholder="请输入知识点"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="58px">
       <el-form-item label="类型" prop="schoolTypeId">
         <el-select v-model="queryParams.schoolTypeId" placeholder="请选择类型" @change="handleSchoolTypeChange" style="width: 130px" clearable>
           <el-option
             v-for="dict in mt_school_type"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="学段" prop="academicStageId">
+        <el-select v-model="queryParams.academicStageId" placeholder="请选择学段" style="width: 130px" clearable>
+          <el-option
+            v-for="dict in academicStageOptions"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -28,15 +30,13 @@
             :value="subject.subjectType"/>
         </el-select>
       </el-form-item>
-      <el-form-item label="学段" prop="academicStageId">
-        <el-select v-model="queryParams.academicStageId" placeholder="请选择学段" style="width: 130px" clearable>
-          <el-option
-            v-for="dict in academicStageOptions"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
+      <el-form-item label="知识点" prop="knowledge">
+        <el-input
+          v-model="queryParams.knowledge"
+          placeholder="请输入知识点"
+          clearable
+          @keyup.enter="handleQuery"
+        />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -82,10 +82,10 @@
         <template #default="scope">
           <span class="knowledge-label">
             <el-icon v-if="scope.row.children && scope.row.children.length > 0">
-              <Folder />
+              <Notebook />
             </el-icon>
             <el-icon v-else>
-              <Document />
+              <Collection />
             </el-icon>
             {{ scope.row.knowledge }}
           </span>
@@ -98,16 +98,17 @@
       </el-table-column>
       <el-table-column label="学段" align="center" width="150">
         <template #default="scope">
-          {{ getStageName(scope.row.academicStageId) }}
+          <dict-tag :options="mt_academic_stage" :value="scope.row.academicStageId"/>
         </template>
-      </el-table-column>  <el-table-column label="科目" align="center" width="150">
+      </el-table-column> 
+      <el-table-column label="科目" align="center" width="150">
         <template #default="scope">
-          {{ getSubjectName(scope.row.subjectId) }}
+          <dict-tag :options="mt_school_subject" :value="scope.row.subjectId"/>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="450">
         <template #default="scope">
-          <el-button plain type="success" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:knowledge:edit']">修改</el-button>
+          <el-button plain type="success" color="#6EDC93" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:knowledge:edit']">修改</el-button>
           <el-button plain type="primary" icon="Plus" @click="handleAdd(scope.row,2)" v-hasPermi="['glxt:knowledge:add']">新增子节点</el-button>
           <el-button 
             plain 
@@ -121,13 +122,13 @@
       </el-table-column>
     </el-table>
 
-    <pagination
+    <!-- <pagination
       v-show="total>0"
       :total="total"
       v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
-    />
+    /> -->
 
 
     <!-- 添加或修改知识点对话框 -->
@@ -145,7 +146,6 @@
             v-model="form.schoolTypeId" 
             placeholder="请选择类型" 
             style="width: 100%"
-            :disabled="form.parentId !== 0"
             @change="handleSchoolTypeChange"
           >
             <el-option
@@ -162,8 +162,7 @@
                 v-model="form.academicStageId" 
                 placeholder="请选择学段" 
                 style="width: 100%"
-                :disabled="form.parentId !== 0"
-              >
+                >
                 <el-option
                   v-for="item in academicStageOptions"
                   :key="item.value"
@@ -189,9 +188,10 @@
                 value-key="id"
                 placeholder="不选择则为顶级知识点"
                 check-strictly
-                :disabled="operateType == 1"
+                disabled
                 clearable
               />
+              <!-- :disabled="operateType == 1" -->
           </el-form-item>
             <el-form-item label="知识点名称" prop="knowledge">
           <el-input 
@@ -226,7 +226,7 @@ const open = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
 const title = ref("");
-const isExpandAll = ref(true);
+const isExpandAll = ref(false);//默认不展开
 const refreshTable = ref(true);
 const subjectOptions = ref([]);  // 科目选项
 const stageOptions = ref([]);    // 学段选项
@@ -271,7 +271,6 @@ function handleSchoolTypeChange(value) {
   //点击新增按钮进行清空
   form.value.academicStageId = null;
   form.value.subjectId = null;
-  console.log(value);
   if(value == 1){//普教
     academicStageOptions.value = mt_academic_stage.value;
     getSubjectList(value);
@@ -295,7 +294,6 @@ function getSubjectList(schoolType){
     subjectOptions.value = subjectOptions.value.filter((item, index, self) => {
       return self.findIndex(t => t.schoolType === item.schoolType && t.subjectType === item.subjectType) === index;
     });
-    console.log(subjectOptions.value);
   });
 }
 
@@ -305,14 +303,6 @@ const getSubjectName = (subjectType) => {
   const found = mt_school_subject.value.find(item => item.value === subjectType.toString());
   return found ? found.label : '';
 }
-
-//获取学段名称
-const getStageName = (stageId) => {
-  if (!stageId || !mt_academic_stage.value) return '';
-  const found = mt_academic_stage.value.find(item => item.value === stageId.toString());
-  return found ? found.label : '';
-}
-
 
 /** 查询知识点列表 */
 function getList() {
@@ -381,12 +371,8 @@ function handleAdd(row, type) {
   //用与禁止父级节点的类型
   operateType.value = type;
   //给学段赋值
-  if(row.schoolTypeId == 1){//普教
-    console.log(mt_academic_stage.value);
-    form.value.academicStageId = mt_academic_stage.value;
-  } else {//职教
-    console.log(mt_vocal_education_type.value + '职教');
-    form.value.academicStageId = mt_vocal_education_type.value;
+  if(type == 2){//新增子节点的时候
+    handleSchoolTypeChange(row.schoolTypeId)
   }
   reset();
   getTreeselect();
@@ -415,14 +401,8 @@ function toggleExpandAll() {
 
 /** 修改按钮操作 */
 async function handleUpdate(row) {
-    //给学段赋值
-    if(row.schoolTypeId == 1){//普教
-    console.log(mt_academic_stage.value);
-    form.value.academicStageId = mt_academic_stage.value;
-  } else {//职教
-    console.log(mt_vocal_education_type.value + '职教');
-    form.value.academicStageId = mt_vocal_education_type.value;
-  }
+  //回显学段
+  handleSchoolTypeChange(row.schoolTypeId)
   reset();
   await Promise.all([getTreeselect(), getSubjectList(row.schoolTypeId)]);
   if (row != null) {

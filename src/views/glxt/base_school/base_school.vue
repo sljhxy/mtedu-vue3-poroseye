@@ -71,14 +71,14 @@
       <el-table-column prop="status" label="生效" width="80" align="center">
         <template #default="{ row }">
           <el-tag :type="row.isActive == 'true' ? 'success' : 'info'" size="small">
-            {{ row.isActive == 'true' ? '生效' : '未生效' }}
+            {{ row.isActive == 'true' ? '已生效' : '未生效' }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" min-width="180">
         <template #default="scope">
           <div class="operation-buttons">
-          <el-button plain type="success" icon="Edit" @click="handleEdit(scope.row)">修改</el-button>
+          <el-button plain type="success" icon="Edit" color="#6EDC93" @click="handleEdit(scope.row)">修改</el-button>
           <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
         </div>
         </template>
@@ -106,7 +106,7 @@ const { mt_base_education_type, mt_school_type, mt_academic_stage } = proxy.useD
 // 导入分页组件
 import Pagination from '@/components/Pagination'
 //导入学校列表
-import { listSchool, delSchool } from '@/api/glxt/base_school'
+import { baseListSchool, delSchool } from '@/api/glxt/base_school'
 // 导入区域接口
 import { getAreaTree } from "@/api/glxt/area";
 
@@ -201,7 +201,7 @@ const baseSchoolList = ref([]);
 function getList() {
   console.log(searchForm.value)
   loading.value = true;
-  listSchool(searchForm.value).then(response => {
+  baseListSchool(searchForm.value).then(response => {
     baseSchoolList.value = response.rows;
     total.value = response.total;
     loading.value = false;

@@ -10,7 +10,7 @@
         <div class="info-content">
           <div class="info-item">
             <span class="label">学校名称：</span>
-            <span class="value">{{ schoolInfo.name }}-{{ schoolInfo.id }}</span>
+            <span class="value">{{ schoolInfo.name }}</span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
@@ -44,13 +44,10 @@
           <el-table-column prop="educationLevelName" label="学校类型" align="center">
             {{ schoolInfo.educationLevelName }}
           </el-table-column>
-          <el-table-column prop="schoolPeriodName" label="学段" align="center">
-            {{ schoolInfo.schoolPeriodName }}
-          </el-table-column>
           <el-table-column prop="collegeName" label="学院名称" align="center"/>
           <el-table-column prop="contactName" label="联系人" align="center"/>
           <el-table-column prop="contactPhone" label="联系电话" align="center"/>
-          <el-table-column label="操作" width="200" align="center">
+          <el-table-column label="操作"  align="center">
             <template #default="scope">
               <el-button type="primary" link @click="editCollege(scope.row)" v-hasPermi="['glxt:college:edit']">
                 <el-icon><Edit /></el-icon>编辑
@@ -104,9 +101,6 @@
       <el-form :model="collegeFrom" label-width="100px" :rules="rules" ref="collegeFromRef">
         <el-form-item label="学校类型" prop="educationLevel">
           <el-input v-model="collegeFrom.educationLevel" :value="schoolInfo.educationLevelName" disabled/>
-        </el-form-item>
-        <el-form-item label="学段" prop="schoolPeriod">
-          <el-input v-model="collegeFrom.schoolPeriod" :value="schoolInfo.schoolPeriodName" disabled/>
         </el-form-item>
         <el-form-item label="学院名称" prop="collegeName">
             <el-input v-model="collegeFrom.collegeName"  placeholder="请输入学院名称"/>

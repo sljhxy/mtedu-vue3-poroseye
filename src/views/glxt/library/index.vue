@@ -6,7 +6,7 @@
           v-model="queryParams.textbookVersionName"
           placeholder="请输入教材版本名称"
           clearable
-          @keyup.enter="handleQuery"
+          @input="handleQuery"
           :prefix-icon="Search"
         />
       </el-form-item>
@@ -29,6 +29,7 @@
       <el-col :span="1.5">
         <el-button
           type="success"
+          color="#6EDC93"
           plain
           icon="Edit"
           :disabled="single"
@@ -70,7 +71,7 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button plain type="success" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:library:edit']">修改</el-button>
+          <el-button plain type="success" color="#6EDC93" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:library:edit']">修改</el-button>
           <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:library:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -99,17 +100,17 @@
             <el-button type="danger" icon="Delete" @click="handleDeleteMtVolume">删除</el-button>
           </el-col>
         </el-row>
-        <el-scrollbar height="500px"> 
+        <el-scrollbar :height="mtVolumeList.length > 0 ? '500px' : '100px'"> 
             <el-table :data="mtVolumeList" :row-class-name="rowMtVolumeIndex" @selection-change="handleMtVolumeSelectionChange" ref="mtVolume">
               <el-table-column type="selection" width="50" align="center" />
-              <el-table-column label="序号" align="center" prop="index" width="50"/>
-              <el-table-column label="封面" prop="coverImg" width="250">
+              <!-- <el-table-column label="序号" align="center" prop="index" width="50"/> -->
+              <el-table-column label="封面" align="center" prop="coverImg">
                 <template #default="scope">
                   <!-- <el-input v-model="scope.row.coverImg" placeholder="请输入封面" /> -->
                   <image-upload v-model="scope.row.coverImg"/>
                 </template>
               </el-table-column>
-              <el-table-column label="分册名称" prop="volumeName" width="300">
+              <el-table-column label="分册名称" align="center" prop="volumeName">
                 <template #default="scope">
                   <el-input v-model="scope.row.volumeName" placeholder="请输入分册名称" />
                 </template>

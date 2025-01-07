@@ -10,7 +10,7 @@
         <div class="info-content">
           <div class="info-item">
             <span class="label">学校名称：</span>
-            <span class="value">{{ schoolInfo?.name }}-{{ schoolInfo.id }}</span>
+            <span class="value">{{ schoolInfo?.name }}</span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
@@ -80,7 +80,7 @@
             <el-table-column prop="systemName" label="系" align="center"/>
             <el-table-column prop="contactName" label="联系人" align="center"/>
             <el-table-column prop="contactPhone" label="联系电话" align="center"/>
-            <el-table-column label="操作" width="200" align="center">
+            <el-table-column label="操作" align="center">
               <template #default="scope">
                 <el-button type="primary" link @click="editSystem(scope.row)" v-permission="['glxt:system:edit']">
                   <el-icon><Edit /></el-icon>编辑

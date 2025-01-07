@@ -1,6 +1,16 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="80px">
+      <el-form-item label="学校类型" prop="schoolType">
+        <el-select v-model="queryParams.schoolType" style="width: 100px;" clearable @change="handleQuery">
+          <el-option
+            v-for="dict in mt_school_type"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="设备SN号" prop="deviceNo" style="width: 170px;">
         <el-input
           v-model="queryParams.deviceNo"
@@ -9,17 +19,8 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="是否绑定" prop="isBinding">
-        <el-select v-model="queryParams.isBinding" style="width: 100px;" clearable>
-          <el-option
-            v-for="dict in mt_is_binding_type"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="是否激活" prop="isStateActivation">
+    
+      <!-- <el-form-item label="是否激活" prop="isStateActivation">
         <el-select v-model="queryParams.isStateActivation" style="width: 100px;" clearable>
           <el-option
             v-for="dict in mt_is_active_type"
@@ -38,22 +39,6 @@
             :value="dict.value"
           />
         </el-select>
-      </el-form-item>
-      <!-- <el-form-item label="起始时间" prop="startTime">
-        <el-date-picker clearable
-          v-model="queryParams.startTime"
-          type="date"
-          value-format="YYYY-MM-DD"
-          placeholder="请选择起始时间">
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item label="截止时间" prop="endTime">
-        <el-input
-          v-model="queryParams.endTime"
-          placeholder="请输入截止时间"
-          clearable
-          @keyup.enter="handleQuery"
-        />
       </el-form-item> -->
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -74,6 +59,7 @@
       <el-col :span="1.5">
         <el-button
           type="success"
+          color="#6EDC93"
           plain
           icon="Edit"
           :disabled="single"
@@ -106,7 +92,12 @@
     <el-table v-loading="loading" :data="deviceList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" type="index" align="center" prop="id" width="50px"/>
-      <el-table-column label="学校" align="center" prop="schoolId" />
+      <el-table-column label="类型" align="center" prop="schoolId" >
+        <template #default="scope">
+          <dict-tag :options="mt_school_type" :value="scope.row.schoolType"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="学校" align="center" prop="schoolName" />
       <el-table-column label="设备SN号" align="center" prop="deviceNo" />
       <el-table-column label="是否绑定" align="center" prop="isBinding">
         <template #default="scope">
@@ -125,13 +116,13 @@
       </el-table-column>
       <el-table-column label="起止时间" align="center" prop="startTime" width="200">
         <template #default="scope">
-          <span v-if="scope.row.startTime">{{ parseTime(scope.row.startTime, '{y}-{m}-{d}') }}至{{ parseTime(scope.row.endTime, '{y}-{m}-{d}') }}</span>
+          <span v-if="scope.row.startTime">{{ parseTime(scope.row.startTime, '{y}-{m}-{d}') }}&nbsp;至&nbsp;{{ parseTime(scope.row.endTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="300px">
         <template #default="scope">
-          <el-button plain type="success" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:device:edit']">修改</el-button>
+          <el-button plain type="success" color="#6EDC93" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:device:edit']">修改</el-button>
           <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:device:remove']">删除</el-button>
         </template>
       </el-table-column>
@@ -148,24 +139,31 @@
     <!-- 添加或修改设备管理对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="deviceRef" :model="form" :rules="rules" label-width="120px">
-        <el-form-item label="设备SN号：" prop="deviceNo">
-          <el-input v-model="form.deviceNo" placeholder="请输入设备SN号" />
-        </el-form-item>
-        <el-form-item label="学校：" prop="schoolId">
-          <el-select v-model="form.schoolId" placeholder="请选择学校">
+        <el-form-item label="学校类型：" prop="schoolType">
+          <el-select v-model="form.schoolType" placeholder="请选择学校类型" :disabled="form.id" clearable @change="schoolTypeChange">
             <el-option
-              v-for="dict in mt_is_binding_type"
+              v-for="dict in mt_school_type"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
             ></el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="备注：" prop="remark">
-          <el-input v-model="form.remark" placeholder="请输入备注" />
+        <el-form-item label="学&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;校：" prop="schoolId">
+          <el-select v-model="form.schoolId" placeholder="请选择学校" :disabled="schoolDisabled" clearable filterable>
+            <el-option
+              v-for="dict in schoolList"
+              :key="dict.id"
+              :label="dict.schoolName"
+              :value="dict.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="设备SN号：" prop="deviceNo">
+          <el-input v-model="form.deviceNo" placeholder="请输入设备SN号" />
         </el-form-item>
         <el-form-item label="是否绑定：" prop="isBinding">
-          <el-select v-model="form.isBinding" placeholder="是否绑定">
+          <el-select v-model="form.isBinding" placeholder="是否绑定" clearable>
             <el-option
               v-for="dict in mt_is_binding_type"
               :key="dict.value"
@@ -175,7 +173,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="是否激活：" prop="isStateActivation">
-          <el-select v-model="form.isStateActivation" placeholder="是否激活">
+          <el-select v-model="form.isStateActivation" placeholder="是否激活" clearable>
             <el-option
               v-for="dict in mt_is_active_type"
               :key="dict.value"
@@ -185,7 +183,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="是否启动：" prop="isStart">
-          <el-select v-model="form.isStart" placeholder="是否启动">
+          <el-select v-model="form.isStart" placeholder="是否启动" clearable>
             <el-option
               v-for="dict in mt_is_start_type"
               :key="dict.value"
@@ -203,6 +201,9 @@
             start-placeholder="开始日期"
             end-placeholder="截止日期"/>
         </el-form-item>
+        <el-form-item label="备&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;注：" prop="remark">
+          <el-input v-model="form.remark" placeholder="请输入备注" />
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -218,7 +219,14 @@
 import { listDevice, getDevice, delDevice, addDevice, updateDevice } from "@/api/glxt/device";
 import { ref, reactive, watch, onMounted } from 'vue';
 const { proxy } = getCurrentInstance();
-const { mt_is_active_type, mt_is_start_type, mt_is_binding_type } = proxy.useDict('mt_is_active_type', 'mt_is_start_type', 'mt_is_binding_type');
+const { mt_is_active_type, mt_is_start_type, mt_is_binding_type, mt_school_type } = proxy.useDict('mt_is_active_type', 'mt_is_start_type', 'mt_is_binding_type', 'mt_school_type');
+
+
+//引入普教-学校相关接口
+import { baseListSchool } from "@/api/glxt/base_school";
+
+//引入职教-学校相关接口
+import { vacalListSchool } from "@/api/glxt/vocal_school";
 
 const deviceList = ref([]);
 const open = ref(false);
@@ -229,6 +237,11 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+const schoolDisabled = ref(true);
+
+//存学校列表
+const schoolList = ref([]);
+
 //默认日期
 const dateDefault = ref([]);
 // 表单引用
@@ -240,6 +253,7 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     schoolId: null,
+    schoolType: null,
     deviceNo: null,
     isBinding: null,
     isStateActivation: null,
@@ -248,8 +262,12 @@ const data = reactive({
     endTime: null,
   },
   rules: {
+    schoolType: [
+      { required: true, message: "学校类型不能为空", trigger: "change" }
+    ],
     schoolId: [
-      { required: false, message: "学校不能为空", trigger: "change" }
+      { required: true, message: "学校不能为空", trigger: "change" },
+      // { required: true, validator: schoolChange, trigger: "blur" }
     ],
     deviceNo: [
       { required: true, message: "设备SN号不能为空", trigger: "blur" }
@@ -267,6 +285,26 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
+
+
+//根据选择的学校类型获取学校列表
+function schoolTypeChange(value) {
+  schoolList.value = []
+  form.value.schoolId = null;
+  schoolDisabled.value = true;
+  if (value == '1') {
+    schoolDisabled.value = false;
+    baseListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+      schoolList.value = response.rows;
+    });
+  } else if (value == '2') {
+    schoolDisabled.value = false;
+    vacalListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+      schoolList.value = response.rows;
+    })
+  }
+}
+
 
 /** 查询设备管理列表 */
 function getList() {
@@ -355,6 +393,7 @@ watch(dateDefault, (newVal) => {
 function handleAdd() {
   reset();
   open.value = true;
+  schoolDisabled.value = true;//学校禁止
   title.value = "添加设备";
   // 初始化日期
   dateDefault.value[0] = formatDate(new Date());
@@ -365,7 +404,20 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
+  schoolDisabled.value = true;//学校禁止
   reset();
+  //获取通过类型获取学校
+  if (row.schoolType == '1') {
+    baseListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+      schoolList.value = response.rows;
+    });
+  } 
+  if (row.schoolType == '2') {
+    vacalListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+      schoolList.value = response.rows;
+    })
+  }
+
   const _id = row.id || ids.value
   getDevice(_id).then(response => {
     form.value = response.data;

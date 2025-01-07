@@ -81,6 +81,7 @@
             (schoolInfo.isCollege !== '1' && currentStep === 5)"
       :grades="grades"
       :schoolInfo="schoolInfo"
+      :specialities="specialities"
       @prev-step="handlePrevStep"
       @next-step="handleCourseNext"
     />
@@ -146,10 +147,14 @@ const stepsList = computed(() => {
 
   // 如果是本科(isCollege === '1')，在第二个位置插入学院和系
   console.log(schoolInfo.value.isCollege + '<-学段')
-  if (schoolInfo.value?.isCollege === '1') {
+  if (schoolInfo.value?.isCollege === '1' && schoolInfo.value?.isSystem === '1') {
     baseSteps.splice(1, 0, 
       { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
       { title: '创建系', description: '填写系基本信息', icon: Collection }
+    )
+  } else if (schoolInfo.value?.isCollege === '1'){
+    baseSteps.splice(1, 0, 
+      { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
     )
   } else {
     // 如果是专科或中专(isCollege === '2' || '3')，只在第二个位置插入系
@@ -211,7 +216,6 @@ const schoolInfo = ref({})
 
 // 修改处理学校表单提交的函数
 const handleSchoolNext = (schoolData) => {
-  console.log(schoolData + '<-学校数据')
   // 保存完整的学校信息
   schoolInfo.value = {
     id: schoolData.id,

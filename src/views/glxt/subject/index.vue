@@ -1,18 +1,8 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="40px">
-      <el-form-item label="科目" prop="subjectType" >
-        <el-select v-model="queryParams.subjectType" clearable style="width: 100px;">
-          <el-option
-            v-for="dict in mt_school_subject"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
       <el-form-item label="类型" prop="schoolType" >
-        <el-select v-model="queryParams.schoolType" clearable style="width: 100px;">
+        <el-select v-model="queryParams.schoolType" clearable style="width: 100px;" @change="schoolTypeChange">
           <el-option
             v-for="dict in mt_school_type"
             :key="dict.value"
@@ -24,7 +14,17 @@
       <el-form-item label="学段" prop="educationStageType">
         <el-select v-model="queryParams.educationStageType" clearable style="width: 100px;">
           <el-option
-            v-for="dict in mt_academic_stage"
+            v-for="dict in educationStage.value"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="科目" prop="subjectType" >
+        <el-select v-model="queryParams.subjectType" clearable style="width: 100px;">
+          <el-option
+            v-for="dict in mt_school_subject"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -50,6 +50,7 @@
       <el-col :span="1.5">
         <el-button
           type="success"
+          color="#6EDC93"
           plain
           icon="Edit"
           :disabled="single"
@@ -101,7 +102,7 @@
       <el-table-column label="分册名称" align="center" prop="volumeName"/>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button plain type="success" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:subject:edit']">修改</el-button>
+          <el-button plain type="success" color="#6EDC93" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:subject:edit']">修改</el-button>
           <el-button plain type="warning" @click="chapters(scope.row)" v-hasPermi="['glxt:subject:edit']">章节体系</el-button>
           <el-button plain type="danger"  @click="handleDelete(scope.row)" v-hasPermi="['glxt:subject:remove']">删除</el-button>
         </template>
@@ -117,13 +118,15 @@
     />
 
     <!-- 添加或修改科目对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="700px" append-to-body>
       <el-form ref="subjectRef" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="类型" prop="schoolType">
-          <el-radio-group v-model="form.schoolType">
+          <el-radio-group v-model="form.schoolType" >
             <el-radio
+              @change="schoolTypeChange(dict.value)"
               v-for="dict in mt_school_type"
               :key="dict.value"
+              :value="dict.value"
               :label="dict.value"
             >{{dict.label}}</el-radio>
           </el-radio-group>
@@ -131,8 +134,9 @@
         <el-form-item label="学段" prop="educationStageType">
           <el-radio-group v-model="form.educationStageType">
             <el-radio
-              v-for="dict in mt_academic_stage"
+              v-for="dict in educationStage.value"
               :key="dict.value"
+              :value="dict.value"
               :label="dict.value"
             >{{dict.label}}</el-radio>
           </el-radio-group>
@@ -170,7 +174,7 @@
         </el-form-item>
       </el-form>
       <el-divider v-if="form.id !== null" content-position="center">章节列表</el-divider>
-      <el-scrollbar height="500px" v-if="form.id !== null"> 
+      <!-- <el-scrollbar :height="childrenChapter.length > 10 ? '500px' : '100px'" v-if="form.id !== null"> 
         <el-tree style="display: grid; place-items: center;margin-top: 30px;" 
           :data="childrenChapter" node-key="id" default-expand-all empty-text="暂无章节数据，请先添加章节..." :expand-on-click-node="false">
               <template #default="{ node, data }">
@@ -187,7 +191,51 @@
               </div>
               </template>
             </el-tree>
-          </el-scrollbar>
+          </el-scrollbar> -->
+        <el-scrollbar ref="scrollbarRef" height="300px">
+        <el-tree  class="chapter-tree" style="display: grid; place-items: center;margin-top: 30px;  background-color: #f9f9f9;" 
+          :highlight-current="true" default-expand-all
+          :data="childrenChapter" node-key="id" empty-text="暂无章节内容" :expand-on-click-node="false">
+              <template #empty>
+                <el-empty description="暂无章节内容" :image-size="120"/>
+              </template>
+              <template #default="{ node, data }">
+                <div class="custom-tree-node" :data-id="data.id">
+                <span>
+                  <template v-if="data.id === editingId">
+                    <el-input
+                      v-model="data.chapterTxt"
+                      placeholder="请输入章节内容"
+                      @blur="cancelEdit"
+                      @keyup.enter="saveCurrentInp(data, node, form.volumeId)"
+                      size="small"
+                    ></el-input>
+                  </template>
+                  <template v-else>
+                    {{ data.chapterTxt }}
+                  </template>
+                </span>
+                <!-- <span style="margin-left: 300px;">
+                  <a v-if="node.level < 3" :style="{marginRight: '0.5rem'}" @click="appendChapter(data, node, form.volumeId)">
+                    <el-icon :style="{color:'#0000FF'}">
+                      <Plus />
+                    </el-icon>
+                  </a>
+                  <a :style="{marginRight: '0.5rem'}" @click="updateChapter(data, node, form.volumeId)">
+                    <el-icon :style="{color:'#0000FF'}">
+                      <Edit />
+                    </el-icon>
+                  </a>
+                  <a :style="{marginRight: '0.5rem'}" @click="removeChapter(node, data, form.volumeId)">
+                    <el-icon :style="{color:'#DA3434'}">
+                      <Delete />
+                    </el-icon>
+                  </a>
+                </span> -->
+              </div>
+              </template>
+            </el-tree>
+      </el-scrollbar>
           <template #footer>
             <div class="dialog-footer">
               <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -198,7 +246,7 @@
 
 
     <!-- 章节体系 -->
-    <el-dialog :title="title" v-model="chapterOpen" width="750px" append-to-body>
+    <el-dialog :title="title" v-model="chapterOpen" width="1050px" append-to-body>
       <el-form ref="subjectRef" :model="form" label-width="110px" class="custom-form">
         <el-row :gutter="20">
           <el-col :span="12">
@@ -213,7 +261,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="学段" prop="educationStageType" class="custom-form-item"  style="margin-right: 15px;">
+            <el-form-item label="学段" prop="educationStageType" class="custom-form-item" >
               <el-radio-group v-model="form.educationStageType" disabled>
                 <el-radio
                   v-for="dict in mt_academic_stage"
@@ -327,8 +375,9 @@
 import { listSubject, getSubject, delSubject, addSubject, updateSubject, addOrUpdateChapter, delChapter, getChapterList, getChapterMaxId} from "@/api/glxt/subject";
 import { selectTextBookLibraryAndVolumeList } from "@/api/glxt/library";
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { id } from "element-plus/es/locales.mjs";
 const { proxy } = getCurrentInstance();
-const { mt_academic_stage, mt_school_subject, mt_textbooklibrary_time, mt_school_type } = proxy.useDict('mt_academic_stage', 'mt_school_subject', 'mt_textbooklibrary_time', 'mt_school_type');
+const { mt_academic_stage, mt_school_subject, mt_textbooklibrary_time, mt_school_type, mt_vocal_education_type } = proxy.useDict('mt_academic_stage', 'mt_school_subject', 'mt_textbooklibrary_time', 'mt_school_type', 'mt_vocal_education_type');
 const subjectList = ref([]);
 const open = ref(false);
 const loading = ref(true);
@@ -376,6 +425,23 @@ const data = reactive({
 
 
 const { queryParams, form, rules } = toRefs(data);
+
+
+
+//学段
+const educationStage = ref([])
+//学校类型改变时，学段改变
+const schoolTypeChange = (value) => {
+  //清空学段的数据
+    form.value.educationStageType = '1'
+    if(value == '1'){
+        educationStage.value = mt_academic_stage//普教
+    }else{
+        educationStage.value = mt_vocal_education_type//职教
+    }
+}
+
+
 /** 查询科目列表 */
 function getList() {
   loading.value = true;
@@ -478,6 +544,10 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset();
+
+  form.value.schoolType = '1'//默认学校为普教
+  schoolTypeChange('1')//调用普教下的学段
+
   open.value = true;
   title.value = "添加科目";
   getTextBookLibraryAndVolumeList();
@@ -485,6 +555,7 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
+  schoolTypeChange('1')//调用普教下的学段
   getTextBookLibraryAndVolumeList();//获取教材版本-分册列表
   findChapterList(row.volumeId);//章节列表
   reset();
@@ -599,7 +670,7 @@ function appendChapter(data, node, volumeId) {
       //因为vue3全是代理对象所以需要转换一下
       let dataObj = JSON.parse(JSON.stringify(data))
       if (!dataObj.children) {
-        this.childrenChapter.children = [];
+        childrenChapter.value.children = [];
       }
 
       dataObj.children = [].push(newChild);
@@ -613,7 +684,7 @@ function appendChapter(data, node, volumeId) {
       addOrUpdateChapter(formData).then(response => {
           proxy.$modal.msgSuccess("新增成功");
           findChapterList(volumeId);
-        });
+      });
 }
 
 
@@ -644,6 +715,20 @@ function saveCurrentInp(data, node, volumeId){
 //修改章节
 function updateChapter(data, node, volumeId) {
   editingId.value = data.id;
+  // let formData = {
+  //       id: data.id,
+  //       // parentId: data.parentId,
+  //       chapterTxt: data.chapterTxt,
+  //       children: [],
+  //       isInput: false,
+  //       volumeId: volumeId
+  //     }
+  //     console.log(formData)
+  //     console.log(node)
+  // addOrUpdateChapter(formData).then(response => {
+  //     proxy.$modal.msgSuccess("修改成功");
+  //     findChapterList(volumeId);
+  // });
 }
 
  //删除章节

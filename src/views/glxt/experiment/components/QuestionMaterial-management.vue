@@ -82,9 +82,9 @@
                 </template>
 
               </el-table-column>
-              <el-table-column label="操作" width="150">
+              <el-table-column label="操作"  align="center">
                 <template #default="scope">
-                  <el-button type="text" class="delete-btn" @click="deleteQuestion(scope.row)">删除</el-button>
+                  <el-button plain type="danger" class="delete-btn" @click="deleteQuestion(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -96,8 +96,10 @@
                 v-model:limit="queryExperimentQuestionParams.pageSize"
                 :page-sizes="[10, 20, 30, 50]"
                 :total="experimentQuestionTotal"
+                v-show="experimentQuestionTotal > 0"
                 background
                 layout="total, sizes, prev, pager, next, jumper"
+                @current-change="handleQuestionCurrentChange"
               />
             </div>
           </el-tab-pane>
@@ -216,8 +218,10 @@
                 v-model:limit="queryExperimentSourceMaterialParams.pageSize"
                 :page-sizes="[10, 20, 30, 50]"
                 :total="experimentSourceMaterialTotal"
+                v-show="experimentSourceMaterialTotal > 0"
                 background
                 layout="total, sizes, prev, pager, next, jumper"
+                @current-change="handleSourceMaterialCurrentChange"
               />
             </div>
           </el-tab-pane>
@@ -549,6 +553,12 @@ function getExperimentQuestionList() {
   });
 }
 
+// 处理题目页码改变
+const handleQuestionCurrentChange = (val) => {
+  queryExperimentQuestionParams.value.pageNum = val
+  // 这里调用获取数据的方法
+  getExperimentQuestionList()
+}
 
 //删除题库
 const deleteQuestion = (row) => {
@@ -723,6 +733,12 @@ function getExperimentSourceMaterialList() {
 }
 
 
+// 处理素材页码改变
+const handleSourceMaterialCurrentChange = (val) => {
+  queryExperimentSourceMaterialParams.value.pageNum = val
+  // 这里调用获取数据的方法
+  getExperimentSourceMaterialList()
+}
 
 // 删除素材
 const deleteMaterial = (row) => {

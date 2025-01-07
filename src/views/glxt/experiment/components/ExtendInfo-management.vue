@@ -238,7 +238,7 @@
               </div>
             </div>
 
-            <!-- Question Table -->
+            <!-- Warehouse Table -->
             <el-table :data="experimentWarehousePageList" border>
               <el-table-column type="index" label="序号" width="60"></el-table-column>
               <el-table-column prop="content" label="缩略图" align="center">
@@ -288,17 +288,18 @@
             </el-table>
 
             <!-- Pagination -->
-            <!-- <div class="pagination-container">
+            <div class="pagination-container">
               <el-pagination
                 v-model:page="queryExperimentWarehouseParams.pageNum"
                 v-model:limit="queryExperimentWarehouseParams.pageSize"
+                :page-sizes="[10, 20, 30, 50]"
+                v-show="experimentWarehouseTotal > 0"
                 :total="experimentWarehouseTotal"
-                
+                background
                 layout="total, sizes, prev, pager, next, jumper"
-                @size-change="handleSizeChange"
-                @current-change="handleCurrentChange"
+                @current-change="handleWarehouseCurrentChange"
               />
-            </div> -->
+            </div>
 
               <!-- 选择题目弹窗 -->
               <el-dialog 
@@ -815,6 +816,16 @@ function getExperimentWarehouseList() {
     loading.value = false;
   });
 }
+
+
+//
+// 处理实验器具页码改变
+const handleWarehouseCurrentChange = (val) => {
+  queryExperimentWarehouseParams.value.pageNum = val
+  // 这里调用获取数据的方法
+  getExperimentWarehouseList()
+}
+
 
 //删除器具
 const deleteExperimentWarehouseHandler = (row) => {
