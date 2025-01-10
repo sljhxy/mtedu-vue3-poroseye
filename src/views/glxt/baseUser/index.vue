@@ -1,14 +1,14 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="学校" prop="schoolId">
+      <!-- <el-form-item label="学校" prop="schoolId">
         <el-input
           v-model="queryParams.schoolId"
           placeholder="请输入学校"
           clearable
           @keyup.enter="handleQuery"
         />
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item label="用户名称" prop="userName">
         <el-input
           v-model="queryParams.userName"
@@ -25,7 +25,7 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="用户类别" prop="userType">
+      <!-- <el-form-item label="用户类别" prop="userType">
         <el-select v-model="queryParams.userType" style="width: 100px;" placeholder="请选择" clearable>
           <el-option
             v-for="dict in mt_user_type"
@@ -34,7 +34,7 @@
             :value="dict.value"
           />
         </el-select>
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -87,18 +87,24 @@
     <el-table v-loading="loading" :data="baseUserList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="序号" type="index" align="center" width="50px" />
-      <el-table-column label="学校" align="center" prop="schoolId" />
-      <el-table-column label="用户名称" align="center" prop="userName" />
-      <el-table-column label="用户昵称" align="center" prop="nickName" />
-      <el-table-column label="用户编号" align="center" prop="userNo" />
-      <el-table-column label="密码" align="center" prop="password" />
-      <el-table-column label="手机号码" align="center" prop="phonenumber" />
-      <el-table-column label="用户邮箱" align="center" prop="email" />
-      <el-table-column label="用户类别" align="center" prop="userType">
+      <el-table-column label="类型" align="center" prop="userType">
         <template #default="scope">
-          <dict-tag :options="mt_user_type" :value="scope.row.userType"/>
+          <dict-tag :options="mt_user_type" :value="scope.row.userType" :style="scope.row.userType == '1' ? 'color:#2ecc71;font-weight: bold' : 'color:#3498db;font-weight: bold'"/>
         </template>
       </el-table-column>
+      <el-table-column label="姓名" align="center" prop="userName" />
+      <el-table-column label="性别" align="center" prop="sex">
+        <template #default="scope">
+          <dict-tag :options="sys_user_sex" :value="scope.row.sex"/>
+        </template>
+      </el-table-column>
+      <el-table-column label="学校" align="center" prop="schoolName">
+        <template #default="scope">
+          {{scope.row.mtBaseEduSchool ? scope.row.mtBaseEduSchool.schoolName : '--'}}
+        </template>
+      </el-table-column>
+      <el-table-column label="编号" align="center" prop="userNo" />
+      <el-table-column label="手机号" align="center" prop="phonenumber" />
       <el-table-column label="帐号状态" align="center" prop="status">
         <template #default="scope">
           <el-tag type="success" v-if="scope.row.status == '0'">正常</el-tag>
@@ -123,11 +129,142 @@
       @pagination="getList"
     />
 
+    <el-dialog :title="title" v-model="open" width="700px" append-to-body class="school-dialog">
+  <el-form ref="baseUserRef" :model="form" :rules="rules" label-width="100px">
+    <div class="form-section">
+      <div class="section-title">基本信息</div>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="类别" prop="userType">
+            <el-select v-model="form.userType" placeholder="请选择用户类别" clearable style="width: 100%" @change="userTypeChange">
+              <el-option
+                v-for="dict in mt_user_type"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="学校" prop="schoolId">
+            <el-select v-model="form.schoolId" placeholder="请选择学校" clearable style="width: 100%" :disabled="!form.userType" @change="schoolChange(form.schoolId, form.userType)">
+              <el-option
+                v-for="school in schoolList"
+                :key="school.id"
+                :label="school.schoolName"
+                :value="school.id"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20" v-if="form.userType == '2'">
+        <el-col :span="12">
+          <el-form-item label="年级" prop="gradeId">
+            <el-select v-model="form.gradeId" placeholder="请选择年级" clearable :disabled="!form.schoolId" @change="gradeChange">
+              <el-option
+                v-for="grade in selectGradeList"
+                :key="grade.id"
+                :label="grade.name"
+                :value="grade.id"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="班级" prop="classId">
+            <el-select v-model="form.classId" placeholder="请选择班级" clearable :disabled="!form.gradeId">
+              <el-option
+                v-for="classItem in selectClassList"
+                :key="classItem.id"
+                :label="classItem.name"
+                :value="classItem.id"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </div>
+
+    <div class="form-section">
+      <div class="section-title">个人信息</div>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="姓名" prop="userName">
+            <el-input v-model="form.userName" placeholder="请输入用户名称" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="昵称" prop="nickName">
+            <el-input v-model="form.nickName" placeholder="请输入用户昵称" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="性别" prop="sex">
+            <el-select v-model="form.sex" placeholder="请选择性别" clearable>
+              <el-option
+                v-for="dict in sys_user_sex"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item :label="form.userType == '2' ? '学生编号' : form.userType == '1' ? '教师编号' : '编号'" prop="userNo">
+            <el-input v-model="form.userNo" :placeholder="`请输入${form.userType == '2' ? '学生' : form.userType == '1' ? '教师' : ''}编号`" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </div>
+
+    <div class="form-section">
+      <div class="section-title">账户信息</div>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="密码" prop="password">
+            <el-input type="password" v-model="form.password" placeholder="请输入密码" show-password/>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="确认密码" prop="rconfirmPassword">
+            <el-input type="password" v-model="form.rconfirmPassword" placeholder="请确认密码" show-password/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="联系方式" prop="phonenumber">
+            <el-input v-model="form.phonenumber" placeholder="请输入手机号码" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="邮箱" prop="email">
+            <el-input v-model="form.email" type="email" placeholder="请输入邮箱" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </div>
+  </el-form>
+  <template #footer>
+    <div class="dialog-footer">
+      <el-button type="primary" @click="submitForm">确 定</el-button>
+      <el-button @click="cancel">取 消</el-button>
+    </div>
+  </template>
+</el-dialog>
     <!-- 添加或修改用户对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <!-- <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="baseUserRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="类别" prop="userType">
-          <el-select v-model="form.userType" placeholder="请选择用户类别" clearable style="width: 100%">
+          <el-select v-model="form.userType" placeholder="请选择用户类别" clearable style="width: 100%" @change="userTypeChange">
             <el-option
               v-for="dict in mt_user_type"
               :key="dict.value"
@@ -137,7 +274,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="学校" prop="schoolId">
-          <el-select v-model="form.schoolId" placeholder="请选择学校" clearable style="width: 100%">
+          <el-select v-model="form.schoolId" placeholder="请选择学校" clearable style="width: 100%" :disabled="!form.userType" @change="schoolChange(form.schoolId, form.userType)">
             <el-option
               v-for="school in schoolList"
               :key="school.id"
@@ -147,22 +284,22 @@
           </el-select>
         </el-form-item>
         <el-form-item label="年级" prop="gradeId" v-show="form.userType == '2'">
-          <el-select v-model="form.gradeId" placeholder="请选择年级" clearable disabled="form.schoolId">
+          <el-select v-model="form.gradeId" placeholder="请选择年级" clearable :disabled="!form.schoolId" @change="gradeChange">
             <el-option
-              v-for="dict in mt_user_type"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
+              v-for="grade in selectGradeList"
+              :key="grade.id"
+              :label="grade.name"
+              :value="grade.id"
             ></el-option>
           </el-select>
         </el-form-item>
         <el-form-item label="班级" prop="classId" v-show="form.userType == '2'">
-          <el-select v-model="form.classId" placeholder="请选择班级" clearable disabled="form.gradeId">
+          <el-select v-model="form.classId" placeholder="请选择班级" clearable :disabled="!form.gradeId">
             <el-option
-              v-for="dict in mt_user_type"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
+              v-for="classItem in selectClassList"
+              :key="classItem.id"
+              :label="classItem.name"
+              :value="classItem.id"
             ></el-option>
           </el-select>
         </el-form-item>
@@ -197,7 +334,7 @@
         <el-form-item label="确认密码" prop="rconfirmPassword">
           <el-input type="password" v-model="form.rconfirmPassword" placeholder="请确认密码" show-password/>
         </el-form-item>
-        <el-form-item label="手机号码" prop="phonenumber">
+        <el-form-item label="联系方式" prop="phonenumber">
           <el-input v-model="form.phonenumber" placeholder="请输入手机号码" />
         </el-form-item>
         <el-form-item label="邮箱" prop="email">
@@ -211,7 +348,7 @@
           <el-button @click="cancel">取 消</el-button>
         </div>
       </template>
-    </el-dialog>
+    </el-dialog> -->
 
     <!-- 修改配置对话框 -->
     <el-dialog title="配置科目列表" v-model="configOpen" width="1000px" append-to-body >
@@ -219,30 +356,25 @@
         <el-descriptions :column="4" border>
           <el-descriptions-item><template #label><el-icon class="icon-tmp"><School /></el-icon>学校</template>{{ configForm.schoolId }}</el-descriptions-item>
           <el-descriptions-item><template #label><el-icon class="icon-tmp"><user /></el-icon>姓名</template>{{ configForm.userName }}</el-descriptions-item>
-          <el-descriptions-item><template #label><el-icon class="icon-tmp"><Female /></el-icon>性别</template>{{ configForm.sex }}</el-descriptions-item>
+          <el-descriptions-item><template #label><el-icon class="icon-tmp"><Female /></el-icon>性别</template>{{ configForm.sex == '0' ? '男' : '女'}}</el-descriptions-item>
           <el-descriptions-item><template #label><el-icon class="icon-tmp"><ReadingLamp /></el-icon>编号</template>{{ configForm.userNo }}</el-descriptions-item>
         </el-descriptions>
       </div>
 
   
-      <el-tabs v-model="activeTab" class="mt20" type="card">
-        {{ form.schoolId }}
+      <el-tabs v-model="activeTab" class="mt20" type="card"  @tab-click="handleTabClick">
         <el-tab-pane label="配置科目" name="config">
           <div class="mt20 text-right">
-            <el-button plain type="primary" @click="handleAddSubject">
+            <el-button plain type="primary" @click="handleAddSubject" v-hasPermi="['glxt:baseUser:add']" v-show="isShow">
               <el-icon><Setting /></el-icon>&nbsp;配置科目
             </el-button>
           </div>
           <div class="config-content">
             <el-table :data="subjectList" empty-text="请点击配置科目按钮进行配置" border>
-              <!-- 添加空标签 -->
-              <!-- <template #empty>
-                <el-empty description="点击配置科目进行相关配置" :image-size="100"></el-empty>
-              </template> -->
               <el-table-column type="index" label="序号" width="60" align="center" />
               <el-table-column label="年级" align="center">
                 <template #default="scope">
-                  {{ scope.row.grade }}
+                  <!-- {{ scope.row.grade }} -->
                   <el-select 
                     v-model="scope.row.grade" 
                     placeholder="请选择年级" 
@@ -260,7 +392,7 @@
               </el-table-column>
               <el-table-column label="班级" align="center">
                 <template #default="scope">
-                  {{ scope.row.selectedClass }}
+                  <!-- {{ scope.row.selectedClass }} -->
                   <el-select 
                     v-model="scope.row.selectedClass" 
                     placeholder="请选择班级" 
@@ -280,7 +412,7 @@
               </el-table-column>
               <el-table-column label="科目" align="center">
                 <template #default="scope">
-                  {{ scope.row.subject }}
+                  <!-- {{ scope.row.subject }} -->
                   <el-select
                     multiple 
                     v-model="scope.row.subject" 
@@ -309,10 +441,16 @@
                   >
                     保存
                   </el-button>
+                  <el-tooltip content="取消后可重新配置科目" placement="bottom" effect="light">
+                      <el-button plain size="small" v-if="scope.row.id" @click="handleCancleConfig(scope.row)">
+                        取消
+                      </el-button>
+                  </el-tooltip>
                   <el-button 
                     type="danger" 
                     plain
-                    size="small"  
+                    size="small"
+                    v-if="!scope.row.id"  
                     @click="handleConfigDelete(scope.$index)"
                   >
                     删除
@@ -324,25 +462,23 @@
         </el-tab-pane>
 
         <el-tab-pane label="已配置科目" name="list">
-          <el-table :data="configList" border style="width: 100%">
+          <el-table v-loading="loading" :data="configList" border style="width: 100%">
             <!-- 添加空标签 -->
             <template #empty>
               <el-empty description="暂无内容" :image-size="100"></el-empty>
             </template>
             <el-table-column type="index" label="序号" width="60" align="center" />
+            <el-table-column label="年级" align="center" prop="gradeName"/>
+            <el-table-column label="班级" align="center" prop="className"/>
             <el-table-column label="科目" align="center">
               <template #default="scope">
-                {{ getSubjectLabel(scope.row.subject) }}
+                <dict-tag v-for="item in scope.row.courseList" :key="item.id" :options="mt_school_subject" :value="item.subjectId"/>
               </template>
             </el-table-column>
-            <el-table-column label="年级" align="center">
+            <el-table-column label="操作" align="center" >
               <template #default="scope">
-                {{ getGradeLabel(scope.row.grade) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="班级" align="center">
-              <template #default="scope">
-                {{ getClassLabels(scope.row.selectedClass) }}
+                <el-button plain type="success" icon="Edit" size="small" color="#6EDC93" @click="handleConfigUpdate(scope.row)" v-hasPermi="['glxt:baseUser:edit']">编辑</el-button>
+                <el-button plain type="danger" icon="Delete" size="small" @click="handleConfigDel(scope.row)" v-hasPermi="['glxt:baseUser:remove']">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -359,9 +495,11 @@
 </template>
 
 <script setup name="BaseUser">
-import { listBaseUser, getBaseUser, delBaseUser, addBaseUser, updateBaseUser } from "@/api/glxt/baseUser";
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { listBaseUser, getBaseUser, delBaseUser, addBaseUser, updateBaseUser, 
+          configCourse,editConfigCourse,deleteConfigCourse,selectConfigCourseById,selectConfigCourseList } from "@/api/glxt/baseUser";
 const { proxy } = getCurrentInstance();
-const { mt_user_type, sys_user_sex } = proxy.useDict('mt_user_type', 'sys_user_sex');
+const { mt_user_type, sys_user_sex, mt_school_subject } = proxy.useDict('mt_user_type', 'sys_user_sex', 'mt_school_subject');
 
 //导入学校API
 import { baseListSchool } from "@/api/glxt/base_school";
@@ -374,6 +512,8 @@ import { listClass } from "@/api/glxt/base_class";
 
 //导入科目API
 import { listCourse } from "@/api/glxt/base_course";
+import { ref } from 'vue';
+
 
 const baseUserList = ref([]);
 const open = ref(false);
@@ -384,29 +524,19 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
-
 // 新增的响应式变量
 const configOpen = ref(false);
-const activeTab = ref('config');
+const activeTab = ref('list');
 const configForm = ref({});
 const subjectList = ref([]);
-const configList = ref([]);
-
-// 下拉选项数据
-const subjectOptions = ref([
-  { value: '1', label: '语文' },
-  { value: '2', label: '数学' },
-  { value: '3', label: '英语' },
-  { value: '4', label: '物理' },
-  { value: '5', label: '化学' },
-]);
+const configList = ref([]);//已经配置科目列表
+const isShow = ref(true)//配置按钮是否显示, 默认显示
 
 
 //存配置科目中的年级列表
 const gradeOptions = ref([]);
 
-
-//存年级
+//存学校列表
 const schoolList = ref([]);
 //根据选择的学校类型获取学校列表
 function schoolSelectChange() {
@@ -416,21 +546,6 @@ function schoolSelectChange() {
   });
 }
 
-// 获取标签显示文本的方法
-const getSubjectLabel = (value) => {
-  const option = subjectOptions.value.find(item => item.value === value);
-  return option ? option.label : value;
-};
-
-const getGradeLabel = (value) => {
-  const option = gradeOptions.value.find(item => item.value === value);
-  return option ? option.label : value;
-};
-
-const getClassLabels = (values) => {
-  if (!Array.isArray(values)) return '';
-  return values.join(', ');
-};
 
 //确认密码校验
 const equalToPassword = (rule, value, callback) => {
@@ -440,6 +555,7 @@ const equalToPassword = (rule, value, callback) => {
     callback();
   }
 };
+
 
 const data = reactive({
   form: {},
@@ -456,6 +572,13 @@ const data = reactive({
     schoolId: [
       { required: true, message: "学校不能为空", trigger: "blur" }
     ],
+    
+    // gradeId: [
+    //   { required: true, message: "年级不能为空", trigger: "blur" }
+    // ],
+    // classId: [
+    //   { required: true, message: "班级不能为空", trigger: "blur" }
+    // ],
     userName: [
       { required: true, message: "用户名称不能为空", trigger: "blur" }
     ],
@@ -562,9 +685,25 @@ function handleAdd() {
 function handleUpdate(row) {
   reset();
   const _id = row.id || ids.value
+  //调用学校列表
+  schoolSelectChange()
+
+  if(row.userType == '2') {
+
+    //调用年级
+    gradeList(row.schoolId)
+    //调用班级
+    classList(row.gradeId)
+
+  }
   getBaseUser(_id).then(response => {
     form.value = response.data;
     form.value.rconfirmPassword = response.data.password;
+
+    if(row.userType == '2') {//如果是学生
+      form.value.gradeId = response.data.mtStudentGrade ? response.data.mtStudentGrade.gradeId : '暂无年级'//给年级赋值
+      form.value.classId = response.data.mtStudentClass ? response.data.mtStudentClass.classId : '暂无班级'//给班级赋值
+    }
     open.value = true;
     title.value = "修改用户";
   });
@@ -575,12 +714,26 @@ function submitForm() {
   proxy.$refs["baseUserRef"].validate(valid => {
     if (valid) {
       if (form.value.id != null) {
+        if(form.value.userType == '2') {//如果是学生
+
+          form.value.mtStudentGradeId = form.value.mtStudentGrade.id//学生年级的主键，并不是本身的年级ID
+          form.value.mtStudentClassId = form.value.mtStudentClass.id//学生班级的主键，并不是本身的班级ID
+        }
         updateBaseUser(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
           getList();
         });
       } else {
+        if(form.value.userType == '2') {//如果是学生进行校验年级和班级
+          if(!form.value.gradeId) {
+              ElMessage.error('年级或班级不能为空')
+              return
+          }else if(!form.value.classId) {
+              ElMessage.error('班级不能为空')
+              return
+          }
+        }
         addBaseUser(form.value).then(response => {
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
@@ -594,7 +747,7 @@ function submitForm() {
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.confirm('是否确认删除用户编号为"' + _ids + '"的数据项？').then(function() {
+  proxy.$modal.confirm('是否确认删除该用户？').then(function() {
     return delBaseUser(_ids);
   }).then(() => {
     getList();
@@ -613,18 +766,13 @@ function handleExport() {
 function handleConfig(row) {
   configOpen.value = true;
   configForm.value = { ...row };
-  activeTab.value = 'config';
+  activeTab.value = 'list';//默认打开配置列表
   
-  console.log(row)
+  console.log(row.id)
   console.log(configForm.value)
-  // 获取已有配置
-  Promise.all([
-    getTeacherConfig(row.id),
-    getTeacherConfigList(row.id)
-  ]).then(([configResponse, listResponse]) => {
-    subjectList.value = configResponse.data || [];
-    configList.value = listResponse.data || [];
-  });
+
+  //获取已经配置列表
+  selectConfigList(row.id)
 }
 
 // 检查行是否完整填写
@@ -633,10 +781,8 @@ const isRowComplete = (row) => {
 };
 
 
-
 //存科目
 const courseListOptions = ref([]);
-
 // 处理班级选择变更
 const handleClassChange = (row) => {
 
@@ -658,42 +804,63 @@ const handleClassChange = (row) => {
 
 // 处理单行配置保存
 const handleSaveConfig = (row) => {
-  const params = {
-    teacherId: configForm.value.id,
-    gradeId: row.grade,//年级
-    classId: row.selectedClass, //班级
-    courseList: row.subject,//课程
-    contentType: '1'//普教
-  };
 
-  // 调用保存接口
-  saveTeacherConfig(params).then(() => {
-    console.log('save config', params);
-    proxy.$modal.msgSuccess("配置保存成功");
-    // 刷新配置列表
-    getTeacherConfigList(configForm.value.id).then(response => {
-      configList.value = response.data;
-      activeTab.value = 'list';
-    });
+  try {
+    //编辑
+    if(row.id != null){
+      const params = {
+        id: row.id,
+        teacherId: configForm.value.id,
+        gradeId: row.grade,//年级
+        classId: row.selectedClass, //班级
+        courseList: row.subject,//课程
+        contentType: '1'//普教
+      };
+      // 调用保存接口
+      editConfigCourse(params).then(() => {
+        console.log('save config', params);
+        proxy.$modal.msgSuccess("配置修改成功");
+        selectConfigList(configForm.value.id)
+        activeTab.value = 'list';
+      });
+    } else {//保存
+      const params = {
+        teacherId: configForm.value.id,
+        gradeId: row.grade,//年级
+        classId: row.selectedClass, //班级
+        courseList: row.subject,//课程
+        contentType: '1'//普教
+      };
+    
+      // 调用保存接口
+      configCourse(params).then(() => {
+        console.log('save config', params);
+        proxy.$modal.msgSuccess("配置保存成功");
+        selectConfigList(configForm.value.id)
+        activeTab.value = 'list';
+      });
+    }
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+};
+
+//教师配置列表
+const selectConfigList = (teacherId) => {
+  return selectConfigCourseList(teacherId).then(response => {
+    configList.value = response.rows;
   });
 };
 
 // 修改科目变更处理
 const handleSubjectChange = (row) => {
-  console.log('subject change', row);
-  // row.grade = '';
-  // row.selectedClass = [];
-  // row.classList = [];
   row.isComplete = false;
 };
 
-//存年级
+//存班级
 const classListOptions = ref([]);
 // 修改年级变更处理
 const handleGradeChange = (row) => {
-  
-  console.log('grade change', row.grade);
-
    //获取班级级列表
   // 分页相关
   const queryParams = {
@@ -710,9 +877,92 @@ const handleGradeChange = (row) => {
   row.isComplete = false;
 };
 
+// 处理标签页点击
+const handleTabClick = (tab) => {
+  if(tab.props.name == 'config') {
+    //删除之前的
+    subjectList.value.splice(0, subjectList.value.length);
+  }
+  if(tab.props.name == 'list') {
+    //将按钮显示
+    isShow.value = true
+    //获取当前教师配置列表
+    selectConfigList(configForm.value.id)
+  }
+}
+
+//用户类型切换的时候，学校下拉数据清空
+const userTypeChange = (value) => {
+  form.value.schoolId = null//清空学校
+  if(value == '2') {//只有当用户类型是学生的时候，才显示年级和班级
+    form.value.gradeId = null;//清空年级
+    form.value.classId = null;//清空班级
+  }
+}
+
+//新增学生时候，选择学校下拉框
+const schoolChange = (value, userType) => {
+  if(userType == '2') {//只有当用户类型是学生的时候，才显示年级和班级
+    form.value.gradeId = null;//清空年级
+    form.value.classId = null;//清空班级
+    gradeList(value);
+  }
+}
+//新增学生时候，选择年级下拉框
+const gradeChange = (value) => {
+  form.value.classId = null//清空班级
+  classList(value)
+}
+
+//存年级列表
+const selectGradeList = ref([]);
+
+//获取学校下的年级
+const gradeList = (schoolId) => {
+  try{
+    //获取年级列表
+    // 分页相关
+    const queryParams = {
+        pageNum: 1,
+        pageSize: 1000,
+        schoolId: schoolId
+      }
+      listGrade(queryParams).then(response => {
+        selectGradeList.value = response.rows;
+    });
+} catch (error) {
+    ElMessage.error('获取数据失败')
+  }
+}
+
+
+//存班级列表
+const selectClassList = ref([]);
+//获取年级下的班级
+const classList = (gradeId) => {
+  try{
+    //获取班级级列表
+    // 分页相关
+    const queryParams = {
+        pageNum: 1,
+        pageSize: 1000,
+        gradeId: gradeId
+    }
+    listClass(queryParams).then(response => {
+      if(response.code == 200) {
+        selectClassList.value = response.rows;
+      }
+    });
+  } catch (error) {
+    ElMessage.error('获取数据失败')
+  }
+}
+
+
 // 修改添加科目方法
 const handleAddSubject = () => {
   subjectList.value.push({
+    id: null,//判断编辑还是保存
     subject: '',
     grade: '',
     selectedClass: [],
@@ -731,36 +981,100 @@ const handleAddSubject = () => {
   });
 };
 
-// 删除配置项
+
+//修改配置项
+const handleConfigUpdate = (row) => {
+  //先删除缓存
+  subjectList.value.splice(0, subjectList.value.length);
+  //切换到配置栏
+  activeTab.value = 'config';
+  //编辑的时候将配置栏中的配置科目按钮隐藏
+  isShow.value = false
+
+  //组装课程列表
+  const subjectArr = []
+  row.courseList.forEach(item => {
+    subjectArr.push(item.id)
+  });
+  
+  subjectList.value.push({
+    id: row.id,
+    subject: subjectArr,
+    grade: row.gradeId,
+    selectedClass: row.classId,
+    classList: [],
+    isComplete: false
+  });
+
+  try{
+ //获取年级列表
+  // 分页相关
+  const queryParams = {
+      pageNum: 1,
+      pageSize: 1000,
+      schoolId: configForm.value.schoolId
+    }
+    listGrade(queryParams).then(response => {
+      if(response.code == 200) {
+        gradeOptions.value = response.rows;
+        //获取班级级列表
+        // 分页相关
+        const queryParams = {
+            pageNum: 1,
+            pageSize: 1000,
+            gradeId: row.gradeId
+        }
+        listClass(queryParams).then(response => {
+          if(response.code == 200) {
+            classListOptions.value = response.rows;
+              //获取科目列表
+            // 分页相关
+            const queryParams = {
+                pageNum: 1,
+                pageSize: 1000,
+                gradeId: row.gradeId
+            }
+            listCourse(queryParams).then(response => {
+              courseListOptions.value = response.rows;
+            });
+          }
+        });
+      }
+  });
+  } catch (error) {
+    ElMessage.error('获取数据失败')
+  }
+  
+  // console.log(row)
+};
+
+
+//保存科目配置逻辑删除列表
 function handleConfigDelete(index) {
   subjectList.value.splice(index, 1);
 }
 
-// 提交配置表单
-function submitConfigForm() {
-  if (!validateConfig()) {
-    return;
-  }
-
-  const params = {
-    teacherId: configForm.value.id,
-    configs: subjectList.value.map(item => ({
-      subject: item.subject,
-      grade: item.grade,
-      classes: item.selectedClass
-    }))
-  };
-
-  // 调用保存接口
-  saveTeacherConfig(params).then(() => {
-    proxy.$modal.msgSuccess("配置保存成功");
-    // 刷新配置列表
-    getTeacherConfigList(configForm.value.id).then(response => {
-      configList.value = response.data;
-      activeTab.value = 'list'; // 切换到列表标签页
-    });
-  });
+// 删除配置项
+function handleConfigDel(row) {
+  // subjectList.value.splice(index, 1);
+  console.log('删除了' + row)
+  ElMessageBox.confirm('确定要删除该数据吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    deleteConfigCourse(row.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('删除成功')
+        //刷新当前教师列表
+        selectConfigList(row.teacherId)
+      }else{
+        ElMessage.error('删除失败')
+      }
+    })
+  })
 }
+
 
 // 配置验证
 function validateConfig() {
@@ -781,6 +1095,13 @@ function validateConfig() {
   return true;
 }
 
+//编辑中取消按钮
+function handleCancleConfig() {
+  subjectList.value = [];//清空表单列表
+  isShow.value = true //恢复配置课程按钮
+}
+
+
 // 取消配置
 function cancelConfig() {
   configOpen.value = false;
@@ -788,23 +1109,7 @@ function cancelConfig() {
   subjectList.value = [];
 }
 
-// API 接口函数（需要根据实际接口进行实现）
-function getTeacherConfig(teacherId) {
-  // return request.get(`/api/teacher/config/${teacherId}`);
-  return Promise.resolve({ data: [] }); // 模拟数据
-}
-
-function saveTeacherConfig(data) {
-  // return request.post('/api/teacher/config', data);
-  return Promise.resolve(); // 模拟保存
-}
-
-function getTeacherConfigList(teacherId) {
-  // return request.get(`/api/teacher/config/list/${teacherId}`);
-  return Promise.resolve({ data: [] }); // 模拟数据
-}
-
-getList();
+getList(); //获取用户列表
 </script>
 
 <style scoped>
@@ -840,10 +1145,79 @@ getList();
   margin-left: 8px;
 }
 
+/**图标布局 */
 .icon-tmp{
   position: relative;
   top: 2px;
   margin-right: 2px;
+}
+
+
+.school-dialog {
+  background: #f5f9fc;
+  border-radius: 12px;
+}
+
+.school-dialog .el-dialog__header {
+  background: linear-gradient(135deg, #6edc93, #3498db);
+  border-radius: 12px 12px 0 0;
+  padding: 20px;
+}
+
+.school-dialog .el-dialog__title {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.form-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #2c3e50;
+  margin-bottom: 20px;
+  padding-left: 10px;
+  border-left: 4px solid #6edc93;
+}
+
+.el-form-item {
+  margin-bottom: 20px;
+}
+
+.el-form-item__label {
+  color: #34495e;
+  font-weight: 500;
+}
+
+.el-input__inner,
+.el-select {
+  border-radius: 6px;
+}
+
+.dialog-footer {
+  text-align: right;
+  /* padding: 20px 0 0; */
+}
+
+.el-button {
+  border-radius: 6px;
+  padding: 10px 20px;
+}
+
+/* .el-button--primary {
+  background: linear-gradient(135deg, #6edc93, #3498db);
+  border: none;
+} */
+
+.el-button--primary:hover {
+  opacity: 0.9;
 }
 
 </style>

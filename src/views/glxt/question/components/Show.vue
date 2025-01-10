@@ -1,5 +1,6 @@
 <template>
   <div style="line-height:1.8">
+    {{ question }}
     <div v-if="qType==1" v-loading="qLoading">
       <div class="q-title" v-html="question.title"/>
       <div class="q-content">
@@ -38,11 +39,9 @@
 
 </template>
 
-<script>
-export default {
-  name: 'QuestionShow',
-  props: {
-    question: {
+<script setup>
+const props = defineProps({
+  question: {
       type: Object,
       default: function () {
         return {}
@@ -56,7 +55,6 @@ export default {
       type: Number,
       default: 0
     }
-  },
-  methods: {}
-}
+})
+
 </script>

@@ -35,9 +35,6 @@
                 <label>所在地区：</label>
                 <span>{{ getLocationLabelTmp(formData.province) }}-{{ getLocationLabelTmp(formData.city) }}-{{ getLocationLabelTmp(formData.district) }}</span>
               </div>
-              {{ formData.province }}
-              {{ formData.city }}
-              {{ formData.district }}
               <div class="info-item">
                 <label>详细地址：</label>
                 <span>{{ formData.detailAddress }}</span>
@@ -75,15 +72,17 @@
             </div>
             <div class="info-content">
               <div class="info-item">
-                <label>类型：</label>
-                <span>{{ getBaseEducationType(formData.educationLevel) }}</span>
+                <label>类&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;型：</label>
+                <span>
+                  <dict-tag :options="mt_school_type" :value="formData.educationLevel"/>
+                </span>
               </div>
               <div class="info-item">
                 <label>是否有学院：</label>
                 <span>{{ formData.isCollege == '1' ? '是' : '否' }}</span>
               </div>
               <div class="info-item">
-                <label>是否有系：</label>
+                <label>是&nbsp;&nbsp;否&nbsp;有&nbsp;系：</label>
                 <span>{{ formData.isSystem == '1' ? '是' : '否' }}</span>
               </div>
             </div>
@@ -208,15 +207,15 @@
             </div>
             <el-form-item label="是否有学院:" class="full-width" prop="isCollege">
               <el-radio-group v-model="formData.isCollege">
-                <el-radio :label="true">是</el-radio>
-                <el-radio :label="false">否</el-radio>
+                <el-radio label="1">是</el-radio>
+                <el-radio label="0">否</el-radio>
               </el-radio-group>
             </el-form-item>
 
             <el-form-item label="是否有系:" class="full-width" prop="isSystem">
-              <el-radio-group v-model="formData.isSystem">
-                <el-radio :label="true">是</el-radio>
-                <el-radio :label="false">否</el-radio>
+              <el-radio-group v-model="formData.isSystem" disabled>
+                <el-radio label="1">是</el-radio>
+                <el-radio label="0">否</el-radio>
               </el-radio-group>
             </el-form-item>
             <div class="form-row">
@@ -270,7 +269,7 @@ const router = useRouter()
 import { getAreaTree } from "@/api/glxt/area";
 
 //引入学校相关接口
-import { vacalListSchool, addSchool, updateSchool, getSchool, delSchool, checkSchool} from "@/api/glxt/vocal_school";
+import { vocalListSchool, addSchool, updateSchool, getSchool, delSchool, checkSchool} from "@/api/glxt/vocal_school";
 
 //学校网址接口引入
 import { generateLetter } from '@/api/glxt/base_school'
@@ -297,7 +296,7 @@ const formData = ref({
   educationLevel: '2',//类型 职教
   educationLevelName: '',//类型名称
   isCollege: '0',//是否有学院
-  isSystem: '0',//是否有系
+  isSystem: '1',//是否有系
   isActive: true
 })
 
@@ -631,8 +630,9 @@ const showAddDialog = () => {
   formData.value.educationLevel = '2'
   // formData.value.isCollege = '0' 
   // formData.value.isSystem = '0' 
-  formData.value.isCollege == '0' ? true : false,
-  formData.value.isSystem == '0' ? true : false,
+  formData.value.isCollege = '0' 
+  formData.value.isSystem = '1' 
+  formData.value.isActive = true
 
   isEdit.value = false // 重置编辑状态
   dialogVisible.value = true

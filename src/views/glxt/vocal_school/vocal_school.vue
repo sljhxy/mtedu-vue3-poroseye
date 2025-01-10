@@ -113,7 +113,7 @@ const {mt_vocal_education_system_type, mt_vocal_education_type } = proxy.useDict
 // 导入分页组件
 import Pagination from '@/components/Pagination'
 //导入学校列表
-import { vacalListSchool, delSchool } from '@/api/glxt/vocal_school'
+import { vocalListSchool, delSchool } from '@/api/glxt/vocal_school'
 // 导入区域接口
 import { getAreaTree } from "@/api/glxt/area";
 
@@ -257,7 +257,7 @@ const baseSchoolList = ref([]);
 function getList() {
   console.log(searchForm.value)
   loading.value = true;
-  vacalListSchool(searchForm.value).then(response => {
+  vocalListSchool(searchForm.value).then(response => {
     baseSchoolList.value = response.rows;
     total.value = response.total;
     loading.value = false;

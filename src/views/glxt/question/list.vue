@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParam" ref="queryForm" :inline="true">
+    <el-form :model="queryParam" ref="queryFormRef" :inline="true" v-show="showSearch">
       <!-- <el-form-item label="题目ID：">
         <el-input v-model="queryParam.id" clearable></el-input>
       </el-form-item>
@@ -19,14 +19,22 @@
                     :label="item.name+' ( '+item.levelName+' )'"></el-option>
         </el-select>
       </el-form-item> -->
-      <!-- <el-form-item label="题型：">
-        <el-select v-model="queryParam.questionType" clearable>
-          <el-option v-for="item in questionType" :key="item.key" :value="item.key" :label="item.value"></el-option>
+      <el-form-item label="题型：">
+        <el-select v-model="queryParam.questionType" clearable style="width: 100px;">
+          <el-option v-for="item in mt_question_type" :key="item.value" :value="item.value" :label="item.label"></el-option>
         </el-select>
-      </el-form-item> -->
+      </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="submitForm">查询</el-button>
-        <!-- <el-tooltip placement="bottom" trigger="click">
+        <el-button type="primary" icon="Search" @click="submitForm">搜索</el-button>
+        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        
+      
+      </el-form-item>
+    </el-form>
+    <right-toolbar v-model:showSearch="showSearch" @queryTable="submitForm" style="margin-bottom: 10px;float: right;"></right-toolbar>
+    <!-- v-loading="listLoading"  -->
+    <!-- 添加按钮 按照后续需要再进行添加 -->
+    <!-- <el-tooltip placement="bottom" trigger="click" effect="light">
           <template #content>
             <el-button type="warning" size="small" v-for="item in editUrlEnumTmp" :key="item.key"
                       @click="$router.push({path:item.value})">{{item.name}}
@@ -34,33 +42,33 @@
           </template>
           <el-button slots="default" type="primary" class="link-left" style="float: right;">添加</el-button>
         </el-tooltip> -->
-      </el-form-item>
-    </el-form>
-    <!-- v-loading="listLoading"  -->
     <el-table :data="tableData" border fit highlight-current-row style="width: 100%" v-loading="listLoading">
       <el-table-column type="index" label="序号" width="70px" align="center"/>
       <el-table-column prop="schoolType" label="学校类型"  width="120px" align="center">
-        <template #default="{row}">
-          {{ getSchoolTypeName(row.schoolType) }}
+        <template #default="scope">
+          <dict-tag :options="mt_school_type" :value="scope.row.schoolType"/>
         </template>
       </el-table-column>
       <el-table-column prop="academicStageType" label="学段"  width="120px" align="center">
-        <template #default="{row}">
-          {{ row.schoolType == 1 ? getAcademicStageName(row.academicStageType) : getVocalEducationTypeName(row.academicStageType) }}
+        <template #default="scope">
+          <dict-tag :options=" scope.row.schoolType == 1 ? mt_academic_stage : mt_vocal_education_type" :value="scope.row.academicStageType"/>
         </template>
       </el-table-column>
-      <!-- <el-table-column prop="questionType" label="题型" :formatter="questionTypeFormatter" width="70px"> -->
       <el-table-column prop="questionType" label="题型"  width="70px" align="center">
-        <template #default="{row}">
-          {{ getQuestionName(row.questionType) }}
+        <template #default="scope">
+          <dict-tag :options="mt_question_type" :value="scope.row.questionType"/>
         </template>
       </el-table-column>
-      <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip/>
+      <el-table-column prop="shortTitle" label="题干" show-overflow-tooltip>
+        <template #default="{row}">
+          <div v-html="row.shortTitle"></div>
+        </template>
+      </el-table-column>
       <el-table-column prop="score" label="分数" width="60px"/>
       <el-table-column prop="difficult" label="难度" width="60px"/>
       <el-table-column label="操作" align="center" width="300px">
         <template #default="{row}">
-          <el-button  @click="showQuestion(row)">预览</el-button>
+          <el-button plain type="info" color="#6c757d" @click="showQuestion(row)">预览</el-button>
           <el-button plain type="success" icon="Edit" color="#6EDC93" @click="editQuestion(row)">编辑</el-button>
           <el-button plain type="danger" icon="Delete" @click="deleteQuestion(row)" class="link-left">删除</el-button>
         </template>
@@ -91,13 +99,12 @@ import QuestionShow from './components/Show'
 import { listQuestion, getQuestion, delQuestion} from '@/api/glxt/question'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
+const showSearch = ref(false);//默认隐藏
 
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
 const { mt_question_type, mt_school_type, mt_vocal_education_type, mt_academic_stage} = proxy.useDict('mt_question_type', 'mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage');
 
-// 组件注册
-const components = { Pagination, QuestionShow }
 
 const router = useRouter()
 
@@ -116,7 +123,8 @@ const listLoading = ref(true)
 const tableData = ref([])
 const total = ref(0)
 
-const questionShow = reactive({
+//预览题库
+const questionShow = ref({
   qType: 0,
   dialog: false,
   question: null,
@@ -133,45 +141,20 @@ const editUrlEnumTmp = [
 ]
 
 
-//获取题目类型名称
-const getQuestionName = (questionType) => {
-  if (!questionType || !mt_question_type.value) return '';
-  const found = mt_question_type.value.find(item => item.value === questionType.toString());
-  return found ? found.label : '';
+
+/** 重置按钮操作 */
+function resetQuery() {
+  proxy.resetForm("queryFormRef");
+  submitForm();
 }
 
-
-//获取学校类型名称
-const getSchoolTypeName = (schoolType) => {
-  if (!schoolType || !mt_school_type.value) return '';
-  const found = mt_school_type.value.find(item => item.value === schoolType);
-  return found ? found.label : '';
-}
-
-//获取普教-学段名称
-const getAcademicStageName = (academicStageType) => {
-  if (!academicStageType || !mt_academic_stage.value) return '';
-  const found = mt_academic_stage.value.find(item => item.value === academicStageType);
-  return found ? found.label : '';
-}
-
-//获取职教-学段名称
-const getVocalEducationTypeName = (vocalEducationType) => {
-  if (!vocalEducationType || !mt_vocal_education_type.value) return '';
-  const found = mt_vocal_education_type.value.find(item => item.value === vocalEducationType);
-  return found ? found.label : '';
-}
-
-
-
-
-
-// 方法
+// 搜索方法
 const submitForm = () => {
   queryParam.pageNum = 1
   search()
 }
 
+//获取题库列表
 const search = async () => {
   listLoading.value = true
   try {
@@ -188,20 +171,16 @@ const search = async () => {
   }
 }
 
-const levelChange = () => {
-  queryParam.subjectId = null
-  subjectFilter.value = subjects.value.filter(data => data.level === queryParam.level)
-}
-
+// 预览题库
 const showQuestion = async (row) => {
-  questionShow.dialog = true
-  questionShow.loading = true
+  questionShow.value.dialog = true
+  questionShow.value.loading = true
   try {
     const re = await getQuestion(row.id)
-    questionShow.qType = re.data.questionType
-    questionShow.question = re.response
+    questionShow.value.qType = re.data.questionType
+    questionShow.value.question = re.data
   } finally {
-    questionShow.loading = false
+    questionShow.value.loading = false
   }
 }
 
@@ -215,6 +194,7 @@ const editQuestion = (row) => {
   }
 }
 
+//删除题库
 const  deleteQuestion= async (row) => {
 
   ElMessageBox.confirm(

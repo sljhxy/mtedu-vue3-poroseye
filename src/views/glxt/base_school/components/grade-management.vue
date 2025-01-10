@@ -176,14 +176,6 @@ const reset = () => {
 // 加载状态
 const loading = ref(false)
 
-const getEducationLevelText = (level) => {
-  const levelMap = {
-    primary: '小学',
-    junior: '初中',
-    senior: '高中'
-  }
-  return levelMap[level] || level
-}
 
 const dialogVisible = ref(false)
 const dialogType = ref('add')
@@ -192,6 +184,7 @@ const editingGrade = ref({
   name: '',
   schoolId: props.schoolInfo.id
 })
+
 const geadeFrom = ref({
   id: null,
   name: '',

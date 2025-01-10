@@ -42,3 +42,47 @@ export function delVocalUser(id) {
     method: 'delete'
   })
 }
+
+//教师 - 配置课程
+export function configCourse(data) {
+  return request({
+    url: '/glxt/baseUser/configCourse',
+    method: 'post',
+    data: data
+  })
+}
+
+
+//教师 - 修改配置课程
+export function editConfigCourse(data) {
+  return request({
+    url: '/glxt/baseUser/editConfigCourse',
+    method: 'put',
+    data: data
+  })
+}
+//教师 - 删除配置
+export function deleteConfigCourse(id) {
+  return request({
+    url: '/glxt/baseUser/deleteConfigCourse/' + id,
+    method: 'delete'
+  })
+}
+
+
+// 教师- 查看配置课程
+export function selectConfigCourseById(id) {
+  return request({
+    url: '/glxt/baseUser/selectConfigCourseById/' + id,
+    method: 'get'
+  })
+}
+
+
+// 获取教师配置列表
+export function selectVocalConfigCourseList(userId) {
+  return request({
+    url: '/glxt/baseUser/selectVocalConfigCourseList/' + userId,
+    method: 'get'
+  })
+}

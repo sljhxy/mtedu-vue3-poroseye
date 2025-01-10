@@ -83,7 +83,7 @@
                 </div>
               </transition-group>
             </div>
-            <el-dialog style="margin-top: 15vh !important;" title="实验原理" v-model="principleDialogVisible">   
+            <el-dialog style="margin-top: 5vh !important;" title="实验原理" v-model="principleDialogVisible">   
                 <el-form :model="formPrincipleData" ref="principleFormRef">
                         <el-form-item class="editor-wrapper" prop="text">
                           <Tinymce v-model="formPrincipleData.text" :height="400" />
@@ -171,7 +171,7 @@
                 </div>
               </transition-group>
             </div>
-            <el-dialog style="margin-top: 15vh !important;" title="实验目标" v-model="targetDialogVisible">   
+            <el-dialog style="margin-top: 5vh !important;" title="实验目标" v-model="targetDialogVisible">   
               <el-form :model="formTargetData" ref="targetFormRef">
                       <el-form-item class="editor-wrapper" prop="text">
                         <Tinymce v-model="formTargetData.text" :height="400" />

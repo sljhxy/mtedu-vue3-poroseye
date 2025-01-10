@@ -226,7 +226,7 @@ const { mt_is_active_type, mt_is_start_type, mt_is_binding_type, mt_school_type 
 import { baseListSchool } from "@/api/glxt/base_school";
 
 //引入职教-学校相关接口
-import { vacalListSchool } from "@/api/glxt/vocal_school";
+import { vocalListSchool } from "@/api/glxt/vocal_school";
 
 const deviceList = ref([]);
 const open = ref(false);
@@ -299,7 +299,7 @@ function schoolTypeChange(value) {
     });
   } else if (value == '2') {
     schoolDisabled.value = false;
-    vacalListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+    vocalListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
       schoolList.value = response.rows;
     })
   }
@@ -413,7 +413,7 @@ function handleUpdate(row) {
     });
   } 
   if (row.schoolType == '2') {
-    vacalListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+    vocalListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
       schoolList.value = response.rows;
     })
   }

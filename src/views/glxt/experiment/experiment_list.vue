@@ -96,14 +96,14 @@
         <el-table-column label="操作" width="500" align="center">
           <template #default="scope">
             <div class="operation-buttons">
-              <el-button 
+              <!-- <el-button 
                 type="success" 
                 plain
                 @click="handlePreview(scope.row)"
               >
                 <el-icon><View /></el-icon>
                 <span>预览</span>
-              </el-button>
+              </el-button> -->
               <el-button 
                 type="primary" 
                 color="#6EDC93"
@@ -243,7 +243,7 @@ const handleDelete = (row) => {
   })
 }
 
-getListExperimentInfo()
+getListExperimentInfo();
 
 
 // 控制搜索框显示隐藏

@@ -36,7 +36,7 @@
       <component
         ref="currentComponentRef" 
         :is="currentComponent"
-        v-model:experimentName="experimentName"
+        :experimentName="experimentName"
         :experimentId="currentExperimentId"
         @canSave="updateCanSave"
       ></component>
@@ -50,7 +50,7 @@
           <el-button 
             class="nav-button prev-button" 
             v-if="activeStep == 0" 
-            @click="go_back"
+            @click="handleBackList"
           >
             <el-icon><ArrowLeft /></el-icon>
             返回列表
@@ -117,6 +117,7 @@ const props = defineProps({
   }
 })
 
+
 const router = useRouter()
 const activeStep = ref(0)
 
@@ -130,22 +131,23 @@ const steps = [
   AuditManagement//审核
 ]
 
+
 const currentComponent = computed(() => {
   return steps[activeStep.value]
 })
 
 
-
-const go_back = () => {
+//返回列表
+const handleBackList = () => {
   router.push({
     path: '/glxt/experiment/experiment_list',
     query: { 
-      _t: Date.now() // 添加时间戳参数强制刷新列表
+      _t: new Date().getTime() // 添加时间戳参数强制刷新列表
     }
   })
-
 }
 
+//上一步
 const prev = () => {
   if (activeStep.value > 0) {
     activeStep.value--
@@ -212,9 +214,9 @@ const next = async () => {
 }
 
 // 添加返回方法
-const handleBack = () => {
-  router.go(-1)
-}
+// const handleBack = () => {
+//   router.go(-1)
+// }
 </script>
 
 <style lang="scss" scoped>

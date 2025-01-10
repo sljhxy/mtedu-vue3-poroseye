@@ -107,6 +107,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import SchoolManagement from './components/school-management.vue'//学校
 import CollegeManagement from './components/college-management.vue'//学院
 import SystemManagement from './components/system-management.vue'//系
@@ -147,14 +148,16 @@ const stepsList = computed(() => {
 
   // 如果是本科(isCollege === '1')，在第二个位置插入学院和系
   console.log(schoolInfo.value.isCollege + '<-学段')
-  if (schoolInfo.value?.isCollege === '1' && schoolInfo.value?.isSystem === '1') {
+  // if (schoolInfo.value?.isCollege === '1' && schoolInfo.value?.isSystem === '1') {
+  //   baseSteps.splice(1, 0, 
+  //     { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
+  //     { title: '创建系', description: '填写系基本信息', icon: Collection }
+  //   )
+  // } else 
+  if (schoolInfo.value?.isCollege === '1'){
     baseSteps.splice(1, 0, 
-      { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
-      { title: '创建系', description: '填写系基本信息', icon: Collection }
-    )
-  } else if (schoolInfo.value?.isCollege === '1'){
-    baseSteps.splice(1, 0, 
-      { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
+    { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
+    { title: '创建系', description: '填写系基本信息', icon: Collection }
     )
   } else {
     // 如果是专科或中专(isCollege === '2' || '3')，只在第二个位置插入系

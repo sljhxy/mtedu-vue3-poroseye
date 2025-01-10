@@ -13,22 +13,30 @@
         </div>
       </template>
 
-      <el-form :model="form" ref="form" label-width="140px" v-loading="formLoading" :rules="rules" class="question-form">
+      <el-form :model="form" ref="formRef" label-width="140px" v-loading="formLoading" :rules="rules" class="question-form">
         <!-- 基础信息区域 -->
         <div class="form-section">
           <div class="section-row">
-            <FirstLinePlugins @selectData="handleSelectData" />
+            <FirstLinePlugins 
+            @selectData="handleSelectData" 
+            :initialData="{
+                schoolType: form.schoolType,
+                academicStageType: form.academicStageType,
+                courseSystems: form.courseSystems
+              }"
+              />
           </div>
         </div>
 
         <!-- 题目内容区域 -->
         <div class="form-section">
+          <!-- {{ form.title }} -->
           <el-form-item label="题干：" prop="title" required>
             <el-input v-model="form.title" @focus="inputClick(form,'title')" type="textarea" :rows="3"/>
           </el-form-item>
 
 
-          {{ form.items }}
+          <!-- {{ form.items }} -->
           <!-- {{ newItemArr }} -->
           <el-form-item label="填空答案：" required>
 
@@ -77,7 +85,7 @@
                 collapse-tags-tooltip
                 />
             </el-form-item>
-            {{ form.knowledgePoints }}
+            <!-- {{ form.knowledgePoints }} -->
         </div>
       </el-form>
     </el-card>
@@ -178,9 +186,9 @@ const questionShow = ref({
 
 // 处理firstLinePlugins组件传过来的数据
 const handleSelectData = (data) => {
-  formData.value.schoolType = data.schoolType
-  formData.value.academicStageType = data.academicStageType
-  formData.value.courseSystems = data.courseSystems
+  form.value.schoolType = data.schoolType
+  form.value.academicStageType = data.academicStageType
+  form.value.courseSystems = data.courseSystems
 }
 
 //知识点树形结构
@@ -212,12 +220,18 @@ onMounted(async () => {
     try {
         const response = await getQuestion(id)
         const questionData = response.data
-        formData.value = {
+        form.value = {
         ...questionData,
         knowledgePoints: Array.isArray(questionData.knowledgePoints) 
         ? questionData.knowledgePoints 
         : []
-    }
+        }
+          // 将数据传递给 FirstLinePlugins 组件
+          // handleSelectData({
+          //       schoolType: questionData.schoolType,
+          //       academicStageType: questionData.academicStageType,
+          //       courseSystems: questionData.courseSystems
+          //   })
         console.log('加载的表单数据:', formData.value)
     } catch (error) {
         console.error('加载题目数据失败:', error)
@@ -242,6 +256,8 @@ const inputClick = (object, parameterName) => {
   richEditor.value.parameterName = parameterName
   richEditor.value.dialogVisible = true
 }
+
+
 const updateEditorContent = (newContent) => {
   richEditor.value.content = newContent
 }
@@ -281,6 +297,7 @@ const newItemArr = ref([])
 
 // 填空题特有的方法
 const questionItemReset = (content) => {
+  // debugger
   const spanRegex = /<span class="gapfilling-span (.*?)">(.*?)<\/span>/g
   const matches = [...content.matchAll(spanRegex)]
   

@@ -188,7 +188,7 @@ export const constantRoutes = [
   path: '/glxt/experiment',
   component: Layout,
   redirect: '/glxt/experiment/experiment_list',
-  name: 'experiment',
+  name: 'ExperimentManagement',
   meta: { title: '实验管理'},
   hidden: true,
   children: [
@@ -196,13 +196,15 @@ export const constantRoutes = [
       path: 'experiment_list',
       name: 'experimentList',
       component: () => import('@/views/glxt/experiment/experiment_list.vue'),
-      meta: { title: '实验管理', icon: 'experiment' }
+      meta: { title: '实验管理列表'},
+      hidden: true
     },
     {
       path: 'experiment_steps',
       name: 'experimentSteps',
       component: () => import('@/views/glxt/experiment/experiment_steps.vue'),
-      meta: { title: '实验步骤', icon: 'experiment' }
+      meta: { title: '实验步骤'},
+      hidden: true
     }
     // ... 其他路由
   ]

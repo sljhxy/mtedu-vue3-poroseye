@@ -1,7 +1,7 @@
 import request from '@/utils/request'
 
 // 查询职教-学校列表
-export function vacalListSchool(query) {
+export function vocalListSchool(query) {
   return request({
     url: '/glxt/vocalSchool/list',
     method: 'get',

@@ -39,7 +39,7 @@
               <div class="info-header">
                 <div class="header-left">
                   <div class="experiment-icon-wrapper">
-                    <el-icon class="experiment-icon"><Beaker /></el-icon>
+                    <el-icon class="experiment-icon"><MostlyCloudy /></el-icon>
                   </div>
                   <div class="title-group">
                     <div class="title-row">
@@ -163,7 +163,7 @@
               v-model="dialogVisible"       
               :title="isEdit ? '编辑实验信息' : '添加实验信息'"
               width="50%"
-              style="margin-top: 17vh !important;"
+              style="margin-top: 5vh !important;"
               :close-on-click-modal="false"
               :destroy-on-close="true"
               class="experiment-dialog"
@@ -405,12 +405,12 @@
                       </el-form-item>
                   </el-form>
                   <template #footer>
-                    <span class="dialog-footer">
+                    <div class="dialog-footer">
                       <el-button @click="descDialogVisible = false">取消</el-button>
                       <el-button type="primary" @click="submitDescForm">确定</el-button>
-                    </span>
+                    </div>
                   </template>
-                </el-dialog>
+            </el-dialog>
           </el-tab-pane>
         </el-tabs>
       </div>
@@ -442,6 +442,7 @@ import {getExperimentInfoDescribe, addExperimentInfoDescribe, updateExperimentIn
 const route = useRoute()
 const activeStep = ref(0)
 const loading = ref(true);
+
 // 处理标签页点击
 const handleTabClick = (tab) => {
   if (tab.props.name === 'experimentDesc' && !experimentId.value) {
@@ -774,11 +775,12 @@ const showDescDialog = () => {
   descDialogVisible.value = true
 }
 
-
+const experimentName = ref(basicForm.value.experimentName);
 
 // 暴露 activeTab 给父组件
 defineExpose({
   activeTab,
+  experimentName,
   experimentId,
   validateForm 
 })

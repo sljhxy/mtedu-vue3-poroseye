@@ -5,6 +5,7 @@
       <div class="info-card">
         <div class="info-header">
           <el-icon><School /></el-icon>
+          {{ schoolInfo }}
           <h3>学校信息</h3>
         </div>
         <div class="info-content">

@@ -243,7 +243,7 @@
     </div>
 
     <!-- 文件上传对话框 -->
-    <el-dialog v-model="uploadDialogVisible" :title="uploadDialogTitle" width="600px" class="upload-dialog" style="margin-top: 10% !important;">
+    <el-dialog v-model="uploadDialogVisible" :title="uploadDialogTitle" width="600px" class="upload-dialog" style="margin-top: 5vh !important;">
       <el-form ref="submitFormRef" :model="submitForm" :rules="rules" label-width="120px">
         <el-form-item :label="fileBtnName" prop="fileUrl">
           <file-upload v-model="submitForm.fileUrl" @fileData="fileSuccessData" :fileSuffix="currentUploadType"/>
