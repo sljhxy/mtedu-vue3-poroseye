@@ -347,6 +347,25 @@
             ></el-option>
           </el-select>
         </el-form-item>
+      
+        <el-form-item label="学校：" prop="selectSchoolOpections">
+                <el-cascader
+                    v-model="form.selectSchoolOpections"
+                    :options="schoolOptions"
+                    :show-all-levels="false"
+                    :props="{ 
+                        expandTrigger: 'hover',
+                        emitPath: true
+                    }"
+                    placeholder="请选择课程体系"
+                    clearable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    class="w-full"
+                    @change="handleCourseSystemChange"
+                />
+                {{form.selectSchoolOpections}}
+            </el-form-item>
         <el-form-item label="学院" prop="collegeId" v-show="isCollege == '1'">
           <el-select v-model="form.collegeId" placeholder="请选择学院" clearable style="width: 100%"
           :disabled="!form.schoolId"
@@ -603,7 +622,7 @@
 <script setup name="VocalUser">
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listVocalUser, getVocalUser, delVocalUser, addVocalUser, updateVocalUser,
-        configCourse,editConfigCourse,deleteConfigCourse,selectConfigCourseById,selectVocalConfigCourseList } from "@/api/glxt/vocalUser";
+        configCourse,editConfigCourse,deleteConfigCourse,selectConfigCourseById,selectVocalConfigCourseList, getSchoolOptions } from "@/api/glxt/vocalUser";
 
 const { proxy } = getCurrentInstance();
 const { mt_user_type, sys_user_sex, mt_school_subject } = proxy.useDict('mt_user_type', 'sys_user_sex', 'mt_school_subject');
@@ -644,6 +663,18 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+
+
+const schoolOptions = ref([])//获取挂载课程
+
+const getSelectSchoolOptionList = () => {
+
+  getSchoolOptions().then(response => {
+    schoolOptions.value = response.data
+   
+})
+}
+
 
 //确认密码校验
 const equalToPassword = (rule, value, callback) => {
@@ -957,6 +988,7 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset();
+  getSelectSchoolOptionList()
   //获取学校列表
   schoolSelectChange()
   open.value = true;

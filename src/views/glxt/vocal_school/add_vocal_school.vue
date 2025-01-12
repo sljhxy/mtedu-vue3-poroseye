@@ -35,19 +35,22 @@
     />
 
     <!-- 系管理 - 根据学校类型调整显示位置 -->
+    <!-- v-if="(schoolInfo.isCollege === '1' && currentStep === 2) || 
+    (schoolInfo.isCollege !== '1' && currentStep === 1)" -->
     <system-management
-      v-if="(schoolInfo.isCollege === '1' && currentStep === 2) || 
-            (schoolInfo.isCollege !== '1' && currentStep === 1)"
+    v-if="(schoolInfo.isCollege === '1' && schoolInfo.isSystem === '1' && currentStep === 2) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '1' && currentStep === 1)"
       :schoolInfo="schoolInfo"
-      :colleges="colleges"
+      :colleges="collegesData"
       @prev-step="handlePrevStep"
       @next-step="handleSystemNext"
     />
 
     <!-- 创建专业 -->
     <speciality-management 
-    v-if="(schoolInfo.isCollege === '1' && currentStep === 3) || 
-            (schoolInfo.isCollege !== '1' && currentStep === 2)"
+    v-if="(schoolInfo.isCollege === '1' && schoolInfo.isSystem === '1' && currentStep === 3) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '1' && currentStep === 2) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '0' && currentStep === 1)"
       :school-info="schoolInfo"
       :systems="systems"
       @prev-step="handlePrevStep"
@@ -56,8 +59,9 @@
 
     <!-- 创建年级 -->
     <grade-management 
-      v-if="(schoolInfo.isCollege === '1' && currentStep === 4) || 
-            (schoolInfo.isCollege !== '1' && currentStep === 3)"
+            v-if="(schoolInfo.isCollege === '1' && schoolInfo.isSystem === '1' && currentStep === 4) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '1' && currentStep === 3) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '0' && currentStep === 2)"
       :school-info="schoolInfo" 
       :specialities="specialities"
       @prev-step="handlePrevStep"
@@ -66,8 +70,9 @@
 
     <!-- 创建班级 -->
     <class-management 
-      v-if="(schoolInfo.isCollege === '1' && currentStep === 5) || 
-            (schoolInfo.isCollege !== '1' && currentStep === 4)"
+    v-if="(schoolInfo.isCollege === '1' && schoolInfo.isSystem === '1' && currentStep === 5) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '1' && currentStep === 4) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '0' && currentStep === 3)"
       :grades="grades"
       :schoolInfo="schoolInfo"
       :specialities="specialities"
@@ -77,8 +82,9 @@
 
     <!-- 创建科目课程 -->
     <course-management 
-      v-if="(schoolInfo.isCollege === '1' && currentStep === 6) || 
-            (schoolInfo.isCollege !== '1' && currentStep === 5)"
+    v-if="(schoolInfo.isCollege === '1' && schoolInfo.isSystem === '1' && currentStep === 6) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '1' && currentStep === 5) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '0' && currentStep === 4)"
       :grades="grades"
       :schoolInfo="schoolInfo"
       :specialities="specialities"
@@ -88,8 +94,9 @@
 
     <!-- 设备激活 -->
     <device-management 
-      v-if="(schoolInfo.isCollege === '1' && currentStep === 7) || 
-            (schoolInfo.isCollege !== '1' && currentStep === 6)"
+    v-if="(schoolInfo.isCollege === '1' && schoolInfo.isSystem === '1' && currentStep === 7) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '1' && currentStep === 6) || 
+            (schoolInfo.isCollege === '0' && schoolInfo.isSystem === '0' && currentStep === 5)"
       :schoolInfo="schoolInfo"
       @prev-step="handlePrevStep"
     />
@@ -127,7 +134,7 @@ const currentStep = ref(0)
 const schoolFormRef = ref(null)
 const route = useRoute()
 const grades = ref([])
-const colleges = ref([])
+const collegesData = ref([])
 const systems = ref([])
 const specialities = ref([])
 
@@ -148,18 +155,23 @@ const stepsList = computed(() => {
 
   // 如果是本科(isCollege === '1')，在第二个位置插入学院和系
   console.log(schoolInfo.value.isCollege + '<-学段')
-  // if (schoolInfo.value?.isCollege === '1' && schoolInfo.value?.isSystem === '1') {
-  //   baseSteps.splice(1, 0, 
-  //     { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
-  //     { title: '创建系', description: '填写系基本信息', icon: Collection }
-  //   )
-  // } else 
-  if (schoolInfo.value?.isCollege === '1'){
+  if (schoolInfo.value?.isCollege === '1' && schoolInfo.value?.isSystem === '1') {
     baseSteps.splice(1, 0, 
-    { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
+      { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
+      { title: '创建系', description: '填写系基本信息', icon: Collection }
+    )
+  } else 
+  if (schoolInfo.value?.isCollege == '0' && schoolInfo.value?.isSystem == '0'){
+    baseSteps.splice(1, 0, 
+    // { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },
+    // { title: '创建系', description: '填写系基本信息', icon: Collection }
+    )
+  } else if (schoolInfo.value?.isCollege == '0' && schoolInfo.value?.isSystem == '1'){
+    baseSteps.splice(1, 0, 
+    
     { title: '创建系', description: '填写系基本信息', icon: Collection }
     )
-  } else {
+  }else{
     // 如果是专科或中专(isCollege === '2' || '3')，只在第二个位置插入系
     baseSteps.splice(1, 0, 
       { title: '创建系', description: '填写系基本信息', icon: Collection }
@@ -240,7 +252,11 @@ const handleSchoolNext = (schoolData) => {
 
 // 处理学院管理的下一步
 const handleCollegeNext = (collegeData) => {
-  colleges.value = collegeData
+
+  console.log('接收学院数据')
+  console.log(collegeData)
+  console.log('接收学院数据')
+  collegesData.value = collegeData
   currentStep.value++
 }
 

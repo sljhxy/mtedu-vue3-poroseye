@@ -24,10 +24,11 @@
           </div> -->
         </div>
         <!-- 只有为本科院校时，才显示学院列表 1本科 -->
-        <div class="college-section" v-show="schoolInfo.schoolPeriod == 1">
+        <div class="college-section" v-show="schoolInfo.isCollege == '1'">
           <div class="college-header">
             <span class="label">学院列表</span>
-            <!-- {{ currentCollege }} -->
+            {{ currentCollege }}
+            {{ colleges }}
           </div>
           <div class="college-tags">
             <el-tag
@@ -414,7 +415,8 @@ const saveSystem = () => {
   try{
     systemFormRef.value.validate((valid) => {
     if (valid) {
-      if(props.schoolInfo.schoolPeriod == 1){//本科院校
+      debugger
+      if(props.schoolInfo.isCollege == '1'){//本科院校
         systemForm.value.schoolOrCollegeId = currentCollege.value.id//获取学院id
       }else{//专科院校
         systemForm.value.schoolOrCollegeId = props.schoolInfo.id//获取学校id

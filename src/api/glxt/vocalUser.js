@@ -86,3 +86,18 @@ export function selectVocalConfigCourseList(userId) {
     method: 'get'
   })
 }
+
+
+
+
+
+    /**
+     * 职教添加用户 学校-学院-系-专业 下拉
+     * 获取学校课程下拉框
+     */
+export function getSchoolOptions() {
+  return request({
+    url: '/glxt/vocalUser/getSchoolOption',
+    method: 'get'
+  })
+}

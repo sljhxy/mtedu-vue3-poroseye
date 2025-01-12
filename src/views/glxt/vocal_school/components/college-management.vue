@@ -310,8 +310,12 @@ const handleNextStep = () => {
     ElMessage.warning('请至少添加一个学院')
     return
   }
+  console.log('学院数据')
+  console.log(collegeList.value)
+  console.log('学院数据')
   // 传递学院数据
   emit('next-step', collegeList.value)
+  
 
 }
 

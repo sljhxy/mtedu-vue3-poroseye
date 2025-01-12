@@ -10,7 +10,7 @@
         <div class="info-content">
           <div class="info-item">
             <span class="label">学校名称：</span>
-            <span class="value">{{ schoolInfo?.name }}</span>
+            <span class="value">{{ schoolInfo?.name }}-{{ schoolInfo?.id }}</span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
@@ -23,7 +23,7 @@
             <span class="value">{{ schoolInfo.schoolPeriodName }}-{{ schoolInfo.schoolPeriod }}</span>
           </div> -->
         </div>
-        <div class="grade-section">
+        <div class="grade-section" v-show="schoolInfo.isSystem == '1'">
           <div class="grade-header">
             <span class="label">系列表</span>
           </div>
@@ -143,7 +143,7 @@
     >
       <el-form :model="specialityForm" label-width="80px" :rules="rules" ref="specialityFormRef">
         
-        <el-form-item label="系" prop="vocalEduSystemId">
+        <el-form-item label="系" prop="vocalEduSystemId" v-show="schoolInfo.isSystem == '1'">
           <el-select v-model="specialityForm.vocalEduSystemId" placeholder="请选择系" class="w-full" disabled>
             <el-option
               v-for="system in systems"
@@ -244,9 +244,10 @@ const specialityFormRef = ref(null)
 
 const specialityForm = ref({
   id: null,
+  schoolId: '',//学校id
   schoolPeriod: '',//学段
   schoolYear: '',//学制
-  vocalEduSystemId: '',//系列id
+  vocalEduSystemId: '',//系列id或者学校 Id
   specialityName: '',//专业名称
   specialityAbbreviation: '',//专业简称
   specialityDesc: '',//专业描述
@@ -285,6 +286,7 @@ const specialityList = ref([]);
 const queryParams = ref({
   pageNum: 1,
   pageSize: 10,
+  schoolId: props.schoolInfo.id,
   vocalEduSystemId: '',
   specialityName: '',
   specialityAbbreviation: '',
@@ -302,9 +304,17 @@ const reset = () => {
   }
 }
 const loading = ref(false);
+
+
+
 // 根据年级id获取专业列表的方法，添加分页逻辑
 const getSpecialityesBySystem = (system) => {
-  queryParams.value.vocalEduSystemId = system.id;
+  if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
+    queryParams.value.vocalEduSystemId = system.id;//获取学系id
+  }else{//专科院校
+    queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
+  }
+  // queryParams.value.vocalEduSystemId = system.id;
   getList(queryParams.value);
   // 设置总数和更新表格数据
   // handleSearch()
@@ -319,6 +329,18 @@ const getList = (params) => {
     loading.value = false;
   });
 };
+
+
+// 监听学院数据变化
+watch(() => props.schoolInfo.isSystem, (newSystems) => {
+  
+  if(newSystems == '0') {
+    queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
+    getList(queryParams.value);  
+  }
+  
+  
+}, { immediate: true })
 
 // 添加搜索处理方法
 const handleSearch = () => {
@@ -367,12 +389,23 @@ watch(() => props.systems, (newSystems) => {
 // 添加专业
 const clickAddSpeciality = () => {
   reset();
+
+  if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
+      specialityForm.value.vocalEduSystemId = currentSystem.value.id//获取学系id
+    }else{//专科院校
+    specialityForm.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
+  }
+
   //给系赋值获取当前选中的系id
-  specialityForm.value.vocalEduSystemId = currentSystem.value.id
-  if (!currentSystem.value) {
+  // specialityForm.value.vocalEduSystemId = currentSystem.value.id
+
+  if(props.schoolInfo.isSystem == '1'){
+    if (!currentSystem.value) {
     ElMessage.warning('请先选择系')
     return
   }
+  }
+
   
   dialogType.value = 'add'
   dialogVisible.value = true
@@ -428,11 +461,21 @@ const saveSpeciality = () => {
   try{
     specialityFormRef.value.validate((valid) => {
     if (valid) {
+      // if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
+      //   specialityForm.value.vocalEduSystemId = currentSystem.value.id//获取学系id
+      // }else{//专科院校
+      //   specialityForm.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
+      // }
+      if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
+          queryParams.value.vocalEduSystemId = currentSystem.value.id//获取学系id
+      }else{//专科院校
+         queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
+      }
       if (specialityForm.value.id != null) {
         updateSpeciality(specialityForm.value).then(response => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("修改成功");
-            queryParams.value.vocalEduSystemId = currentSystem.value.id
+           // queryParams.value.vocalEduSystemId = currentSystem.value.id
             getList(queryParams.value);
           } 
         });
@@ -440,7 +483,7 @@ const saveSpeciality = () => {
         addSpeciality(specialityForm.value).then(response => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("新增成功");
-            queryParams.value.vocalEduSystemId = currentSystem.value.id
+            // queryParams.value.vocalEduSystemId = currentSystem.value.id
             getList(queryParams.value);
           }
         });

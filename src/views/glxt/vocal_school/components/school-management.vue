@@ -213,7 +213,7 @@
             </el-form-item>
 
             <el-form-item label="是否有系:" class="full-width" prop="isSystem">
-              <el-radio-group v-model="formData.isSystem" disabled>
+              <el-radio-group v-model="formData.isSystem">
                 <el-radio label="1">是</el-radio>
                 <el-radio label="0">否</el-radio>
               </el-radio-group>
