@@ -23,7 +23,7 @@
           <div class="info-item">
             <div class="info-row">
               <span class="label">学段：</span>
-              <span class="value">{{ schoolInfo?.schoolTypeName }}</span>
+              <span class="value">{{ schoolInfo?.schoolTypeName }}- {{schoolInfo?.schoolType  }}</span>
             </div>
           </div>
         </div>
@@ -348,7 +348,7 @@ watch(queryParams.value.name, () => {
 const subjectOptions = ref([])
 const initSubjectList = () => {
   try{
-    initSubject({schoolType: '1'}).then(response => {
+    initSubject({schoolType: '1', educationStageType:props.schoolInfo.schoolType}).then(response => {
       if(response.code == 200){
         subjectOptions.value = response.rows
         //获取科目名称

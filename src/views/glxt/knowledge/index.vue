@@ -24,10 +24,10 @@
       <el-form-item label="科目" prop="subjectId">
         <el-select v-model="queryParams.subjectId" placeholder="请选择科目"  style="width: 130px" clearable>
           <el-option
-            v-for="subject in subjectOptions"
-            :key="subject.id"
-            :label="getSubjectName(subject.subjectType)"
-            :value="subject.subjectType"/>
+            v-for="dict in queryParams.schoolTypeId=='1'?mt_school_subject:mt_vocal_school_subject"
+            :key="dict.value"
+            :label="dict.label"
+            :value="dict.value"/>
         </el-select>
       </el-form-item>
       <el-form-item label="知识点" prop="knowledge">
@@ -103,7 +103,7 @@
       </el-table-column> 
       <el-table-column label="科目" align="center" width="150">
         <template #default="scope">
-          <dict-tag :options="mt_school_subject" :value="scope.row.subjectId"/>
+          <dict-tag :options="scope.row.schoolTypeId=='1'?mt_school_subject:mt_vocal_school_subject" :value="scope.row.subjectId"/>
         </template>
       </el-table-column>
       <el-table-column label="操作" align="center" width="450">
@@ -174,10 +174,10 @@
           <el-form-item label="科目" prop="subjectId">
             <el-select v-model="form.subjectId" placeholder="请选择科目"  clearable>
               <el-option
-                v-for="subject in subjectOptions"
-                :key="subject.id"
-                :label="getSubjectName(subject.subjectType)"
-                :value="subject.subjectType"/>
+                v-for="dict in form.schoolTypeId=='1'?mt_school_subject:mt_vocal_school_subject"
+                :key="dict.value"
+                  :label="dict.label"
+                  :value="dict.value"/>
             </el-select>
             </el-form-item>
             <el-form-item label="上级知识点" prop="parentId">
@@ -197,7 +197,6 @@
           <el-input 
             v-model="form.knowledge" 
             placeholder="请输入知识点名称"
-            maxlength="50"
             show-word-limit
           />
         </el-form-item>
@@ -218,7 +217,7 @@ import { Document, Folder } from '@element-plus/icons-vue'
 import { listSubject} from "@/api/glxt/subject";
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
-const { mt_vocal_education_type, mt_academic_stage, mt_school_subject, mt_school_type} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject', 'mt_school_type');
+const { mt_vocal_education_type, mt_academic_stage, mt_school_subject, mt_school_type,mt_vocal_school_subject} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject', 'mt_school_type','mt_vocal_school_subject');
 
 const knowledgeList = ref([]);
 const knowledgeOptions = ref([]);

@@ -1,6 +1,5 @@
 <template>
   <div class="experiment-steps">
-    <!-- Top Action Bar -->
     <div class="top-actions">
       <div class="left-area"/>
       <div class="center-area">
@@ -15,7 +14,6 @@
 
       <div class="right-area"/>
     </div>
-    <!-- Steps -->
     <el-steps 
       simple
       :active="activeStep" 
@@ -31,19 +29,20 @@
         <el-step title="审核提交" icon="Check" />
     </el-steps>
 
-    <!-- Steps Content -->
+  
     <div class="steps-content">
       <component
         ref="currentComponentRef" 
         :is="currentComponent"
+        @addExperimentInfoId="handleAddExperimentInfoId"
+        :toEexperimentInfoId="toEexperimentInfoId"
         :experimentName="experimentName"
         :experimentId="currentExperimentId"
-        @canSave="updateCanSave"
+        @currentId="updateExperimentId"
       ></component>
     
     </div>
 
-    <!-- Bottom Action Buttons -->
     <div class="page-footer">
       <div class="footer-content">
         <div class="button-group">
@@ -52,8 +51,8 @@
             v-if="activeStep == 0" 
             @click="handleBackList"
           >
-            <el-icon><ArrowLeft /></el-icon>
-            返回列表
+          <el-icon><ArrowLeft /></el-icon>
+            返回列表            
           </el-button>
           <el-button 
             class="nav-button prev-button" 
@@ -79,28 +78,29 @@
             @click="submit"
             v-if="activeStep === 5"
           >
-            提交
+            完成
             <el-icon><Check /></el-icon>
           </el-button>
         </div>
       </div>
     </div>
 
-  </div>
-
-
-    <!-- 添加新的悬浮返回按钮 -->
-    <!-- <div class="floating-return">
-      <div class="return-content" @click="handleBack">
+        <!-- 添加新的悬浮返回按钮 -->
+    <div class="floating-return">
+      <div class="return-content" @click="handleBackList">
         <div class="return-arrow"></div>
         <span class="return-text">返回列表</span>
       </div>
-    </div> -->
+    </div>
+  </div>
+
+
+
 
 </template>
 
 <script setup>
-import { ref, computed, defineProps } from 'vue'
+import { ref, computed, defineProps, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import BasicInfoManagement from './components/BasicInfo-management.vue'
@@ -109,12 +109,49 @@ import QuestionMaterialManagement from './components/QuestionMaterial-management
 import StepsSettingManagement from './components/StepsSetting-management.vue'
 import DataUploadManagement from './components/DataUpload-management.vue'
 import AuditManagement from './components/Audit-management.vue'
+// 导入inject
+import { inject } from 'vue';
 
-const props = defineProps({
-  experimentName: {
-    type: String,
-    default: '新建实验'
+// 注入刷新事件,这里括号中的参数要对应上前面provide中的第一个参数
+const goRefresh = inject('reload');
+
+//导入实验基本信息api 
+import {getExperimentInfo} from '@/api/glxt/experimentInfo'
+
+// const props = defineProps({
+//   experimentName: {
+//     type: String,
+//     default: '新建实验'
+//   }
+// })
+const route = useRoute()
+const experiment = ref({})
+//获取实验信息
+const getExperimentInfoData = async (experimentId) => {
+  const response = await getExperimentInfo(experimentId)
+  if (response.code === 200) {
+    experimentName.value = response.data.experimentName
+    // currentExperimentId.value = experimentId
+  } else {
+    ElMessage.error('获取实验信息失败')
   }
+}
+
+// 修改 onMounted 钩子
+onMounted(async () => {
+  // 从路由参数判断操作类型和实验ID
+  const { type, id } = route.query
+  
+  if (type === 'edit' && id) {
+    getExperimentInfoData(id)
+  } 
+
+
+  // debugger
+  // if(type === 'add' && currentExperimentId.value) {
+  //   console.log(currentExperimentId)
+  //   getExperimentInfoData(currentExperimentId.value)
+  // }
 })
 
 
@@ -137,6 +174,8 @@ const currentComponent = computed(() => {
 })
 
 
+
+
 //返回列表
 const handleBackList = () => {
   router.push({
@@ -147,9 +186,41 @@ const handleBackList = () => {
   })
 }
 
+// 监听路由变化后刷新
+// router.beforeEach((to, from, next) => {
+//   console.log('路由变化', to, from);
+//   // debugger
+//   if (to.name === 'experimentList') {
+//     next(); // 先完成路由跳转
+//       // 强制重新加载当前路由
+//     // next({ ...to, force: true });
+//     // 在需要执行的地方调用方法
+//     // goRefresh();
+//     setTimeout(() => {
+//       window.location.reload(false); // 使用 true 强制从服务器重新加载，而不是从缓存
+//     }, 0);
+//   } else {
+//     next();
+//   }
+// })
+
+
+//传向实验组件的数据
+const toEexperimentInfoId = ref(null)
+//新增完实验后传过来的学校id
+const handleAddExperimentInfoId = (experimentInfoId) => {
+  toEexperimentInfoId.value = experimentInfoId
+  console.log('接收到最新的实验id为:' + experimentInfoId)
+  getExperimentInfoData(experimentInfoId)
+}
 //上一步
 const prev = () => {
   if (activeStep.value > 0) {
+
+    if(activeStep.value === 1) {
+      getExperimentInfoData(currentExperimentId.value)
+    }
+
     activeStep.value--
     canSave.value = false// 进入上一步时，保存按钮状态重置为false
   }
@@ -157,7 +228,13 @@ const prev = () => {
 
 const submit = () => {
   // 提交逻辑
-  ElMessage.success('提交成功')
+  router.push({
+    path: '/glxt/experiment/experiment_list',
+    query: { 
+      _t: new Date().getTime() // 添加时间戳参数强制刷新列表
+    }
+  })
+  // ElMessage.success('提交成功')
 }
 
 // 实验名称响应式变量
@@ -166,19 +243,20 @@ const experimentName = ref('')
 const canSave = ref(false)
 
 // 更新保存按钮状态
-const updateCanSave = (value) => {
-  canSave.value = value
+const updateExperimentId = (value) => {
+  currentExperimentId.value = value
 }
 
 
 // Add experimentId ref
-const currentExperimentId = ref('')
+const currentExperimentId = ref()
 
 
 const currentComponentRef = ref(null)
 // Update the next method to include experimentId handling
 const next = async () => {
   if (activeStep.value < 5) {
+    // debugger
     // Check if current component has validation method
     if (currentComponentRef.value && currentComponentRef.value.validateForm) {
       try {

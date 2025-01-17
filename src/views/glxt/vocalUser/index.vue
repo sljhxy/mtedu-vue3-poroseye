@@ -80,6 +80,11 @@
           <dict-tag :options="sys_user_sex" :value="scope.row.sex"/>
         </template>
       </el-table-column>
+      <el-table-column label="学校" align="center" prop="schoolName">
+        <template #default="scope">
+          {{scope.row.mtVocalEduSchool ? scope.row.mtVocalEduSchool.schoolName : '--'}}
+        </template>
+      </el-table-column>
       <el-table-column label="编号" align="center" prop="userNo" />
       <el-table-column label="手机号" align="center" prop="phonenumber" />
       <el-table-column label="帐号状态" align="center" prop="status">
@@ -105,11 +110,11 @@
       @pagination="getList"
     />
 
-<!-- <el-dialog :title="title" v-model="open" width="800px" append-to-body class="campus-dialog">
-  <el-form ref="baseUserRef" :model="form" :rules="rules" label-width="100px" class="campus-form">
-    <div class="form-sections"> -->
+<el-dialog :title="title" v-model="open" width="1000px" append-to-body class="campus-dialog">
+  <el-form ref="vocalUserRef" :model="form" :rules="rules" label-width="100px" class="campus-form">
+    <div class="form-sections">
       <!-- 基本信息 -->
-      <!-- <div class="form-section campus-card">
+      <div class="form-section campus-card">
         <div class="section-header">
           <span class="section-title">学校信息</span>
         </div>
@@ -128,76 +133,29 @@
               </el-form-item>
             </el-col>
             <el-col :span="12">
-              <el-form-item label="学校" prop="schoolId">
-                <el-select v-model="form.schoolId" placeholder="请选择学校" clearable style="width: 100%" :disabled="!form.userType" @change="schoolChange(form.schoolId, form.userType)">
-                  <el-option
-                    v-for="school in schoolList"
-                    :key="school.id"
-                    :label="school.schoolName"
-                    :value="form.id ? school.id : school.id + ',' + school.isCollege + ',' + school.isSystem"
-                  />
-                </el-select>
-              </el-form-item>
+              <el-form-item label="学校" prop="selectSchoolOptions">
+                <el-cascader
+                style="width: 100%;"
+                    :disabled="!form.userType"
+                    v-model="form.selectSchoolOptions"
+                    :options="schoolOptions"
+                    :show-all-levels="true"
+                    :props="{ 
+                        expandTrigger: 'hover',
+                        emitPath: true
+                    }"
+                    placeholder="请选择学校体系"
+                    clearable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    class="w-full"
+                    @change="handleSchoolChange(form.selectSchoolOptions, form.userType)"
+                />
+                <!-- {{form.selectSchoolOptions}} -->
+            </el-form-item>
             </el-col>
           </el-row>
 
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <el-form-item label="学院" prop="collegeId" v-show="isCollege == '1'">
-                <el-select v-model="form.collegeId" placeholder="请选择学院" clearable style="width: 100%"
-                :disabled="!form.schoolId"
-                @change="collegeChange(form.collegeId)">
-                  <el-option
-                    v-for="college in selectCollegeList"
-                    :key="college.id"
-                    :label="college.collegeName"
-                    :value="form.id ? college.id : college.id + ',' + college.vocalEduSchoolId"
-                  ></el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="系" prop="systemId" v-show="isCollege == '1' && isSystem == '1'">
-                <el-select v-model="form.systemId" placeholder="请选择系" clearable style="width: 100%"
-                :disabled="isCollege == '1' ? !form.collegeId : !form.schoolId"
-                  @change="systemChange">
-                  <el-option
-                    v-for="system in selectSystemList"
-                    :key="system.id"
-                    :label="system.systemName"
-                    :value="system.id"
-                  ></el-option>
-                </el-select>
-              </el-form-item>
-              <el-form-item label="系" prop="systemId" v-show="isCollege == '0' && isSystem == '1'">
-                <el-select v-model="form.systemId" placeholder="请选择系" clearable style="width: 100%"
-                :disabled="isCollege == '1' ? !form.collegeId : !form.schoolId"
-                  @change="systemChange">
-                  <el-option
-                    v-for="system in selectSystemList"
-                    :key="system.id"
-                    :label="system.systemName"
-                    :value="system.id"
-                  ></el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
-
-            <el-col :span="8">
-              <el-form-item label="专业" prop="specialityId" v-show="form.schoolId">
-                <el-select v-model="form.specialityId" placeholder="请选择专业" clearable style="width: 100%"
-                :disabled="!form.systemId"
-                @change="specialityChange(form.specialityId, form.userType)">
-                  <el-option
-                    v-for="speciality in selectSpecialityList"
-                    :key="speciality.id"
-                    :label="speciality.specialityName"
-                    :value="speciality.id"
-                  ></el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
         </div>
       </div>
 
@@ -205,12 +163,12 @@
         <div class="section-header">
           <span class="section-title">年级-班级信息</span>
         </div>
-        <div class="form-content"> -->
+        <div class="form-content"> 
           <!-- 学生专属信息 -->
-          <!-- <el-row :gutter="20">
+          <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="年级" prop="gradeId">
-                <el-select v-model="form.gradeId" placeholder="请选择年级" clearable :disabled="!form.schoolId" @change="gradeChange">
+                <el-select v-model="form.gradeId" placeholder="请选择年级" clearable :disabled="!form.selectSchoolOptions" @change="gradeChange">
                   <el-option
                     v-for="grade in selectGradeList"
                     :key="grade.id"
@@ -234,10 +192,10 @@
             </el-col>
           </el-row>
         </div>
-      </div> -->
+      </div>
 
       <!-- 个人信息 -->
-      <!-- <div class="form-section campus-card">
+      <div class="form-section campus-card">
         <div class="section-header">
           <span class="section-title">个人信息</span>
         </div>
@@ -275,10 +233,10 @@
           </el-row>
 
         </div>
-      </div> -->
+      </div>
 
       <!-- 账户信息 -->
-      <!-- <div class="form-section campus-card">
+      <div class="form-section campus-card">
         <div class="section-header">
           <span class="section-title">账户信息</span>
         </div>
@@ -320,10 +278,10 @@
       <el-button @click="cancel">取 消</el-button>
     </div>
   </template>
-</el-dialog> -->
+</el-dialog>
 
     <!-- 添加或修改职教-用户对话框 -->
-    <el-dialog :title="title" v-model="open" width="600px" append-to-body>
+    <!-- <el-dialog :title="title" v-model="open" width="600px" append-to-body>
       <el-form ref="vocalUserRef" :model="form" :rules="rules" label-width="100px" class="dialog-form">
         <el-form-item label="类别" prop="userType">
           <el-select v-model="form.userType" placeholder="请选择用户类别" clearable style="width: 100%" @change="userTypeChange">
@@ -334,8 +292,8 @@
               :value="dict.value"
             ></el-option>
           </el-select>
-        </el-form-item>
-        <el-form-item label="学校" prop="schoolId">
+        </el-form-item> -->
+        <!-- <el-form-item label="学校" prop="schoolId">
           <el-select v-model="form.schoolId" placeholder="请选择学校" clearable filterable style="width: 100%" 
           :disabled="!form.userType"
           @change="schoolChange(form.schoolId, form.userType)">
@@ -346,27 +304,29 @@
             :value="form.id ? school.id : school.id + ',' + school.isCollege + ',' + school.isSystem"
             ></el-option>
           </el-select>
-        </el-form-item>
+        </el-form-item> -->
       
-        <el-form-item label="学校：" prop="selectSchoolOpections">
+        <!-- <el-form-item label="学校" prop="selectSchoolOptions">
                 <el-cascader
-                    v-model="form.selectSchoolOpections"
+                style="width: 100%;"
+                    :disabled="!form.userType"
+                    v-model="form.selectSchoolOptions"
                     :options="schoolOptions"
-                    :show-all-levels="false"
+                    :show-all-levels="true"
                     :props="{ 
                         expandTrigger: 'hover',
                         emitPath: true
                     }"
-                    placeholder="请选择课程体系"
+                    placeholder="请选择学校体系"
                     clearable
                     collapse-tags
                     collapse-tags-tooltip
                     class="w-full"
-                    @change="handleCourseSystemChange"
-                />
-                {{form.selectSchoolOpections}}
-            </el-form-item>
-        <el-form-item label="学院" prop="collegeId" v-show="isCollege == '1'">
+                    @change="handleSchoolChange(form.selectSchoolOptions, form.userType)"
+                /> -->
+                <!-- {{form.selectSchoolOptions}} -->
+            <!-- </el-form-item> -->
+        <!-- <el-form-item label="学院" prop="collegeId" v-show="isCollege == '1'">
           <el-select v-model="form.collegeId" placeholder="请选择学院" clearable style="width: 100%"
           :disabled="!form.schoolId"
           @change="collegeChange(form.collegeId)">
@@ -401,9 +361,9 @@
               :value="speciality.id"
             ></el-option>
           </el-select>
-        </el-form-item>
-        <el-form-item label="年级" prop="gradeId" v-show="form.userType == '2'">
-          <el-select v-model="form.gradeId" placeholder="请选择年级" clearable :disabled="!form.specialityId"
+        </el-form-item> -->
+        <!-- <el-form-item label="年级" prop="gradeId" v-show="form.userType == '2'">
+          <el-select v-model="form.gradeId" placeholder="请选择年级" clearable :disabled="!form.selectSchoolOptions"
           @change="gradeChange">
             <el-option
               v-for="grade in selectGradeList"
@@ -467,7 +427,7 @@
           <el-button @click="cancel">取 消</el-button>
         </div>
       </template>
-    </el-dialog>
+    </el-dialog> -->
 
 
       <!-- 修改配置对话框 -->
@@ -597,7 +557,7 @@
             <el-table-column label="班级" align="center" prop="className"/>
             <el-table-column label="科目" align="center">
               <template #default="scope">
-                <dict-tag v-for="item in scope.row.vocalCourseList" :key="item.id" :options="mt_school_subject" :value="item.subjectId"/>
+                <dict-tag v-for="item in scope.row.vocalCourseList" :key="item.id" :options="mt_vocal_school_subject" :value="item.subjectId"/>
               </template>
             </el-table-column>
             <el-table-column label="操作" align="center" >
@@ -625,7 +585,7 @@ import { listVocalUser, getVocalUser, delVocalUser, addVocalUser, updateVocalUse
         configCourse,editConfigCourse,deleteConfigCourse,selectConfigCourseById,selectVocalConfigCourseList, getSchoolOptions } from "@/api/glxt/vocalUser";
 
 const { proxy } = getCurrentInstance();
-const { mt_user_type, sys_user_sex, mt_school_subject } = proxy.useDict('mt_user_type', 'sys_user_sex', 'mt_school_subject');
+const { mt_user_type, sys_user_sex, mt_vocal_school_subject } = proxy.useDict('mt_user_type', 'sys_user_sex', 'mt_vocal_school_subject');
 
 
 //导入学校API
@@ -667,11 +627,11 @@ const title = ref("");
 
 const schoolOptions = ref([])//获取挂载课程
 
+//学院下拉相关数据
 const getSelectSchoolOptionList = () => {
 
   getSchoolOptions().then(response => {
     schoolOptions.value = response.data
-   
 })
 }
 
@@ -699,8 +659,8 @@ const data = reactive({
     userType: null,
   },
   rules: {
-    schoolId: [
-      { required: true, message: "学校不能为空", trigger: "blur" }
+    selectSchoolOptions: [
+      { required: true, message: "学校相关信息不能为空", trigger: "blur" }
     ],
     userName: [
       { required: true, message: "用户名称不能为空", trigger: "blur" }
@@ -809,6 +769,17 @@ const specialityChange = (value, userType) => {
     form.value.gradeId = null;//清空年级
     form.value.classId = null;//清空班级
     gradeList(value);
+  }
+}
+
+const handleSchoolChange = (value, userType) => {
+  if(userType == '2') {//只有当用户类型是学生的时候，才显示年级和班级
+    form.value.gradeId = null;//清空年级
+    form.value.classId = null;//清空班级
+
+    console.log(value[value.length - 1])
+    console.log(value[value.length - 1].split('-')[1])
+    gradeList(value[value.length - 1].split('-')[1]);
   }
 }
 
@@ -990,7 +961,7 @@ function handleAdd() {
   reset();
   getSelectSchoolOptionList()
   //获取学校列表
-  schoolSelectChange()
+  // schoolSelectChange()
   open.value = true;
   title.value = "添加职教-用户";
 }
@@ -1017,20 +988,22 @@ function handleUpdate(row) {
   reset();
   const _id = row.id || ids.value
 
+  //获取学校数据
+  getSelectSchoolOptionList()
   //调用学校列表
-  schoolSelectChange()
+  // schoolSelectChange()
 
-  //单独调用一下当前学校数据
-  getSchoolData(row.schoolId)
+  // //单独调用一下当前学校数据
+  // getSchoolData(row.schoolId)
 
-  console.log(row)
-  //调用学院
-  collegeList(row.schoolId)
-  //调用系
-  //获取学院或系
-  isCollege.value == '1' ? collegeList(row.schoolId) : systemList(row.schoolId)
-  //调用专业
-  specialityList(row.systemId)
+  // console.log(row)
+  // //调用学院
+  // collegeList(row.schoolId)
+  // //调用系
+  // //获取学院或系
+  // isCollege.value == '1' ? collegeList(row.schoolId) : systemList(row.schoolId)
+  // //调用专业
+  // specialityList(row.systemId)
 
   if(row.userType == '2') {
     //调用年级
@@ -1061,24 +1034,6 @@ function submitForm() {
           form.value.mtStudentGradeId = form.value.mtStudentGrade.id//学生年级的主键，并不是本身的年级ID
           form.value.mtStudentClassId = form.value.mtStudentClass.id//学生班级的主键，并不是本身的班级ID
         }
-        updateVocalUser(form.value).then(response => {
-          proxy.$modal.msgSuccess("修改成功");
-          open.value = false;
-          getList();
-        });
-      } else {
-        if(form.value.schoolId != undefined) {//处理学校id
-          let arr = form.value.schoolId.split(',')
-          if(arr.length == 3) {
-            form.value.schoolId = arr[0]
-          }
-        }
-        if(form.value.collegeId != undefined) {//处理学院
-          let arr = form.value.collegeId.split(',')
-          if(arr.length == 2) {
-            form.value.collegeId = arr[0]
-          }
-        }
         if(form.value.userType == '2') {//如果是学生进行校验年级和班级
           if(!form.value.gradeId) {
               ElMessage.error('年级或班级不能为空')
@@ -1088,6 +1043,34 @@ function submitForm() {
               return
           }
         }
+        updateVocalUser(form.value).then(response => {
+          proxy.$modal.msgSuccess("修改成功");
+          open.value = false;
+          getList();
+        });
+      } else {
+        // if(form.value.schoolId != undefined) {//处理学校id
+        //   let arr = form.value.schoolId.split(',')
+        //   if(arr.length == 3) {
+        //     form.value.schoolId = arr[0]
+        //   }
+        // }
+        // if(form.value.collegeId != undefined) {//处理学院
+        //   let arr = form.value.collegeId.split(',')
+        //   if(arr.length == 2) {
+        //     form.value.collegeId = arr[0]
+        //   }
+        // }
+        if(form.value.userType == '2') {//如果是学生进行校验年级和班级
+          if(!form.value.gradeId) {
+              ElMessage.error('年级或班级不能为空')
+              return
+          }else if(!form.value.classId) {
+              ElMessage.error('班级不能为空')
+              return
+          }
+        }
+        // return
         addVocalUser(form.value).then(response => {
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
@@ -1461,7 +1444,7 @@ getList();
   .form-sections {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 12px;
   }
 
   .campus-card {
@@ -1501,6 +1484,7 @@ getList();
 .dialog-footer {
   padding: 16px 20px;
   border-top: 1px solid #e0e7ed;
+  margin-top: 40px;
   text-align: right;
 }
 .section-title {
@@ -1511,7 +1495,25 @@ getList();
   padding-left: 10px;
   border-left: 4px solid #6edc93;
 }
+.el-form-item {
+  margin-bottom: 20px;
+}
 
+.el-form-item__label {
+  color: #34495e;
+  font-weight: 500;
+}
+
+.el-input__inner,
+.el-select {
+  border-radius: 6px;
+}
+
+
+.el-button {
+  border-radius: 6px;
+  padding: 10px 20px;
+}
 /**表单字体两端对齐 */
 // :deep .el-form-item label:after {
 //   content: "";

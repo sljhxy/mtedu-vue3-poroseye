@@ -85,7 +85,7 @@
               <el-radio 
                 v-for="item in formData.items" 
                 :key="item.prefix" 
-                :label="item.prefix"
+                :value="item.prefix"
                 class="answer-radio"
               >
                 {{item.prefix}}

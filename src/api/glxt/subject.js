@@ -95,3 +95,13 @@ export function getCourseSystemOptions(schoolType, academicStage) {
     method: 'get'
   })
 }
+
+
+//判断科目是否存在
+export function subjectExist(data) {
+  return request({
+    url: '/glxt/subject/subjectExist',
+    method: 'get',
+    params: data
+  })
+}

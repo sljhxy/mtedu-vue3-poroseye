@@ -14,7 +14,7 @@
       <el-form-item label="学段" prop="periodType">
         <el-select v-model="queryParams.periodType" placeholder="请选择" style="width: 150px;" clearable>
           <el-option
-            v-for="dict in educationStage.value"
+            v-for="dict in queryParams.contentType=='1'?mt_academic_stage:mt_vocal_education_type"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -148,17 +148,16 @@
               v-for="dict in mt_school_type"
               :key="dict.value"
               :value="dict.value"
-              :label="dict.value"
             >{{dict.label}}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="学段" prop="periodType">
           <el-radio-group v-model="form.periodType">
             <el-radio
-              v-for="dict in educationStage.value"
+              v-for="dict in form.contentType=='1'?mt_academic_stage:mt_vocal_education_type"
               :key="dict.value"
               :value="dict.value"
-              :label="dict.value"
+            
             >{{dict.label}}</el-radio>
           </el-radio-group>
         </el-form-item>
@@ -176,7 +175,7 @@
             <el-radio
               v-for="dict in mt_source_material_type"
               :key="dict.value"
-              :label="dict.value"
+              :value="dict.value"
             >{{dict.label}}</el-radio>
           </el-radio-group>
         </el-form-item>

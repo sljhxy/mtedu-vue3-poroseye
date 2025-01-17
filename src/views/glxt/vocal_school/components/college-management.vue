@@ -5,7 +5,6 @@
       <div class="info-card">
         <div class="info-header">
           <el-icon><School /></el-icon>
-          {{ schoolInfo }}
           <h3>学校信息</h3>
         </div>
         <div class="info-content">
@@ -132,7 +131,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 const { proxy } = getCurrentInstance();
 //导入学院相关接口
 import { listCollege, getCollege, addCollege, updateCollege, delCollege, checkCollege } from '@/api/glxt/vocal_college'
-// const collegeFromRef = ref(null)
+
+
 // 接收父组件传递的学校信息
 const props = defineProps({
   schoolInfo: {
@@ -303,17 +303,14 @@ const cancel = () => {
 const emit = defineEmits(['prev-step', 'next-step'])
 
 const handlePrevStep = () => {
-  emit('prev-step')
+  emit('prev-step')//子传父
 }
 const handleNextStep = () => {
   if (collegeList.value.length === 0) {
     ElMessage.warning('请至少添加一个学院')
     return
   }
-  console.log('学院数据')
-  console.log(collegeList.value)
-  console.log('学院数据')
-  // 传递学院数据
+  
   emit('next-step', collegeList.value)
   
 

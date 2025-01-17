@@ -169,6 +169,7 @@ import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 //引入年级api
 import { listVocalGrade, addVocalGrade, updateVocalGrade, delVocalGrade, getVocalGrade, checkVocalGrade } from '@/api/glxt/vocal_grade'
 
+
 const { proxy } = getCurrentInstance();
 // 接收父组件传递的数据
 const props = defineProps({
@@ -419,6 +420,7 @@ const emit = defineEmits(['prev-step', 'next-step'])
 
 const handlePrevStep = () => {
   emit('prev-step')
+
 }
 
 const handleNextStep = () => {

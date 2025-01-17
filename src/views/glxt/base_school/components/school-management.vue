@@ -10,7 +10,7 @@
             <div class="title-content">
               <div class="title-row">
                 <h3>{{ formEditData.schoolName }}</h3>
-                <el-button type="primary" link class="edit-btn" @click="handleEdit(schoolId)">
+                <el-button type="primary" link class="edit-btn" @click="handleEdit(schoolId? schoolId : toSchoolMagentSchooId)">
                   <el-icon><Edit /></el-icon>
                   编辑学校信息
                 </el-button>
@@ -205,15 +205,12 @@
                   <el-select v-model="formData.educationLevel" placeholder="普教类型" disabled>
                     <el-option v-for="item in educationLevels" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
-                  {{ formData.educationLevel }}
                   <el-select v-model="formData.schoolType" placeholder="请选择学段" clearable>
                     <el-option v-for="item in mt_academic_stage" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
-                  {{ formData.schoolType }}
                   <el-select v-model="formData.schoolSystem" placeholder="请选择学制" clearable>
                     <el-option v-for="item in mt_base_education_type" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
-                  {{ formData.schoolSystem }}
                 </div>
               </el-form-item>
             </div>
@@ -273,9 +270,20 @@ import { baseListSchool, addSchool, updateSchool, getSchool, delSchool, generate
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const emit = defineEmits(['next-step'])
+const emit = defineEmits(['next-step', 'addSchoolId'])
+
 const schoolForm = ref(null)
 const schoolId = ref(null)
+
+// 接收父组件传递的学校ID
+const props = defineProps({
+  toSchoolMagentSchooId: {
+    type: Number,
+    required: true
+  }
+})
+
+
 const formData = ref({
   id: null,
   logo: '',
@@ -455,7 +463,15 @@ const handleCityChange = async (cityId) => {
 // 在组件挂载时初始化数据
 onMounted(() => {
   initAreaData()
+
+    //新增后接收的学校id不为空，则调用getSchoolData方法获取学校数据
+  //解决新增学校后到下一步后，返回学校组件时不显示刚刚新增的学校数据BUG
+  if (props.toSchoolMagentSchooId) {
+    getSchoolData(props.toSchoolMagentSchooId)
+    hasSchools.value = true
+  }
 })
+
 // 暴露方法给父组件使用
 defineExpose({
   formData,
@@ -558,6 +574,7 @@ const handleCancel = () => {
 
 // 修改显示添加弹框函数
 const showAddDialog = () => {
+  reset()
   // 确保教育类型默认为普教
   formData.value.educationLevel = '1'
   isEdit.value = false // 重置编辑状态
@@ -596,6 +613,7 @@ const handleConfirm = async () => {
             // 关闭窗
             dialogVisible.value = false
             schoolId.value = response.data
+            emit('addSchoolId', response.data)//将当前新增的学校ID穿到父组件
             getSchoolData(response.data)
           });
         }
@@ -621,7 +639,7 @@ const getSchoolData = async (id) => {
     formData.value.schoolSystemName = response.data.schoolSystem ? getSchoolSystem(response.data.schoolSystem) : '';
     formData.value.educationLevelName = response.data.educationLevel ? getBaseEducationType(response.data.educationLevel) : '';
 
-    console.log('formData.value:', formData.value);
+    // console.log('formData.value:', formData.value);
     formEditData.value = {...formData.value}
   } catch (error) {
     ElMessage.error('获取学校数据失败');
@@ -693,10 +711,10 @@ onMounted(async () => {
     hasSchools.value = true
     await getSchoolData(id)
   } else {
-    // 新增模式
-    hasSchools.value = false
-    // 重置表单数据
-    reset()
+    // // 新增模式
+    // hasSchools.value = false
+    // // 重置表单数据
+    // reset()
   }
 })
 

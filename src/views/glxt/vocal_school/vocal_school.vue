@@ -61,7 +61,7 @@
       </el-table-column>
       <el-table-column prop="schoolSystem" label="年制" min-width="100" align="center">
         <template #default="{ row }"> 
-          {{ getSchoolYear(row.schoolYear) }}
+          {{ getSchoolYear(row.schoolYear) }} 
         </template>
       </el-table-column>
       <el-table-column prop="city" label="所在地市" min-width="150" align="center" >
@@ -97,8 +97,8 @@
     <pagination
       v-show="total > 0"
       :total="total"
-      v-model:page="currentPage"
-      v-model:limit="pageSize"
+      v-model:page="searchForm.pageNum"
+      v-model:limit="searchForm.pageSize"
       @pagination="handleSearch"
     />
   </div>
@@ -129,7 +129,9 @@ const router = useRouter()
 const showSearch = ref(true)
 
 // 搜索表单数据
-const searchForm = reactive({
+const searchForm = ref({
+  pageNum: 1,
+  pageSize: 10,
   schoolName: '',
   stage: '',
   city: ''
@@ -204,12 +206,6 @@ const initAreaData = async () => {
   }
 };
 
-// 分页相关
-const queryParams = reactive({
-  pageNum: 1,
-  pageSize: 10
-})
-
 
 // 获取地址标签的方法
 const getLocationLabel1 = (id) => {
@@ -246,9 +242,8 @@ const getSchoolYear = (schoolSystem) => {
 
 // 搜索方法
 const handleSearch = () => {
-  loading.value = true
   // 实现搜索逻辑
-  queryParams.pageNum = 1;
+  searchForm.pageNum = 1;
   getList();
 }
 

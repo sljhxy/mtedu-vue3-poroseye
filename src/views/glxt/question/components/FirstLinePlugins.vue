@@ -23,7 +23,7 @@
                     @change="academicStageChange"
                 >
                 <el-option 
-                    v-for="item in educationStage.value" 
+                    v-for="item in formData.schoolType=='1'?mt_academic_stage:mt_vocal_education_type" 
                     :key="item.value" 
                     :value="item.value" 
                     :label="item.label"
@@ -32,9 +32,9 @@
             </el-form-item>
             <el-form-item label="科目-教材体系：" prop="courseSystems">
                 <el-cascader
+                    style="width: 300px;"
                     v-model="formData.courseSystems"
                     :options="courseSystemOptions"
-                    :show-all-levels="false"
                     :props="{ 
                         expandTrigger: 'hover',
                         multiple: true,
@@ -55,7 +55,7 @@
 <script setup>
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
-const { mt_school_type, mt_vocal_education_type, mt_academic_stage, mt_school_subject} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject');
+const { mt_school_type, mt_vocal_education_type, mt_academic_stage, mt_school_subject,mt_vocal_school_subject} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject','mt_vocal_school_subject');
 
 import {getCourseSystemOptions } from '@/api/glxt/subject'
 
@@ -80,8 +80,10 @@ const formData = ref({
 
 
 //获取科目名称
-const getSubjectName = (subjectType) => {
-    return mt_school_subject.value ?.find(item => item.value === subjectType).label
+const getSubjectName = (schoolType, subjectType) => {
+    return schoolType=='1' ? 
+    mt_school_subject.value ?.find(item => item.value === subjectType).label : 
+    mt_vocal_school_subject.value ?.find(item => item.value === subjectType).label
 }
 
 //学段
@@ -89,13 +91,14 @@ const educationStage = ref([])
 
 //学校类型改变时，学段改变
 const schoolTypeChange = (value) => {
-  //清空学段的数据
-    // formData.value.academicStageType = null
-    if(value == 1){
-        educationStage.value = mt_academic_stage
-    }else{
-        educationStage.value = mt_vocal_education_type
-    }
+  //清空学段、科目教材体系的数据
+    formData.value.courseSystems = [[]]
+    formData.value.academicStageType = ''
+    // if(value == 1){
+    //     educationStage.value = mt_academic_stage
+    // }else{
+    //     educationStage.value = mt_vocal_education_type
+    // }
 }
 
 const academicStageChange = (value) => {
@@ -105,12 +108,13 @@ const academicStageChange = (value) => {
 const courseSystemOptions = ref([])//获取挂载课程
 const getCourseSystemOptionList = (schoolType, academicStage) => {
 
-getCourseSystemOptions(schoolType, academicStage).then(response => {
-    courseSystemOptions.value = response.data
-    courseSystemOptions.value.forEach(item => {
-    item.label = getSubjectName(item.value);
+    getCourseSystemOptions(schoolType, academicStage).then(response => {
+        courseSystemOptions.value = response.data
+        console.log(courseSystemOptions.value)
+        courseSystemOptions.value.forEach(item => {
+        item.label = getSubjectName(schoolType,item.value);
+        })
     })
-})
 }
 
 
@@ -136,7 +140,7 @@ watch(() => props.initialData, (newVal) => {
     }
         // Trigger the necessary cascading updates
         if (newVal.schoolType) {
-            schoolTypeChange(newVal.schoolType)
+            // schoolTypeChange(newVal.schoolType)
             if (newVal.academicStageType) {
                 getCourseSystemOptionList(newVal.schoolType, newVal.academicStageType)
             }

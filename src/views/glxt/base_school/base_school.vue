@@ -85,14 +85,19 @@
       </el-table-column>
     </el-table>
 
-    <!-- 分页器 -->
-    <pagination
-      v-show="total > 0"
-      :total="total"
-      v-model:page="currentPage"
-      v-model:limit="pageSize"
-      @pagination="handleSearch"
-    />
+    <!-- 分页器 --> 
+    <div class="pagination-container">
+        <el-pagination
+          v-model:page="searchForm.pageNum"
+          v-model:limit="searchForm.pageSize"
+          v-show="total > 0"
+          :total="total"
+          :page-sizes="[10, 20, 30, 50]"
+          background
+          layout="total, sizes, prev, pager, next, jumper"
+          @pagination="handleSearch"
+        />
+    </div>
   </div>
 </template>
 
@@ -123,7 +128,9 @@ const router = useRouter()
 const showSearch = ref(true)
 
 // 搜索表单数据
-const searchForm = reactive({
+const searchForm = ref({
+  pageNum: 1,
+  pageSize: 10,
   schoolName: '',
   stage: '',
   city: ''
@@ -152,17 +159,12 @@ const initAreaData = async () => {
     ElMessage.error('获取区域数据失败')
   }
 }
-// 分页相关
-const queryParams = reactive({
-  pageNum: 1,
-  pageSize: 10
-})
+
 
 
 // 获取地址标签的方法
 const getLocationLabel = (id) => {
   // 从省份列表中查找
-  console.log(areaList.value)
   const provinceItem = areaList.value?.find(item => item.id === id)
   if (provinceItem) return provinceItem.label
 
@@ -189,17 +191,16 @@ const getSchoolSystem = (schoolSystem) => {
 
 
 // 搜索方法
-const handleSearch = () => {
-  loading.value = true
+const handleSearch = (val) => {
   // 实现搜索逻辑
-  queryParams.pageNum = 1;
+  // console.log(val )
+  // searchForm.value.pageNum = val;
   getList();
 }
 
 const baseSchoolList = ref([]);
 /** 查询普教-学校列表 */
 function getList() {
-  console.log(searchForm.value)
   loading.value = true;
   baseListSchool(searchForm.value).then(response => {
     baseSchoolList.value = response.rows;
@@ -344,4 +345,12 @@ initAreaData();
     }
   }
 }
+/* 分页容器样式 */
+.pagination-container {
+  margin-top: 20px;
+  padding: 16px 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
 </style>

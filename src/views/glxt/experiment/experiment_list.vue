@@ -51,7 +51,7 @@
     <!-- 操作按钮 -->
     <div class="operation-bar">
       <div class="left-buttons">
-        <el-button type="primary"  plain icon="Plus" @click="handleAdd">新增</el-button>
+        <el-button type="primary"  plain icon="Plus" @click="handleAdd" v-hasPermi="['glxt:experimentInfo:add']">新增</el-button>
       </div>
       <div class="right-buttons">
         <el-button
@@ -109,6 +109,7 @@
                 color="#6EDC93"
                 plain
                 @click="handleEdit(scope.row)"
+                v-hasPermi="['glxt:experimentInfo:edit']"
               >
                 <el-icon><Edit /></el-icon>
                 <span>修改</span>
@@ -117,6 +118,7 @@
                 type="warning" 
                 plain
                 @click="handleAudit(scope.row)"
+                v-hasPermi="['glxt:experimentInfo:edit']"
               >
                 <el-icon><Check /></el-icon>
                 <span>审核</span>
@@ -125,6 +127,7 @@
                 type="danger" 
                 plain
                 @click="handleDelete(scope.row)"
+                v-hasPermi="['glxt:experimentInfo:remove']"
               >
                 <el-icon><Delete /></el-icon>
                 <span>删除</span>
@@ -155,7 +158,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 //导入实验信息API
-import { listExperimentInfo,delExperimentInfo } from '@/api/glxt/experimentInfo'
+import { listExperimentInfo, delExperimentInfo, toExamine } from '@/api/glxt/experimentInfo'
 
 const { proxy } = getCurrentInstance();
 const { mt_academic_stage, mt_school_type, mt_vocal_education_type, mt_experiment_audit_status } = proxy.useDict('mt_academic_stage', 'mt_school_type','mt_vocal_education_type', 'mt_experiment_audit_status');
@@ -217,6 +220,31 @@ const getListExperimentInfo = () => {
   })
 }
 
+//审核实验
+const handleAudit = (row) => {
+  // 实现审核逻辑
+  ElMessageBox.confirm(
+    `确定要审核实验 【${row.experimentName}】 吗？`,
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    // 实现删除逻辑
+    toExamine(row.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('审核成功')
+        getListExperimentInfo();
+      } else {
+        ElMessage.error('审核失败')
+      }
+    });
+  }).catch(() => {
+    ElMessage.info('取消审核')
+  })
+}
 
 // 删除试验信息
 const handleDelete = (row) => {
@@ -303,9 +331,6 @@ const handleEdit = (row) => {
   })
 }
 
-const handleAudit = (row) => {
-  // 实现审核逻辑
-}
 
 //当前页面
 const handleCurrentChange = (val) => {

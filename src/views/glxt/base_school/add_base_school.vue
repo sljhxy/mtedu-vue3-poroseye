@@ -23,6 +23,8 @@
     <school-management
       v-if="currentStep === 0"
       ref="schoolFormRef"
+      @addSchoolId="handleAddSchoolId"
+      :toSchoolMagentSchooId="toSchoolMagentSchooId"
       @next-step="handleSchoolNext"
     />
 
@@ -58,12 +60,21 @@
       :schoolInfo="schoolInfo"
       @prev-step="handlePrevStep"
     />
+
+    <!-- 添加新的悬浮返回按钮 -->
+    <div class="floating-return">
+      <div class="return-content" @click="handleBack">
+        <div class="return-arrow"></div>
+        <span class="return-text">返回列表</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import SchoolManagement from './components/school-management.vue'
 import GradeManagement from './components/grade-management.vue'
 import ClassManagement from './components/class-management.vue'
@@ -73,6 +84,7 @@ import DeviceManagement from './components/device-management.vue'
 //引入accets中的图标
 import { School, GoldMedal, Pear, Reading, Monitor } from '@element-plus/icons-vue'
 
+const router = useRouter()
 
 const currentStep = ref(0)
 const schoolFormRef = ref(null)
@@ -144,6 +156,14 @@ const handleSchoolNext = (schoolData) => {
   currentStep.value++
 }
 
+
+//传向学校组件的数据
+const toSchoolMagentSchooId = ref(null)
+//新增完学校后传过来的学校id
+const handleAddSchoolId = (schoolId) => {
+  toSchoolMagentSchooId.value = schoolId
+}
+
 // 处理年级管理的下一步
 const handleGradeNext = (gradeData) => {
   grades.value = gradeData
@@ -167,6 +187,16 @@ const handlePrevStep = () => {
 
 const handleStepClick = (index) => {
   currentStep.value = index
+}
+
+// 处理返回按钮点击
+const handleBack = () => {
+  router.push({
+    path: '/glxt/base_school/base_school',
+    query: { 
+      _t: Date.now() // 添加时间戳参数强制刷新列表
+    }
+  })
 }
 </script>
 
@@ -248,6 +278,61 @@ const handleStepClick = (index) => {
     &:hover {
       .el-step__head:not(.is-process) .el-step__icon {
         transform: translateY(-2px);
+      }
+    }
+  }
+}
+
+/* 新的悬浮返回按钮样式 */
+.floating-return {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 999;
+
+  .return-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px 15px 10px 10px;
+    background: #f4f4f5;
+    border-radius: 20px 0 0 20px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #4facfe;
+      padding-right: 85px;
+
+      .return-text {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+
+    .return-arrow {
+      width: 12px;
+      height: 12px;
+      border-top: 2px solid #909399;
+      border-right: 2px solid #909399;
+      transform: rotate(225deg);
+      margin-right: 5px;
+    }
+
+    .return-text {
+      position: absolute;
+      right: 15px;
+      color: #fff;
+      opacity: 0;
+      visibility: hidden;
+      white-space: nowrap;
+      transition: all 0.3s ease;
+    }
+
+    &:hover {
+      .return-arrow {
+        border-color: #fff;
       }
     }
   }

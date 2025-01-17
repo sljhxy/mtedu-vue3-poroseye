@@ -56,7 +56,7 @@
           <!-- 更新多选答案部分 -->
           <el-form-item label="正确答案：" prop="correctArray" required>
             <el-checkbox-group v-model="formData.correctArray" class="answer-group">
-              <el-checkbox v-for="item in formData.items" :key="item.prefix" :label="item.prefix" class="answer-checkbox">
+              <el-checkbox v-for="item in formData.items" :key="item.prefix" :value="item.prefix" class="answer-checkbox">
                 {{item.prefix}}
               </el-checkbox>
             </el-checkbox-group>

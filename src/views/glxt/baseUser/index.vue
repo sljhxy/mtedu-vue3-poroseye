@@ -114,7 +114,6 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="400px">
         <template #default="scope">
           <el-button plain type="info" v-show="scope.row.userType == '1'" icon="Setting" @click="handleConfig(scope.row)" v-hasPermi="['glxt:baseUser:edit']">配置</el-button>
-          <el-button plain type="warning" v-show="scope.row.userType == '2'" class="ml-2" icon="Edit">占位</el-button>
           <el-button plain type="success" icon="Edit" color="#6EDC93" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:baseUser:edit']">编辑</el-button>
           <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:baseUser:remove']">删除</el-button>
         </template>
@@ -129,10 +128,13 @@
       @pagination="getList"
     />
 
-    <el-dialog :title="title" v-model="open" width="700px" append-to-body class="school-dialog">
-  <el-form ref="baseUserRef" :model="form" :rules="rules" label-width="100px">
-    <div class="form-section">
-      <div class="section-title">基本信息</div>
+    <el-dialog :title="title" v-model="open" width="1000px" append-to-body class="campus-dialog">
+  <el-form ref="baseUserRef" :model="form" :rules="rules" label-width="100px" class="campus-form">
+    <div class="form-sections">
+      <div class="form-section campus-card">
+      <div class="section-header">
+          <span class="section-title">学校信息</span>
+      </div>
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="类别" prop="userType">
@@ -160,36 +162,47 @@
         </el-col>
       </el-row>
       
-      <el-row :gutter="20" v-if="form.userType == '2'">
-        <el-col :span="12">
-          <el-form-item label="年级" prop="gradeId">
-            <el-select v-model="form.gradeId" placeholder="请选择年级" clearable :disabled="!form.schoolId" @change="gradeChange">
-              <el-option
-                v-for="grade in selectGradeList"
-                :key="grade.id"
-                :label="grade.name"
-                :value="grade.id"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="班级" prop="classId">
-            <el-select v-model="form.classId" placeholder="请选择班级" clearable :disabled="!form.gradeId">
-              <el-option
-                v-for="classItem in selectClassList"
-                :key="classItem.id"
-                :label="classItem.name"
-                :value="classItem.id"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
+  
     </div>
 
-    <div class="form-section">
-      <div class="section-title">个人信息</div>
+    <div class="form-section campus-card" v-if="form.userType == '2'">
+        <div class="section-header">
+          <span class="section-title">年级-班级信息</span>
+        </div>
+          <!-- 学生专属信息 -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="年级" prop="gradeId">
+                <el-select v-model="form.gradeId" placeholder="请选择年级" clearable :disabled="!form.schoolId" @change="gradeChange">
+                  <el-option
+                    v-for="grade in selectGradeList"
+                    :key="grade.id"
+                    :label="grade.name"
+                    :value="grade.id"
+                  ></el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="班级" prop="classId">
+                <el-select v-model="form.classId" placeholder="请选择班级" clearable :disabled="!form.gradeId">
+                  <el-option
+                    v-for="classItem in selectClassList"
+                    :key="classItem.id"
+                    :label="classItem.name"
+                    :value="classItem.id"
+                  ></el-option>
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+      </div>
+
+
+    <div class="form-section campus-card">
+      <div class="section-header">
+          <span class="section-title">个人信息</span>
+      </div>
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="姓名" prop="userName">
@@ -224,8 +237,10 @@
       </el-row>
     </div>
 
-    <div class="form-section">
-      <div class="section-title">账户信息</div>
+    <div class="form-section campus-card">
+      <div class="section-header">
+          <span class="section-title">账户信息</span>
+      </div>
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="密码" prop="password">
@@ -252,6 +267,8 @@
         </el-col>
       </el-row>
     </div>
+    </div>
+
   </el-form>
   <template #footer>
     <div class="dialog-footer">
@@ -1112,7 +1129,7 @@ function cancelConfig() {
 getList(); //获取用户列表
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .mt20 {
   margin-top: 20px;
 }
@@ -1170,12 +1187,55 @@ getList(); //获取用户列表
   font-weight: bold;
 }
 
-.form-section {
+/* .form-section {
   background: white;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}*/
+
+
+
+/* 表单布局样式优化 */
+.campus-dialog {
+  .el-dialog__body {
+    padding: 20px;
+  }
+}
+
+.campus-form {
+  .form-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .campus-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid #ebeef5;
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #ebeef5;
+
+      .el-icon {
+        color: #6EDC93;
+        margin-right: 8px;
+      }
+
+      span {
+        font-size: 16px;
+        font-weight: 500;
+        color: #2c3e50;
+      }
+    }
+  }
 }
 
 .section-title {
@@ -1185,8 +1245,14 @@ getList(); //获取用户列表
   margin-bottom: 20px;
   padding-left: 10px;
   border-left: 4px solid #6edc93;
-}
+} 
 
+.dialog-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e0e7ed;
+  margin-top: 40px;
+  text-align: right;
+}
 .el-form-item {
   margin-bottom: 20px;
 }

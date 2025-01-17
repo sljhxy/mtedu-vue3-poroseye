@@ -140,7 +140,7 @@
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="deviceRef" :model="form" :rules="rules" label-width="120px">
         <el-form-item label="学校类型：" prop="schoolType">
-          <el-select v-model="form.schoolType" placeholder="请选择学校类型" :disabled="form.id" clearable @change="schoolTypeChange">
+          <el-select v-model="form.schoolType" placeholder="请选择学校类型" :disabled="form.id?true:false" clearable @change="schoolTypeChange">
             <el-option
               v-for="dict in mt_school_type"
               :key="dict.value"

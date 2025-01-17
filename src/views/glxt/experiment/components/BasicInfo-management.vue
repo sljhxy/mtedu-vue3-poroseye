@@ -1,6 +1,5 @@
 <template>
   <div class="basic-info-container">
-
     <!-- 主内容区域包装器 -->
     <div class="main-content-wrapper">
 
@@ -62,7 +61,7 @@
                   </div>
                 </div>
                 <div class="header-actions">
-                  <el-button type="primary" class="edit-button" @click="showDialog('edit', experimentId)">
+                  <el-button type="primary" class="edit-button" @click="showDialog('edit', experimentId? experimentId : toEexperimentInfoId)">
                     <el-icon><Edit /></el-icon>
                     编辑实验信息
                   </el-button>
@@ -80,7 +79,7 @@
                         <span>实验示意图</span>
                       </div>
                       <div class="thumbnail-wrapper">
-                        <image-preview :src="experimentData?.thumbnail || defaultThumbnail" />
+                        <image-preview :src="experimentData?.thumbnail || '暂无实验图像'" />
                       </div> 
                     </div>
                   </el-col>
@@ -227,7 +226,7 @@
                   </el-col>
                   <el-col :span="12">
                     <!-- 学段 -->
-                    {{ basicForm.academicStageType }}
+                    <!-- {{ basicForm.academicStageType }} -->
                     <el-form-item label="学段" prop="academicStageType">
                         <el-select 
                               v-model="basicForm.academicStageType" 
@@ -268,7 +267,7 @@
                   </el-col>
                   <el-col :span="12">
                     <!-- 版本教材 -->
-                    {{ basicForm.courseSystems }}
+                    <!-- {{ basicForm.courseSystems }} -->
                     <el-form-item label="版本教材" prop="courseSystems">
                       <el-cascader
                           v-model="basicForm.courseSystems"
@@ -348,7 +347,7 @@
               </div>
             </template>
 
-            <div v-show="experimentDescribeList.length && experimentId ">
+            <div v-show="experimentDescribeList.length && (experimentId || toEexperimentInfoId) ">
               <el-button plain type="primary" icon="Plus" @click="showDescDialog" style="margin-bottom: 10px;" v-hasPermi="['glxt:experimentInfoDescribe:add']">添加</el-button>
               <el-table v-loading="loading" :data="experimentDescribeList">
                 <el-table-column label="序号" width="55" type="index" align="center" />
@@ -365,9 +364,17 @@
                   </template>
               </el-table-column>
             </el-table>
+              <!-- 分页器 -->
+            <pagination
+              v-show="total > 0"
+              :total="total"
+              v-model:page="experimentDescQueryParams.pageNum"
+              v-model:limit="experimentDescQueryParams.pageSize"
+              @pagination="handleSearch"
+            />
             </div>
             <!-- 实验说明内容 -->
-            <div v-show="!experimentId" class="empty-tip">
+            <div v-show="!experimentId && !experimentDescribeList.length" class="empty-tip">
               <el-empty description="请先添加并保存实验基础信息">
                 <template #description>
                   <p>请先添加并保存实验基础信息</p>
@@ -443,26 +450,45 @@ const route = useRoute()
 const activeStep = ref(0)
 const loading = ref(true);
 
+// 标签页激活状态
+const activeTab = ref('basicInfo')
+
+const emit = defineEmits(['addExperimentInfoId'])
+
+
+// 接收父组件传递的实验ID
+const props = defineProps({
+  toEexperimentInfoId: {
+    type: Number,
+    required: true
+  }
+})
+
+
 // 处理标签页点击
 const handleTabClick = (tab) => {
-  if (tab.props.name === 'experimentDesc' && !experimentId.value) {
+  activeTab.value = tab.props.name
+  if (activeTab.value === 'experimentDesc' && experimentDescribeList.length == 0) {
     ElMessage.warning('请先添加并保存实验基础信息后再进行实验说明编辑')
     activeTab.value = 'basicInfo' // 强制切回基础信息标签
     return;
   }
   
-  if(tab.props.name == 'experimentDesc') {
+  if(activeTab.value == 'experimentDesc') {
     //获取实验说明列表
     getExperimentInfoDescribeList()
   }
-  if(tab.props.name == 'basicInfo') {
+  if(activeTab.value == 'basicInfo') {
     //获取实验信息
-    loadExperimentData(experimentId.value)
+    // if (route.query.type === 'edit') {//编辑状态的话无需调用接口
+
+      loadExperimentData(experimentId.value? experimentId.value : props.toEexperimentInfoId)
+    // }
+    
   }
 }
 
-// 标签页激活状态
-const activeTab = ref('basicInfo')
+
 
 // 表单引用
 const basicFormRef = ref(null)
@@ -504,9 +530,12 @@ const resetBasicForm = () => {
   
 }
 
+//实验说明列表
 const experimentDescribeList = ref([])
 // 实验说明表单数据
 const descForm = ref({
+  pageNum: 1,
+  pageSize:10,
   id:null,
   experimentInfoId:'',
   title:'',
@@ -570,8 +599,12 @@ const getSubjectName = (subjectType) => {
 
 // 实验基本信息表单验证规则
 const rules = {
-  name: [{ required: true, message: '请输入实验名称', trigger: 'blur' }],
-  description: [{ required: true, message: '请输入实验简介', trigger: 'blur' }],
+  experimentName: [{ required: true, message: '请输入实验名称', trigger: 'blur' }],
+  attrType: [{ required: true, message: '属性不能为空', trigger: 'blur' }],
+  schoolType: [{ required: true, message: '学校类型不能为空', trigger: 'blur' }],
+  academicStageType: [{ required: true, message: '学段类型不能为空', trigger: 'blur' }],
+  developerType: [{ required: true, message: '开发者不能为空', trigger: 'blur' }],
+  version: [{ required: true, message: '版本号不能为空', trigger: 'blur' }],
   // 其他验规则...
 }    
 //实验说明表单验证规则
@@ -583,36 +616,18 @@ const descFormRules = {
 const experimentId = ref()
 
 // 添加 emit 定义
-const emit = defineEmits(['update:experimentName', 'canSave'])
+// const emit = defineEmits(['update:experimentName', 'canSave'])
 
-// 监听实验名称变化
-watch(() => basicForm.name, (newName) => {
-  emit('update:experimentName', newName)
-})
+// // 监听实验名称变化
+// watch(() => basicForm.name, (newName) => {
+//   emit('update:experimentName', newName)
+// })
 
-// 修改表单验证方法   TODO： 优化为动态获取
-const validateForm = async () => {
-  if (activeTab.value === 'basicInfo') {
-    // Validate principle tab
-    if (!basicForm.value.experimentName || !basicForm.value.schoolType) {
-      // throw new Error('请完成实验基本信息的必填项')
-      return false
-    }
-  } else if (activeTab.value === 'experimentDesc') {
-    // Validate target tab
-    if (experimentDescribeList.value.length == 0) {
-      // throw new Error('请完成实验说明的必填项')
-      return false
-    }
-  }
-
-  return true
-}
 
 // 监听表单变化
-watch(basicForm, async () => {
-  await validateForm()
-}, { deep: true })
+// watch(basicForm, async () => {
+//   await validateForm()
+// }, { deep: true })
 
 // 添加响应式变量
 const dialogVisible = ref(false)
@@ -624,19 +639,28 @@ const operateType = ref('')
 // 修改 onMounted 钩子
 onMounted(async () => {
   
+  // 获取实验说明列表
+  getExperimentInfoDescribeList();
+
   // 从路由参数判断操作类型和学校ID
   const { type, id } = route.query
   
-  operateType.value = type
+  operateType.value = true
   if (type === 'edit' && id) {
     // 编辑模式
     experimentId.value = id
     await loadExperimentData(id)
-    hasExperiments.value = type
+    hasExperiments.value = true
   } else {
     // 新增模式
-    // 重置表单数据
-    resetBasicForm()
+    //新增后接收的实验id不为空，则调用loadExperimentData方法获取学校数据
+    //解决新增实验到下一步后，返回实验组件时不显示刚刚新增的实验数据BUG、
+    // debugger
+    if (props.toEexperimentInfoId) {
+      console.log('新增后接收到的实验id为: ', props.toEexperimentInfoId)
+      loadExperimentData(props.toEexperimentInfoId)
+      hasExperiments.value = true
+    }
   }
 })
 
@@ -694,9 +718,13 @@ const submitForm = async () => {
   try {
     proxy.$refs["basicFormRef"].validate(valid => {
       if (valid) {
-        if (basicForm.id != null) {
+        // debugger
+        if (basicForm.value.id != null) {
           updateExperimentInfo(basicForm.value).then(response => {
             proxy.$modal.msgSuccess("修改成功");
+             //获取实验数据
+            experimentId.value = response.data
+            emit('addExperimentInfoId', response.data)
              //获取实验数据
             loadExperimentData(response.data)
           });
@@ -705,7 +733,8 @@ const submitForm = async () => {
             proxy.$modal.msgSuccess("新增成功");
             //获取实验数据
             experimentId.value = response.data
-
+            emit('addExperimentInfoId', response.data)
+            console.log('新增实验id传过去的id为： ' + response.data)
             loadExperimentData(response.data)
             // hasExperiments.value = true // 添加成功后显示实验信息
           });
@@ -775,16 +804,6 @@ const showDescDialog = () => {
   descDialogVisible.value = true
 }
 
-const experimentName = ref(basicForm.value.experimentName);
-
-// 暴露 activeTab 给父组件
-defineExpose({
-  activeTab,
-  experimentName,
-  experimentId,
-  validateForm 
-})
-
 
 // 处理对话框关闭
 const handleDescClose = (done) => {
@@ -797,7 +816,7 @@ const submitDescForm = async () => {
   try {
     proxy.$refs["descFormRef"].validate(valid => {
     if (valid) {
-      descForm.value.experimentInfoId = experimentId.value;
+      descForm.value.experimentInfoId = experimentId.value? experimentId.value : props.toEexperimentInfoId;
       if (descForm.value.id != null) {
         updateExperimentInfoDescribe(descForm.value).then(response => {
           proxy.$modal.msgSuccess("修改成功");
@@ -829,18 +848,54 @@ const experimentDescQueryParams = ref({
 function getExperimentInfoDescribeList() {
   loading.value = true;
   //获取实验id
-  experimentDescQueryParams.value.experimentInfoId = experimentId.value;
-  listExperimentInfoDescribe(experimentDescQueryParams.value).then(response => {
-    experimentDescribeList.value = response.rows;
-    total.value = response.total;
-    loading.value = false;
-  });
+  experimentDescQueryParams.value.experimentInfoId = experimentId.value?(experimentId.value?experimentId.value:route.query.id):props.toEexperimentInfoId;
+  debugger
+  if(experimentDescQueryParams.value.experimentInfoId) {
+    listExperimentInfoDescribe(experimentDescQueryParams.value).then(response => {
+      experimentDescribeList.value = response.rows;
+      total.value = response.total;
+      loading.value = false;
+    });
+  }
 
 
 }
 
 //===================================================================实验说明====END===============================================================
+// 修改表单验证方法   TODO： 优化为动态获取
+const validateForm = () => {
+  // if (activeTab.value == 'basicInfo') {
+  //   // Validate principle tab
+  //   if (!basicForm.value.experimentName && !basicForm.value.schoolType && experimentDescribeList.value.length === 0) {
+  //     throw new Error('请完成实验基本信息的必填项')
+  //     // return false
+  //   }
+  // } else if (activeTab.value == 'experimentDesc') {
+  //   // Validate target tab
+  //   if (experimentDescribeList.value.length === 0) {
+  //     throw new Error('请完成实验说明的必填项')
+  //     // return false
+  //   }
+  // }
+  // debugger
+  console.log('total.value', total.value)
+  console.log('total.value', !basicForm.value)
+  console.log('total.value', experimentDescribeList.value.length == 0)
+  if (basicForm.value && total.value == 0) {
+      throw new Error('请完成实验信息和实验说明的添加')
+      // return false
+  }
+  return true
+}
 
+
+
+// 暴露 activeTab 给父组件
+defineExpose({
+  activeTab,
+  experimentId,
+  validateForm 
+})
 </script>
 
 <style lang="scss" scoped>

@@ -10,7 +10,7 @@
             <div class="title-content">
               <div class="title-row">
                 <h3>{{ formData.schoolName }}</h3>
-                <el-button type="primary" link class="edit-btn" @click="handleEdit(schoolId)">
+                <el-button type="primary" link class="edit-btn" @click="handleEdit(schoolId? schoolId : toSchoolMagentSchooId)">
                   <el-icon><Edit /></el-icon>
                   编辑学校信息
                 </el-button>
@@ -207,22 +207,22 @@
             </div>
             <el-form-item label="是否有学院:" class="full-width" prop="isCollege">
               <el-radio-group v-model="formData.isCollege">
-                <el-radio label="1">是</el-radio>
-                <el-radio label="0">否</el-radio>
+                <el-radio :value="true">是</el-radio>
+                <el-radio :value="false">否</el-radio>
               </el-radio-group>
             </el-form-item>
 
             <el-form-item label="是否有系:" class="full-width" prop="isSystem">
               <el-radio-group v-model="formData.isSystem">
-                <el-radio label="1">是</el-radio>
-                <el-radio label="0">否</el-radio>
+                <el-radio :value="true">是</el-radio>
+                <el-radio :value="false">否</el-radio>
               </el-radio-group>
             </el-form-item>
             <div class="form-row">
               <el-form-item label="是否生效:" class="full-width" prop="isActive">
                 <el-radio-group v-model="formData.isActive">
-                  <el-radio :label="true">是</el-radio>
-                  <el-radio :label="false">否</el-radio>
+                  <el-radio :value="true">是</el-radio>
+                  <el-radio :value="false">否</el-radio>
                 </el-radio-group>
               </el-form-item>
             </div>
@@ -258,7 +258,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, onMounted} from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 const { proxy } = getCurrentInstance();
@@ -274,14 +274,25 @@ import { vocalListSchool, addSchool, updateSchool, getSchool, delSchool, checkSc
 //学校网址接口引入
 import { generateLetter } from '@/api/glxt/base_school'
 
-import { id } from 'element-plus/es/locales.mjs';
+
 // 添加路由相关引入
 import { useRoute } from 'vue-router'
 import { get } from '@vueuse/core';
 const route = useRoute()
-const emit = defineEmits(['next-step'])
+const emit = defineEmits(['next-step', 'addSchoolId'])
+
+
 const schoolFormRef = ref(null)
 const schoolId = ref(null)
+
+// 接收父组件传递的学校ID
+const props = defineProps({
+  toSchoolMagentSchooId: {
+    type: Number,
+    required: true
+  }
+})
+
 const formData = ref({
   id: null,
   logo: '',
@@ -366,7 +377,6 @@ const handleNext = async () => {
   try {
     emit('next-step', formData.value)
   } catch (error) {
-    console.error('下一步操作失败:', error)
     ElMessage.error('操作失败，请重试')
   }
 }
@@ -462,6 +472,10 @@ const initAreaDataTmp = async () => {
 
 //============================================end============================================
 
+// 控制弹框显示
+const dialogVisible = ref(false)
+// 是否有学校数据
+const hasSchools = ref(false)
 
 
 // 编辑-区域数据
@@ -525,7 +539,18 @@ const handleCityChange = async (cityId) => {
 onMounted(() => {
   initAreaData()
   initAreaDataTmp()
+  console.log('新增后接收到的学校id为: ', props.toSchoolMagentSchooId)
+
+  //新增后接收的学校id不为空，则调用getSchoolData方法获取学校数据
+  //解决新增学校后到下一步后，返回学校组件时不显示刚刚新增的学校数据BUG
+  if (props.toSchoolMagentSchooId) {
+    getSchoolData(props.toSchoolMagentSchooId)
+    hasSchools.value = true
+  }
+
 })
+
+
 // 暴露方法给父组件使用
 defineExpose({
   formData,
@@ -535,10 +560,6 @@ defineExpose({
 // 初始化省份选择
 handleProvinceChange()
 
-// 控制弹框显示
-const dialogVisible = ref(false)
-// 是否有学校数据
-const hasSchools = ref(false)
 
 
 // 表单重置
@@ -606,7 +627,6 @@ const handleEdit = async (id) => {
     }
 
   } catch (error) {
-    console.error('加载学校数据失败:', error);
     ElMessage.error('加载学校数据失败');
   }
 }
@@ -626,11 +646,12 @@ const handleCancel = () => {
 // 修改显示添加弹框函数
 const showAddDialog = () => {
 
+  reset()
   // 确保教育类型默认为职教
   formData.value.educationLevel = '2'
   // formData.value.isCollege = '0' 
   // formData.value.isSystem = '0' 
-  formData.value.isCollege = '0' 
+  formData.value.isCollege = '1' 
   formData.value.isSystem = '1' 
   formData.value.isActive = true
 
@@ -671,6 +692,7 @@ const handleConfirm = async () => {
             // 关闭窗
             dialogVisible.value = false
             schoolId.value = response.data
+            emit('addSchoolId', response.data)//将当前新增的学校ID穿到父组件
             getSchoolData(response.data)
           });
         }
@@ -747,7 +769,6 @@ onMounted(async () => {
   
   operateType.value = type
   console.log(route.query)
-  console.log(type,id)
   if (type === 'edit' && id) {
     // 编辑模式
     schoolId.value = id
@@ -755,9 +776,11 @@ onMounted(async () => {
     hasSchools.value = true
   } else {
     // 新增模式
-    hasSchools.value = false
-    // 重置表单数据
-    reset()
+    // hasSchools.value = false
+    // // 重置表单数据
+    // reset()
+      //      getSchoolData(brotherFormGradeSchoolData.value.id)
+      // hasSchools.value = true
   }
 })
 

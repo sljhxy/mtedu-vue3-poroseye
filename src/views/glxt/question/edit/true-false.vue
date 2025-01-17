@@ -67,7 +67,7 @@
           </el-form-item>
           <el-form-item label="正确答案：" prop="correct" required>
             <el-radio-group v-model="formData.correct">
-              <el-radio  v-for="item in formData.items"  :key="item.prefix"  :label="item.prefix">{{item.prefix}}</el-radio>
+              <el-radio  v-for="item in formData.items"  :key="item.prefix"  :value="item.prefix">{{item.prefix}}</el-radio>
             </el-radio-group>
           </el-form-item>
           <el-form-item label="解析：" prop="analyze" required>

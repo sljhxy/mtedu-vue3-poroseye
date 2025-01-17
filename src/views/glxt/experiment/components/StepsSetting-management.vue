@@ -691,7 +691,8 @@ const resetStepForm = () => {
 
 /** 查询步骤下拉树结构 */
 function getTreeselect() {
-  listExperimentInfoStep().then(response => {
+  let param = { experimentInfoId: props.experimentId }
+  listExperimentInfoStep(param).then(response => {
     stepOptions.value = [];
     const data = { id: 0, stepName: '顶级节点', children: [] };
     data.children = proxy.handleTree(response.rows, "id", "parentId");

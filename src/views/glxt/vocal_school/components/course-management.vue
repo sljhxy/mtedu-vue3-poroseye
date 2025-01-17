@@ -258,7 +258,7 @@ import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { listVocalCourse, addVocalCourse, updateVocalCourse, delVocalCourse, getVocalCourse } from '@/api/glxt/vocal_course'
 import { initSubject, getCourseSystemOptions } from '@/api/glxt/subject'
 const { proxy } = getCurrentInstance();
-const { mt_school_subject } = proxy.useDict('mt_school_subject');
+const { mt_vocal_school_subject } = proxy.useDict('mt_vocal_school_subject');
 //获取教材版本
 import {getLibrary, getVolumeDetail } from '@/api/glxt/library';
 
@@ -471,7 +471,7 @@ const initSubjectList = () => {
 }
 //获取科目名称
 const getSubjectName = (subjectType) => {
-  return mt_school_subject.value ?.find(item => item.value === subjectType).label
+  return mt_vocal_school_subject.value ?.find(item => item.value === subjectType).label
 }
 
 // 修改 addVocalCourse 函数

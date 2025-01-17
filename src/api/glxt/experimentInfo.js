@@ -35,6 +35,14 @@ export function updateExperimentInfo(data) {
   })
 }
 
+// 审核实验
+export function toExamine(id) {
+  return request({
+    url: '/glxt/experimentInfo/toExamine/' + id,
+    method: 'put'
+  })
+}
+
 // 删除实验基本信息
 export function delExperimentInfo(id) {
   return request({

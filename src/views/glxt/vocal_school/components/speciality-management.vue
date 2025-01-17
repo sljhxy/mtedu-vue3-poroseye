@@ -200,8 +200,6 @@ const { proxy } = getCurrentInstance();
 // 专业字典引入
 const { mt_vocal_speciality_type, mt_vocal_education_type, mt_vocal_education_system_type} = proxy.useDict('mt_vocal_speciality_type', 'mt_vocal_education_type', 'mt_vocal_education_system_type');
 
-
-
 //获取学段
 const getisPeriod = (schoolType) => {
   if (!schoolType || !mt_vocal_education_type.value) return '';
@@ -286,7 +284,7 @@ const specialityList = ref([]);
 const queryParams = ref({
   pageNum: 1,
   pageSize: 10,
-  schoolId: props.schoolInfo.id,
+  schoolId: '',
   vocalEduSystemId: '',
   specialityName: '',
   specialityAbbreviation: '',
@@ -312,6 +310,7 @@ const getSpecialityesBySystem = (system) => {
   if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
     queryParams.value.vocalEduSystemId = system.id;//获取学系id
   }else{//专科院校
+    queryParams.value.schoolId = props.schoolInfo.id
     queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
   }
   // queryParams.value.vocalEduSystemId = system.id;
@@ -392,7 +391,8 @@ const clickAddSpeciality = () => {
 
   if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
       specialityForm.value.vocalEduSystemId = currentSystem.value.id//获取学系id
-    }else{//专科院校
+  }else{//专科院校
+    specialityForm.value.schoolId = props.schoolInfo.id
     specialityForm.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
   }
 
@@ -467,9 +467,10 @@ const saveSpeciality = () => {
       //   specialityForm.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
       // }
       if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
-          queryParams.value.vocalEduSystemId = currentSystem.value.id//获取学系id
+        queryParams.value.vocalEduSystemId = currentSystem.value.id//获取学系id
       }else{//专科院校
-         queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
+        queryParams.value.schoolId = props.schoolInfo.id
+        queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
       }
       if (specialityForm.value.id != null) {
         updateSpeciality(specialityForm.value).then(response => {
@@ -499,26 +500,10 @@ const saveSpeciality = () => {
 
 }
 
-// 文件上传相关方法
-const handleImportSuccess = (response) => {
-  ElMessage.success('导入成功')
-  importDialogVisible.value = false
-}
-
-const beforeImportUpload = (file) => {
-  const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
-                file.type === 'application/vnd.ms-excel'
-  if (!isExcel) {
-    ElMessage.error('只能上传 Excel 文件!')
-    return false
-  }
-  return true
-}
-
 const emit = defineEmits(['prev-step', 'next-step'])
 
 const handlePrevStep = () => {
-  emit('prev-step')
+  emit('prev-step')//子传父
 }
 
 const handleNextStep = () => {

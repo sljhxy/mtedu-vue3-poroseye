@@ -547,11 +547,13 @@ const principleTotal = ref(0);
 function getPrincipleList() {
   loading.value = true;
   queryPrincipleParams.value.experimentInfoId = props.experimentId
-  listExperimentPrinciple(queryPrincipleParams.value).then(response => {
-    principleList.value = response.rows;
-    principleTotal.value = response.total;
-    loading.value = false;
-  });
+  if(queryPrincipleParams.value.experimentInfoId) {
+    listExperimentPrinciple(queryPrincipleParams.value).then(response => {
+      principleList.value = response.rows;
+      principleTotal.value = response.total;
+      loading.value = false;
+    });
+  }
 }
 
 
@@ -772,9 +774,9 @@ const confirmSelection = () => {
 
   // 添加新选择的题目
   allWarehouses.value.experimentWarehouseList = [...newQuestions]
-  console.log('allWarehouses.value')
-  console.log(allWarehouses.value.experimentWarehouseList)
-  console.log('allWarehouses.value')
+  // console.log('allWarehouses.value')
+  // console.log(allWarehouses.value.experimentWarehouseList)
+  // console.log('allWarehouses.value')
 
   //进行将已经选择数据添加到实验器具列表
   allWarehouses.value.experimentId = props.experimentId//实验id
@@ -886,21 +888,25 @@ onMounted(() => {
 
 // 对所有的tab进行校验，如果都没有操作则无法通过下一步
 const validateForm = async () => {
-  if (activeTab.value == 'principle') {
-    // Validate principle tab
-    if (!formPrincipleData.value.text) {
-      throw new Error('请完成实验原理的必填项')
-    }
-  } else if (activeTab.value == 'target') {
-    // Validate target tab
-    if (!formTargetData.value.text) {
-      throw new Error('请完成实验目标的必填项')
-    }
-  } else if (activeTab.value == 'equipment') {
-    // Validate equipment tab
-    if (experimentWarehousePageList.value.length === 0) {
-      throw new Error('请至少添加一个实验器具')
-    }
+  // if (activeTab.value == 'principle') {
+  //   // debugger
+  //   // Validate principle tab
+  //   if (principleList.value.length === 0) {
+  //     throw new Error('请完成实验原理的必填项')
+  //   }
+  // } else if (activeTab.value == 'target') {
+  //   // Validate target tab
+  //   if (targetList.value.length === 0) {
+  //     throw new Error('请完成实验目标的必填项')
+  //   }
+  // } else if (activeTab.value == 'equipment') {
+  //   // Validate equipment tab
+  //   if (experimentWarehousePageList.value.length === 0) {
+  //     throw new Error('请至少添加一个实验器具')
+  //   }
+  // }
+  if(principleList.value.length === 0 && targetList.value.length === 0 && experimentWarehousePageList.value.length === 0) {
+    throw new Error('请完成实验扩展信息的必填项')
   }
   return true
 }

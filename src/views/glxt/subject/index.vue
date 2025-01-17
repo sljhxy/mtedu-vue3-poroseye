@@ -14,7 +14,7 @@
       <el-form-item label="学段" prop="educationStageType">
         <el-select v-model="queryParams.educationStageType" clearable style="width: 100px;">
           <el-option
-            v-for="dict in educationStage.value"
+            v-for="dict in queryParams.schoolType=='1'?mt_academic_stage:mt_vocal_education_type"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -24,7 +24,7 @@
       <el-form-item label="科目" prop="subjectType" >
         <el-select v-model="queryParams.subjectType" clearable style="width: 100px;">
           <el-option
-            v-for="dict in mt_school_subject"
+            v-for="dict in queryParams.schoolType=='1'?mt_school_subject:mt_vocal_school_subject"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -90,16 +90,21 @@
       </el-table-column>
       <el-table-column label="学段" align="center" prop="educationStageType">
         <template #default="scope">
-          <dict-tag :options="mt_academic_stage" :value="scope.row.educationStageType"/>
+          <dict-tag :options="scope.row.schoolType == '1'?mt_academic_stage:mt_vocal_education_type" :value="scope.row.educationStageType"/>
         </template>
       </el-table-column>
       <el-table-column label="科目" align="center" prop="subjectType">
         <template #default="scope">
-          <dict-tag :options="mt_school_subject" :value="scope.row.subjectType"/>
+          <dict-tag :options="scope.row.schoolType=='1'?mt_school_subject:mt_vocal_school_subject" :value="scope.row.subjectType"/>
         </template>
       </el-table-column>
       <el-table-column label="版本名称" align="center" prop="textbookVersionName"/>
       <el-table-column label="分册名称" align="center" prop="volumeName"/>
+      <el-table-column label="发行时间" align="center" prop="versionReleaseTimeType">
+        <template #default="scope">
+          <dict-tag :options="mt_textbooklibrary_time" :value="scope.row.versionReleaseTimeType"/>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button plain type="success" color="#6EDC93" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:subject:edit']">修改</el-button>
@@ -127,24 +132,22 @@
               v-for="dict in mt_school_type"
               :key="dict.value"
               :value="dict.value"
-              :label="dict.value"
             >{{dict.label}}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="学段" prop="educationStageType">
           <el-radio-group v-model="form.educationStageType">
             <el-radio
-              v-for="dict in educationStage.value"
+              v-for="dict in form.schoolType=='1'?mt_academic_stage:mt_vocal_education_type"
               :key="dict.value"
               :value="dict.value"
-              :label="dict.value"
             >{{dict.label}}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="科目" prop="subjectType">
           <el-select v-model="form.subjectType" placeholder="请选择科目">
             <el-option
-              v-for="dict in mt_school_subject"
+              v-for="dict in form.schoolType=='1'?mt_school_subject:mt_vocal_school_subject"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -255,7 +258,7 @@
                 <el-radio
                   v-for="dict in mt_school_type"
                   :key="dict.value"
-                  :label="dict.value"
+                  :value="dict.value"
                 >{{dict.label}}</el-radio>
               </el-radio-group>
             </el-form-item>
@@ -264,9 +267,9 @@
             <el-form-item label="学段" prop="educationStageType" class="custom-form-item" >
               <el-radio-group v-model="form.educationStageType" disabled>
                 <el-radio
-                  v-for="dict in mt_academic_stage"
+                  v-for="dict in form.schoolType=='1'?mt_academic_stage:mt_vocal_education_type"
                   :key="dict.value"
-                  :label="dict.value"
+                  :value="dict.value"
                 >{{dict.label}}</el-radio>
               </el-radio-group>
             </el-form-item>
@@ -277,7 +280,7 @@
             <el-form-item label="科目" prop="subjectType" class="custom-form-item">
               <el-select v-model="form.subjectType" placeholder="请选择科目" disabled>
                 <el-option
-                  v-for="dict in mt_school_subject"
+                  v-for="dict in form.schoolType=='1'?mt_school_subject:mt_vocal_school_subject"
                   :key="dict.value"
                   :label="dict.label"
                   :value="dict.value"
@@ -302,6 +305,7 @@
           <el-col :span="12">
             <el-form-item label="版本名称" prop="versionArr" class="custom-form-item">
               <el-cascader
+
                 style="width: 100%;"
                 disabled
                 v-model="form.versionArr"
@@ -372,12 +376,11 @@
 </template>
 
 <script setup name="Subject">
-import { listSubject, getSubject, delSubject, addSubject, updateSubject, addOrUpdateChapter, delChapter, getChapterList, getChapterMaxId} from "@/api/glxt/subject";
+import { listSubject, getSubject, delSubject, addSubject, updateSubject, addOrUpdateChapter, delChapter, getChapterList, getChapterMaxId, subjectExist} from "@/api/glxt/subject";
 import { selectTextBookLibraryAndVolumeList } from "@/api/glxt/library";
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { id } from "element-plus/es/locales.mjs";
 const { proxy } = getCurrentInstance();
-const { mt_academic_stage, mt_school_subject, mt_textbooklibrary_time, mt_school_type, mt_vocal_education_type } = proxy.useDict('mt_academic_stage', 'mt_school_subject', 'mt_textbooklibrary_time', 'mt_school_type', 'mt_vocal_education_type');
+const { mt_academic_stage, mt_school_subject,mt_vocal_school_subject, mt_textbooklibrary_time, mt_school_type, mt_vocal_education_type } = proxy.useDict('mt_academic_stage', 'mt_school_subject','mt_vocal_school_subject', 'mt_textbooklibrary_time', 'mt_school_type', 'mt_vocal_education_type');
 const subjectList = ref([]);
 const open = ref(false);
 const loading = ref(true);
@@ -391,6 +394,30 @@ const props = ref({
   multiple: false,
   checkStrictly: false
 });
+
+//确认密码校验
+const subjectExistMethod = (rule, value, callback) => {
+  if (value) {
+    console.log('value');
+    console.log(value);
+    console.log(form.value);
+    console.log('value');
+    form.value.textbookLibraryId = value[0]
+    form.value.volumeId = value[1]
+    subjectExist(form.value).then(response => {
+    if(response.code === 200) {
+      if(response.data) {
+        callback(new Error("该科目已存在"));
+      } else {
+        callback();
+      }
+    }
+  });
+  } else {
+    callback();
+  }
+};
+
 
 /** 节点是否修改 */
 const editingId = ref(null);
@@ -417,8 +444,9 @@ const data = reactive({
     versionReleaseTimeType: [
       { required: true, message: "版本发行时间不能为空", trigger: "change" }
     ],
-    versionName: [
-      { required: true, message: "版本名称不能为空", trigger: "change" }
+    versionArr: [
+      { required: true, message: "版本名称不能为空", trigger: "change" },
+      { required: true, validator: subjectExistMethod, trigger: "change" }
     ],
   }
 });
@@ -430,15 +458,23 @@ const { queryParams, form, rules } = toRefs(data);
 
 //学段
 const educationStage = ref([])
+//科目
+const subjectStage = ref([])
 //学校类型改变时，学段改变
 const schoolTypeChange = (value) => {
+    // 清空学段选择
+    queryParams.value.educationStageType = null;
+    queryParams.value.subjectType = null;
   //清空学段的数据
-    form.value.educationStageType = '1'
-    if(value == '1'){
-        educationStage.value = mt_academic_stage//普教
-    }else{
-        educationStage.value = mt_vocal_education_type//职教
-    }
+    form.value.educationStageType = '1'//默认小学
+    // if(value == '1'){
+    //     educationStage.value = mt_academic_stage//普教
+    //     subjectStage.value = mt_school_subject
+    // }else{
+    //     educationStage.value = mt_vocal_education_type//职教
+    //     subjectStage.value = mt_vocal_school_subject
+
+    // }
 }
 
 
@@ -544,7 +580,7 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset();
-
+  childrenChapter.value = []//清空章节数据
   form.value.schoolType = '1'//默认学校为普教
   schoolTypeChange('1')//调用普教下的学段
 

@@ -23,6 +23,8 @@
     <school-management
       v-if="currentStep === 0"
       ref="schoolFormRef"
+      @addSchoolId="handleAddSchoolId"
+      :toSchoolMagentSchooId="toSchoolMagentSchooId"
       @next-step="handleSchoolNext"
     />
 
@@ -112,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, provide } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import SchoolManagement from './components/school-management.vue'//学校
@@ -184,7 +186,7 @@ const stepsList = computed(() => {
 // 初始化表单数据
 const initForms = () => {
   const isAdd = route.query.type === 'add'
-  console.log(isAdd + '<-新增')
+  // console.log(isAdd + '<-新增')
   if (isAdd) {
     // 如果是新增操作，重置所有表单数据
     if (schoolFormRef.value?.formData) {
@@ -204,7 +206,7 @@ const initForms = () => {
   } else {
     // 如果是编辑操作，根据 id 加载数据
     const schoolId = route.query.id
-    console.log(schoolId + '<-编辑')
+    // console.log(schoolId + '<-编辑')
     //获取当前学校数据  主要是为了拿到学段，区分是否有学院
     getSchoolData(schoolId)
   }
@@ -215,7 +217,7 @@ const getSchoolData = async (id) => {
   try {
     const response = await getSchool(id);
     schoolInfo.value = {...response.data};
-    console.log(schoolInfo.value.isCollege + '<-学校数据')
+    // console.log(schoolInfo.value.isCollege + '<-学校数据')
   } catch (error) {
     ElMessage.error('获取学校数据失败');
   }
@@ -250,12 +252,17 @@ const handleSchoolNext = (schoolData) => {
   currentStep.value++
 }
 
+//传向学校组件的数据
+const toSchoolMagentSchooId = ref(null)
+//新增完学校后传过来的学校id
+const handleAddSchoolId = (schoolId) => {
+  toSchoolMagentSchooId.value = schoolId
+}
+
 // 处理学院管理的下一步
 const handleCollegeNext = (collegeData) => {
 
-  console.log('接收学院数据')
-  console.log(collegeData)
-  console.log('接收学院数据')
+
   collegesData.value = collegeData
   currentStep.value++
 }

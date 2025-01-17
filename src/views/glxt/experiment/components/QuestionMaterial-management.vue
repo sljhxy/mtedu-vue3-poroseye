@@ -735,6 +735,7 @@ function getExperimentSourceMaterialList() {
 
 // 处理素材页码改变
 const handleSourceMaterialCurrentChange = (val) => {
+  console.log(val )
   queryExperimentSourceMaterialParams.value.pageNum = val
   // 这里调用获取数据的方法
   getExperimentSourceMaterialList()

@@ -172,6 +172,7 @@ import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { listSystem, addSystem, updateSystem, getSystem , delSystem, checkSystem } from '@/api/glxt/vocal_system'
 
 const { proxy } = getCurrentInstance();
+
 // 接收父组件传递的数据
 const props = defineProps({
   colleges: {//学院列表
@@ -285,7 +286,7 @@ const getList = (params) => {
 // 添加搜索处理方法
 const handleSearch = () => {
 
-  if(props.schoolInfo.schoolPeriod == 1){//只有在本科院校时，才根据学院id获取院系列表
+  if(props.schoolInfo.isCollege == '1'){//只有在本科院校时，才根据学院id获取院系列表
     console.log('搜索关键词为：' + currentCollege.value.id + '=' + queryParams.value.systemName)
     queryParams.value.schoolOrCollegeId = currentCollege.value.id;
   }else{//专科院校
@@ -297,10 +298,9 @@ const handleSearch = () => {
 
 // 在组件挂载时，根据学校类型获取院系列表  
 onMounted(() => {
-  if(props.schoolInfo.schoolPeriod != 1){//只有在非本科院校时，才根据学校id获取院系列表
+  if(props.schoolInfo.isCollege == '0' && props.schoolInfo.isSystem == '1'){//只有在非本科院校时，才根据学校id获取院系列表
     queryParams.value.schoolOrCollegeId = props.schoolInfo.id;
     getList(queryParams.value);
-    console.log('学校id为==========================》：' + props.schoolInfo.id)
   }
 })
 
@@ -346,7 +346,7 @@ watch(() => props.colleges, (newColleges) => {
 const clickAddSystem = () => {
   reset();
   
-  if(props.schoolInfo.schoolPeriod == 1){//只有在本科院校时，才需要选择学院
+  if(props.schoolInfo.isCollege == '1'){//只有在本科院校时，才需要选择学院
     //给弹框中的学院赋值学院id
     systemForm.value.schoolOrCollegeId = currentCollege.value.id
     if (!currentCollege.value) {
@@ -384,7 +384,7 @@ const deleteSystem = (row) => {
     delSystem(row.id).then(response => {
       if(response.code == 200){
         ElMessage.success('删除成功')
-        if(props.schoolInfo.schoolPeriod == 1){//只有在本科院校时，才根据学院id获取院系列表
+        if(props.schoolInfo.isCollege == '1'){//只有在本科院校时，才根据学院id获取院系列表
           getSystemsByCollege(currentCollege.value)
         }else{//专科院校
           queryParams.value.schoolOrCollegeId = props.schoolInfo.id;//获取学校id
@@ -453,7 +453,7 @@ const emit = defineEmits(['prev-step', 'next-step'])
 
 // 返回上一步
 const handlePrevStep = () => {
-  emit('prev-step')
+  emit('prev-step')//子传父 
 }
 
 // 下一步
