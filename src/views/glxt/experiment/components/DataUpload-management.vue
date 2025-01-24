@@ -59,7 +59,7 @@
                 <el-table-column prop="abFrameVersion" label="ab框架版本" align="center" />
                 <el-table-column prop="abSdkVersion" label="ab-sdk版本" align="center" />
                 <el-table-column prop="fileSize" label="文件大小" align="center" />
-                <el-table-column prop="abType" label="清洗度" align="center" >
+                <el-table-column prop="abType" label="清晰度" align="center" >
                   <template #default="scope">
                     <dict-tag :options="mt_video_type" :value="scope.row.abType"/>
                   </template>

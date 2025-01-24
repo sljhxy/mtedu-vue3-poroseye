@@ -206,6 +206,7 @@
               </el-form-item>
             </div>
             <el-form-item label="是否有学院:" class="full-width" prop="isCollege">
+              {{ formData.isCollege }}
               <el-radio-group v-model="formData.isCollege">
                 <el-radio :value="true">是</el-radio>
                 <el-radio :value="false">否</el-radio>
@@ -213,6 +214,7 @@
             </el-form-item>
 
             <el-form-item label="是否有系:" class="full-width" prop="isSystem">
+              {{ formData.isSystem }}
               <el-radio-group v-model="formData.isSystem">
                 <el-radio :value="true">是</el-radio>
                 <el-radio :value="false">否</el-radio>
@@ -651,9 +653,9 @@ const showAddDialog = () => {
   formData.value.educationLevel = '2'
   // formData.value.isCollege = '0' 
   // formData.value.isSystem = '0' 
-  formData.value.isCollege = '1' 
-  formData.value.isSystem = '1' 
-  formData.value.isActive = true
+  formData.value.isCollege = true 
+  formData.value.isSystem = true 
+  formData.value.isActive = true 
 
   isEdit.value = false // 重置编辑状态
   dialogVisible.value = true
@@ -682,9 +684,13 @@ const handleConfirm = async () => {
             getSchoolData(submitData.id);
           });
         } else {
+          debugger
           formData.value.province = formData.value.province
           formData.value.city = formData.value.city
           formData.value.district = formData.value.district
+          formData.value.isCollege = formData.value.isCollege ? '1' : '0'
+          formData.value.isSystem = formData.value.isSystem ? '1' : '0'
+          formData.value.isActive = formData.value.isActive ? 'true' : 'false'
           addSchool(formData.value).then(response => {
             proxy.$modal.msgSuccess("新增成功");
              // 更新状态  判断是否是新增 如果新增 则更新状态

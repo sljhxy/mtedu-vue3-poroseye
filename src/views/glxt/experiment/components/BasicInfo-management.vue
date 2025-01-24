@@ -370,7 +370,7 @@
               :total="total"
               v-model:page="experimentDescQueryParams.pageNum"
               v-model:limit="experimentDescQueryParams.pageSize"
-              @pagination="handleSearch"
+              @pagination="getExperimentInfoDescribeList"
             />
             </div>
             <!-- 实验说明内容 -->
@@ -408,7 +408,13 @@
                         <el-input v-model="descForm.title" placeholder="请输入标题"/>
                       </el-form-item>
                       <el-form-item class="editor-wrapper" prop="text">
-                        <Tinymce v-model="descForm.text" :height="260"/>
+                        <el-input 
+                          v-model="descForm.text"   
+                          @focus="inputClick(descForm,'text')"
+                          type="textarea"
+                          :rows="30"
+                        />
+                        <!-- <Tinymce v-model="descForm.text" :height="260"/> -->
                       </el-form-item>
                   </el-form>
                   <template #footer>
@@ -417,6 +423,29 @@
                       <el-button type="primary" @click="submitDescForm">确定</el-button>
                     </div>
                   </template>
+            </el-dialog>
+
+
+            <!-- 富文本编辑器 -->
+            <el-dialog  
+              v-model="richEditor.dialogVisible"   
+              :close-on-click-modal="false" 
+              width="800px"
+              destroy-on-close
+              @close="closeEditor"
+            >
+              <Tinymce 
+                ref="tinymceRef" 
+                v-model="richEditor.content" 
+                :value="richEditor.content"
+                @update:modelValue="updateEditorContent"
+              />
+              <template #footer>
+                <div class="dialog-footer">
+                  <el-button @click="closeEditor">取 消</el-button>
+                  <el-button type="primary" @click="editorConfirm">确 定</el-button>
+                </div>
+              </template>
             </el-dialog>
           </el-tab-pane>
         </el-tabs>
@@ -453,7 +482,40 @@ const loading = ref(true);
 // 标签页激活状态
 const activeTab = ref('basicInfo')
 
+
+const richEditor = ref({
+  dialogVisible: false,
+  object: null,
+  parameterName: '',
+  instance: null,
+  content: ''
+})
+
 const emit = defineEmits(['addExperimentInfoId'])
+
+// const richEditor = ref({
+//   dialogVisible: false,
+//   object: null,
+//   parameterName: '',
+//   instance: null,
+//   content: ''
+// })
+// // 添加更新编辑器内容的方法
+// const updateEditorContent = (content) => {
+//   richEditor.value.content = content
+// }
+
+
+// const content = richEditor.value.content
+  
+//   if (richEditor.value.object === descForm.value) {
+//     descForm.value[richEditor.value.parameterName] = content
+//   } else {
+//     const index = descForm.value.text.findIndex(item => item === richEditor.value.object)
+//     if (index !== -1) {
+//       descForm.value.items[index][richEditor.value.parameterName] = content
+//     }
+//   }
 
 
 // 接收父组件传递的实验ID
@@ -463,6 +525,48 @@ const props = defineProps({
     required: true
   }
 })
+
+//点击点击富文本编辑器
+const inputClick = (object, parameterName) => {
+  richEditor.value.object = object
+  richEditor.value.parameterName = parameterName
+  
+  // 设置初始内容
+  if (object === descForm.value) {
+    richEditor.value.content = descForm.value[parameterName] || ''
+  } else {
+    richEditor.value.content = object[parameterName] || ''
+  }
+  richEditor.value.dialogVisible = true
+}
+
+const closeEditor = () => {
+  richEditor.value.dialogVisible = false
+  richEditor.value.object = null
+  richEditor.value.parameterName = ''
+  richEditor.value.content = ''
+}
+
+const editorConfirm = () => {
+  const content = richEditor.value.content
+  
+  if (richEditor.value.object === descForm.value) {
+    descForm.value[richEditor.value.parameterName] = content
+  } 
+  // else {
+  //   const index = descForm.value.items.findIndex(item => item === richEditor.value.object)
+  //   if (index !== -1) {
+  //     descForm.value.items[index][richEditor.value.parameterName] = content
+  //   }
+  // }
+  
+  closeEditor()
+}
+
+// 添加更新编辑器内容的方法
+const updateEditorContent = (content) => {
+  richEditor.value.content = content
+}
 
 
 // 处理标签页点击

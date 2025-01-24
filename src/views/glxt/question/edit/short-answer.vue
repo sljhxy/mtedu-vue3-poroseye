@@ -185,9 +185,9 @@ const formData = ref({
 
 // 表单验证规则
 const rules = {
-  schoolType: [{ required: true, message: '请选择学校类型', trigger: 'change' }],
-  courseSystems: [{ required: true, message: '请选择学科', trigger: 'change' }],
-  academicStageType: [{ required: true, message: '请选择学段', trigger: 'change' }],
+  // schoolType: [{ required: true, message: '请选择学校类型', trigger: 'change' }],
+  // courseSystems: [{ required: true, message: '请选择学科', trigger: 'change' }],
+  // academicStageType: [{ required: true, message: '请选择学段', trigger: 'change' }],
   title: [{ required: true, message: '请输入题干', trigger: 'blur' }],
   correct: [{ required: true, message: '请输入答案', trigger: 'blur' }],
   analyze: [{ required: true, message: '请输入解析', trigger: 'blur' }],

@@ -11,11 +11,11 @@
         <el-step
           v-for="(step, index) in stepsList"
           :key="index"
-          @click="handleStepClick(index)"
           :title="step.title"
           :description="step.description"
           :icon="step.icon"
         />
+        <!--          @click="handleStepClick(index)"  去除步骤条点击事件  -->
       </el-steps>
     </div>
     <!-- 根据步骤显示不同的内容 -->

@@ -70,7 +70,7 @@
       <el-table-column prop="difficult" label="难度" width="60px"/>
       <el-table-column label="操作" align="center" width="300px">
         <template #default="{row}">
-          <el-button plain type="info" color="#6c757d" @click="showQuestion(row)">预览</el-button>
+          <!-- <el-button plain type="info" color="#6c757d" @click="showQuestion(row)">预览</el-button> -->
           <el-button plain type="success" icon="Edit" color="#6EDC93" @click="editQuestion(row)">编辑</el-button>
           <el-button plain type="danger" icon="Delete" @click="deleteQuestion(row)" class="link-left">删除</el-button>
         </template>

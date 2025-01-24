@@ -540,10 +540,6 @@ function reset() {
     educationStageType: null,
     versionReleaseTimeType: null,
     versionName: null,
-    createdTime: null,
-    createdBy: null,
-    updatedTime: null,
-    updatedBy: null,
     delFlag: null
   };
   proxy.resetForm("subjectRef");
@@ -797,6 +793,9 @@ function submitForm() {
   proxy.$refs["subjectRef"].validate(valid => {
     if (valid) {
       if (form.value.id != null) {
+      console.log('form.value')
+      console.log(form.value)
+      console.log('form.value')
         updateSubject(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;

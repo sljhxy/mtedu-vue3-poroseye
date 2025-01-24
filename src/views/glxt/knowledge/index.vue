@@ -109,7 +109,7 @@
       <el-table-column label="操作" align="center" width="450">
         <template #default="scope">
           <el-button plain type="success" color="#6EDC93" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:knowledge:edit']">修改</el-button>
-          <el-button plain type="primary" icon="Plus" @click="handleAdd(scope.row,2)" v-hasPermi="['glxt:knowledge:add']">新增子节点</el-button>
+          <el-button plain type="primary" icon="Plus" @click="handleAdd(scope.row, 2)" v-hasPermi="['glxt:knowledge:add']">新增子节点</el-button>
           <el-button 
             plain 
             type="danger" 
@@ -140,6 +140,7 @@
       :close-on-click-modal="false"
       :destroy-on-close="true"
     >
+    {{ operateTypeNum }}
       <el-form ref="knowledgeRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="类型" prop="schoolTypeId">
           <el-select 
@@ -246,15 +247,15 @@ const data = reactive({
       { required: true, message: "知识点名称不能为空", trigger: "blur" },
       { min: 2, max: 50, message: "知识点名称长度在 2 到 50 个字符", trigger: "blur" }
     ],
-    schoolTypeId: [
-      { required: true, message: "请选择类型", trigger: "change" }
-    ],
-    subjectId: [
-      { required: true, message: "请选择科目", trigger: "change" }
-    ],
-    academicStageId: [
-      { required: true, message: "请选择学段", trigger: "change" }
-    ]
+    // schoolTypeId: [
+    //   { required: true, message: "请选择类型", trigger: "change" }
+    // ],
+    // subjectId: [
+    //   { required: true, message: "请选择科目", trigger: "change" }
+    // ],
+    // academicStageId: [
+    //   { required: true, message: "请选择学段", trigger: "change" }
+    // ]
   }
 });
 
@@ -366,7 +367,10 @@ function getStageList() {
 }
 
 /** 新增按钮操作 */
+const operateTypeNum = ref();
 function handleAdd(row, type) {
+  //新增父还是子
+  operateTypeNum.value = type;
   //用与禁止父级节点的类型
   operateType.value = type;
   //给学段赋值
@@ -400,6 +404,8 @@ function toggleExpandAll() {
 
 /** 修改按钮操作 */
 async function handleUpdate(row) {
+
+  operateTypeNum.value = row.parentId? 2 : 1;
   //回显学段
   handleSchoolTypeChange(row.schoolTypeId)
   reset();
@@ -425,6 +431,14 @@ function submitForm() {
           getList();
         });
       } else {
+
+        // if(operateTypeNum.value == 2){//新增子节点的时候不需要新增类型、学段、科目
+        //   form.value.schoolTypeId = null;
+        //   form.value.subjectId = null;
+        //   form.value.academicStageId = null;
+
+        // }
+
         addKnowledge(form.value).then(response => {
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;

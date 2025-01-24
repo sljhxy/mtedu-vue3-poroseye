@@ -5,7 +5,7 @@
         <!-- 左侧欢迎区域 -->
         <div class="login-left">
           <h2 class="welcome-text">欢迎使用</h2>
-          <p class="welcome-desc">MT后台管理系统致力于为您提供专业、高效的管理服务</p>
+          <p class="welcome-desc">智能实验模拟舱云平台致力于为您提供专业、高效的服务</p>
           <div class="welcome-tips">
             <p>安全可靠 · 高效便捷 · 专业服务</p>
           </div>
@@ -16,18 +16,18 @@
           
           <!-- 添加登录方式切换tabs -->
           <div class="login-type-tabs">
-            <div 
+            <div style="float: left;" 
               :class="['tab-item', { active: loginType === 'account' }]" 
               @click="loginType = 'account'"
             >
               账号登录
             </div>
-            <div 
+            <!-- <div 
               :class="['tab-item', { active: loginType === 'wechat' }]" 
               @click="loginType = 'wechat'"
             >
               微信登录
-            </div>
+            </div> -->
           </div>
 
           <!-- 账号密码登录表单 -->

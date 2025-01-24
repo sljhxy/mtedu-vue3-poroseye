@@ -59,3 +59,21 @@ export function getVolumeDetail(id) {
     method: 'get'
   })
 }
+
+
+//根据分册id删除分册
+export function delMtVolumeById(id) {
+  return request({
+    url: '/glxt/library/delMtVolumeById/' + id,
+    method: 'delete'
+  })
+}
+
+
+//根据教材版本id获取分册列表
+export function selectMtVolumeList(id) {
+  return request({
+    url: '/glxt/library/selectMtVolumeList/' + id,
+    method: 'get'
+  })
+}

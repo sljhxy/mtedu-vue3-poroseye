@@ -88,6 +88,7 @@
     <!-- 添加或修改教程版本对话框 -->
     <el-dialog :title="title" v-model="open" width="700px" append-to-body>
       <el-form ref="libraryRef" :model="form" :rules="rules" label-width="110">
+        {{ form.id }}
         <el-form-item label="教材版本名称" prop="textbookVersionName">
           <el-input v-model="form.textbookVersionName" placeholder="请输入教材版本名称" />
         </el-form-item>
@@ -97,10 +98,11 @@
             <el-button type="primary" icon="Plus" @click="handleAddMtVolume">添加</el-button>
           </el-col>
           <el-col :span="1.5">
-            <el-button type="danger" icon="Delete" @click="handleDeleteMtVolume">删除</el-button>
+            <el-button type="danger" icon="Delete" @click="handleDeleteMtVolume" :disabled="multiple">删除</el-button>
           </el-col>
         </el-row>
         <el-scrollbar :height="mtVolumeList.length > 0 ? '500px' : '100px'"> 
+          {{ mtVolumeList }}
             <el-table :data="mtVolumeList" :row-class-name="rowMtVolumeIndex" @selection-change="handleMtVolumeSelectionChange" ref="mtVolume">
               <el-table-column type="selection" width="50" align="center" />
               <!-- <el-table-column label="序号" align="center" prop="index" width="50"/> -->
@@ -113,6 +115,11 @@
               <el-table-column label="分册名称" align="center" prop="volumeName">
                 <template #default="scope">
                   <el-input v-model="scope.row.volumeName" placeholder="请输入分册名称" />
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+                <template #default="scope">
+                  <el-button plain type="danger" circle icon="Delete" @click="handleDeleteMtVolume(scope.row)" v-hasPermi="['glxt:library:remove']"></el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -129,16 +136,18 @@
 </template>
 
 <script setup name="Library">
-import { listLibrary, getLibrary, delLibrary, addLibrary, updateLibrary } from "@/api/glxt/library";
+import { listLibrary, getLibrary, delLibrary, addLibrary, updateLibrary, delMtVolumeById, selectMtVolumeList } from "@/api/glxt/library";
 
 const { proxy } = getCurrentInstance();
 
-const libraryList = ref([]);
+const libraryList = ref([]);//教材版本列表
 const mtVolumeList = ref([]);
 const open = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
-const ids = ref([]);
+const ids = ref([]);//教材版本id
+const volumeIds = ref([]);//分册id
+
 const checkedMtVolume = ref([]);
 const single = ref(true);
 const multiple = ref(true);
@@ -172,6 +181,7 @@ function getList() {
     loading.value = false;
   });
 }
+
 
 // 取消按钮
 function cancel() {
@@ -254,10 +264,11 @@ function submitForm() {
   });
 }
 
+
 /** 删除按钮操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value;
-  proxy.$modal.confirm('是否确认删除教程版本编号为"' + _ids + '"的数据项？').then(function() {
+  proxy.$modal.confirm('是否确认删除教程版本？').then(function() {
     return delLibrary(_ids);
   }).then(() => {
     getList();
@@ -280,22 +291,88 @@ function handleAddMtVolume() {
   mtVolumeList.value.push(obj);
 }
 
+//获取分册列表参数
+const queryVolumeParams = ref({
+  textbookLibraryId: null,
+})
+
+//教材版本下的分册列表
+const volumeList = ref([]);
 /** 分册删除按钮操作 */
-function handleDeleteMtVolume() {
-  if (checkedMtVolume.value.length == 0) {
-    proxy.$modal.msgError("请先选择要删除的分册数据");
-  } else {
-    const mtVolumes = mtVolumeList.value;
-    const checkedMtVolumes = checkedMtVolume.value;
-    mtVolumeList.value = mtVolumes.filter(function(item) {
-      return checkedMtVolumes.indexOf(item.index) == -1
-    });
+function handleDeleteMtVolume(row) {
+  console.log(row.id)
+  if(volumeIds.value.length) {//多选的情况下
+      proxy.$modal.confirm('是否确认删除该数据？').then(function() {
+        return delMtVolumeById(volumeIds.value);
+      }).then(() => {
+        getMtVolumeList(form.value.id);
+        proxy.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+  } else {//删除多条
+    console.log('没进来')
+    if(row.id == undefined || row.id == null) {
+      // const mtVolumes = mtVolumeList.value;
+      // const checkedMtVolumes = checkedMtVolume.value;
+      // mtVolumeList.value = mtVolumes.filter(function(item) {
+      //   console.log(item.index)
+      //   mtVolumes.splice(item.index);
+      //   return checkedMtVolumes.indexOf(item.index) == -1
+      // });
+      mtVolumeList.value.forEach(item => {
+        mtVolumeList.value.splice(item.index, 1)
+      })
+    } else {
+      proxy.$modal.confirm('是否确认删除该数据？').then(function() {
+        return delMtVolumeById(row.id);
+      }).then(() => {
+        getMtVolumeList(form.value.id);
+        proxy.$modal.msgSuccess("删除成功");
+      }).catch(() => {});
+    }
   }
+  // if (checkedMtVolume.value.length == 0) {
+  //   proxy.$modal.msgError("请先选择要删除的分册数据");
+  // } else {
+  //   const mtVolumes = mtVolumeList.value;
+  //   const checkedMtVolumes = checkedMtVolume.value;
+  //   mtVolumeList.value = mtVolumes.filter(function(item) {
+  //     return checkedMtVolumes.indexOf(item.index) == -1
+  //   });
+    
+  //   mtVolumeList.value.forEach(element => {
+  //     if(element.id) {
+  //       console.log('进来了')
+  //       console.log(element.id)
+  //       console.log('进来了')
+        
+  //     }
+
+  //   });
+  // }
+}
+
+
+
+
+
+/** 根据教材版本id获取分册列表 */
+function getMtVolumeList(id) {
+  // selectMtVolumeList(queryVolumeParams.value).then(response => {
+  //   volumeList.value = response.data;
+  // });
+  getLibrary(id).then(response => {
+    form.value = response.data;
+    mtVolumeList.value = response.data.mtVolumeList;
+    open.value = true;
+    title.value = "修改教程版本";
+  });
 }
 
 /** 复选框选中数据 */
 function handleMtVolumeSelectionChange(selection) {
+  volumeIds.value = selection.map(item => item.id);
   checkedMtVolume.value = selection.map(item => item.index)
+  multiple.value = !selection.length;
 }
 
 /** 导出按钮操作 */
