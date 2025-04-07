@@ -12,7 +12,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="学段" prop="educationStageType">
-        <el-select v-model="queryParams.educationStageType" clearable style="width: 100px;">
+        <el-select v-model="queryParams.educationStageType" clearable style="width: 100px;" :disabled="!queryParams.schoolType" @change="educationStageTypeChange">
           <el-option
             v-for="dict in queryParams.schoolType=='1'?mt_academic_stage:mt_vocal_education_type"
             :key="dict.value"
@@ -22,7 +22,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="科目" prop="subjectType" >
-        <el-select v-model="queryParams.subjectType" clearable style="width: 100px;">
+        <el-select v-model="queryParams.subjectType" clearable style="width: 100px;" :disabled="!queryParams.schoolType && !queryParams.educationStageType">
           <el-option
             v-for="dict in queryParams.schoolType=='1'?mt_school_subject:mt_vocal_school_subject"
             :key="dict.value"
@@ -477,7 +477,21 @@ const schoolTypeChange = (value) => {
     // }
 }
 
+const educationStageTypeChange = (value) => {
+    // 清空学段选择
+    // queryParams.value.educationStageType = null;
+    queryParams.value.subjectType = null;
+  //清空学段的数据
+    // form.value.educationStageType = '1'//默认小学
+    // if(value == '1'){
+    //     educationStage.value = mt_academic_stage//普教
+    //     subjectStage.value = mt_school_subject
+    // }else{
+    //     educationStage.value = mt_vocal_education_type//职教
+    //     subjectStage.value = mt_vocal_school_subject
 
+    // }
+}
 /** 查询科目列表 */
 function getList() {
   loading.value = true;
