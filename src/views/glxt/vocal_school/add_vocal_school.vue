@@ -30,7 +30,7 @@
 
     <!-- 创建学院 - 只在本科时显示 -->
     <college-management
-      v-if="currentStep === 1 && schoolInfo.isCollege === '1'"
+      v-if="currentStep === 1 && schoolInfo.isCollege === '1'" 
       :schoolInfo="schoolInfo"
       @prev-step="handlePrevStep"
       @next-step="handleCollegeNext"
@@ -156,7 +156,7 @@ const stepsList = computed(() => {
   ]
 
   // 如果是本科(isCollege === '1')，在第二个位置插入学院和系
-  console.log(schoolInfo.value.isCollege + '<-学段')
+  // console.log(schoolInfo.value.isCollege + '<-学段')
   if (schoolInfo.value?.isCollege === '1' && schoolInfo.value?.isSystem === '1') {
     baseSteps.splice(1, 0, 
       { title: '创建学院', description: '填写学院基本信息', icon: OfficeBuilding },

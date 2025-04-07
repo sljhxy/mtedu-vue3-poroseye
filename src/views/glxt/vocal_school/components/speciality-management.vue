@@ -10,7 +10,7 @@
         <div class="info-content">
           <div class="info-item">
             <span class="label">学校名称：</span>
-            <span class="value">{{ schoolInfo?.name }}-{{ schoolInfo?.id }}</span>
+            <span class="value">{{ schoolInfo?.name }}</span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
@@ -264,7 +264,6 @@ const total = ref(0)
 
 // 处理页码改变
 const handleCurrentChange = (val) => {
-  console.log(val + '=--------')
   queryParams.value.pageNum = val
   // 这里可以调用获取数据的方法
   getSpecialityesBySystem(currentSystem.value)
@@ -456,7 +455,7 @@ const cancel = () => {
 
 // 保存/修改专业
 const saveSpeciality = () => {
-  console.log(specialityForm.value)
+  // console.log(specialityForm.value)
   if (!specialityFormRef.value) return
   try{
     specialityFormRef.value.validate((valid) => {

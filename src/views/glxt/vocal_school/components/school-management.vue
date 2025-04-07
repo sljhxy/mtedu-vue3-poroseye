@@ -206,7 +206,6 @@
               </el-form-item>
             </div>
             <el-form-item label="是否有学院:" class="full-width" prop="isCollege">
-              {{ formData.isCollege }}
               <el-radio-group v-model="formData.isCollege">
                 <el-radio :value="true">是</el-radio>
                 <el-radio :value="false">否</el-radio>
@@ -214,7 +213,6 @@
             </el-form-item>
 
             <el-form-item label="是否有系:" class="full-width" prop="isSystem">
-              {{ formData.isSystem }}
               <el-radio-group v-model="formData.isSystem">
                 <el-radio :value="true">是</el-radio>
                 <el-radio :value="false">否</el-radio>
@@ -541,7 +539,7 @@ const handleCityChange = async (cityId) => {
 onMounted(() => {
   initAreaData()
   initAreaDataTmp()
-  console.log('新增后接收到的学校id为: ', props.toSchoolMagentSchooId)
+  // console.log('新增后接收到的学校id为: ', props.toSchoolMagentSchooId)
 
   //新增后接收的学校id不为空，则调用getSchoolData方法获取学校数据
   //解决新增学校后到下一步后，返回学校组件时不显示刚刚新增的学校数据BUG
@@ -774,7 +772,7 @@ onMounted(async () => {
   const { type, id } = route.query
   
   operateType.value = type
-  console.log(route.query)
+  // console.log(route.query)
   if (type === 'edit' && id) {
     // 编辑模式
     schoolId.value = id

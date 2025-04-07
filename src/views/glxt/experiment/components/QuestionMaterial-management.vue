@@ -264,7 +264,7 @@
           border
           :max-height="calculateTableHeight(unselectedQuestions.length)"
         >
-          <el-table-column type="selection" width="55" fixed />
+          <el-table-column type="selection" width="55" fixed align="center"/>
           <el-table-column type="index" label="序号" width="60" fixed />
           <el-table-column prop="schoolType" label="学校类型" align="center">
             <template #default="scope">
@@ -352,7 +352,7 @@
           border
           :max-height="calculateTableHeight(unselectedMaterials.length)"
         >
-          <el-table-column type="selection" width="55" fixed />
+          <el-table-column type="selection" width="55" fixed align="center"/>
           <el-table-column type="contentType" label="学校类型">
             <template #default="scope">
                       <dict-tag :options="mt_school_type" :value="scope.row.contentType"/>

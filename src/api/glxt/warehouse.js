@@ -5,6 +5,7 @@ export function listWarehouse(query) {
   return request({
     url: '/glxt/warehouse/list',
     method: 'get',
+    headers: { 'login_type': 'web_user' },
     params: query
   })
 }

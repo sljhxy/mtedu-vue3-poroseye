@@ -50,3 +50,13 @@ export function delExperimentInfo(id) {
     method: 'delete'
   })
 }
+
+
+// 根据学校类型、学段、科目、版本、分册查询实验列表
+export function listExperimentInfoMountsystem(query) {
+  return request({
+    url: '/glxt/experimentInfoMountsystem/list',
+    method: 'get',
+    params: query
+  })
+}

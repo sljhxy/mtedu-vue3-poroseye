@@ -294,12 +294,12 @@ function schoolTypeChange(value) {
   schoolDisabled.value = true;
   if (value == '1') {
     schoolDisabled.value = false;
-    baseListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+    baseListSchool({ pageNum: 1, pageSize: 100000 }).then(response => {
       schoolList.value = response.rows;
     });
   } else if (value == '2') {
     schoolDisabled.value = false;
-    vocalListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+    vocalListSchool({ pageNum: 1, pageSize: 100000 }).then(response => {
       schoolList.value = response.rows;
     })
   }
@@ -408,12 +408,12 @@ function handleUpdate(row) {
   reset();
   //获取通过类型获取学校
   if (row.schoolType == '1') {
-    baseListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+    baseListSchool({ pageNum: 1, pageSize: 100000 }).then(response => {
       schoolList.value = response.rows;
     });
   } 
   if (row.schoolType == '2') {
-    vocalListSchool({ pageNum: 1, pageSize: 1000 }).then(response => {
+    vocalListSchool({ pageNum: 1, pageSize: 100000 }).then(response => {
       schoolList.value = response.rows;
     })
   }

@@ -257,6 +257,20 @@ export const dynamicRoutes = [
     ]
   },
   {
+    path: '/glxt/column-data', 
+    component: Layout,
+    hidden: true,
+    permissions: ['glxt:column:list'],
+    children: [
+      {
+        path: 'index/:columnId(.*)',
+        component: () => import('@/views/glxt/column/data'),
+        name: 'columnData',
+        meta: { title: '内容管理', activeMenu: '/school/column' }
+      }
+    ]
+  },
+  {
     path: '/monitor/job-log',
     component: Layout,
     hidden: true,

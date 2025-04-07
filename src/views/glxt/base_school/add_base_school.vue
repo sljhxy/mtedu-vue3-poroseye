@@ -95,7 +95,7 @@ const grades = ref([])
 const stepsList = [
   { title: '创建学校', description: '填写学校基本信息', icon: School },
   { title: '创建年级', description: '设置学校年级信息', icon: GoldMedal },
-  { title: '创建班级', description: '创建班级基础���息', icon: Pear },
+  { title: '创建班级', description: '创建班级基础信息', icon: Pear },
   { title: '科目课程', description: '配置教学科目', icon: Reading },
   { title: '设备激活', description: '激活教学设备', icon: Monitor }
 ]

@@ -464,7 +464,7 @@ import Tinymce from "@/components/Tinymce/index.vue"
 
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
-const { mt_school_type, mt_vocal_education_type, mt_academic_stage,mt_school_subject, mt_experiment_attr_type,mt_developer_type} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject','mt_experiment_attr_type','mt_developer_type');
+const { mt_school_type, mt_vocal_education_type, mt_academic_stage,mt_school_subject, mt_experiment_attr_type,mt_developer_type, mt_vocal_school_subject} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject','mt_experiment_attr_type','mt_developer_type', 'mt_vocal_school_subject');
 
 //课程体系API
 import {getCourseSystemOptions } from '@/api/glxt/subject'
@@ -584,10 +584,9 @@ const handleTabClick = (tab) => {
   }
   if(activeTab.value == 'basicInfo') {
     //获取实验信息
-    // if (route.query.type === 'edit') {//编辑状态的话无需调用接口
-
+    if (route.query.type === 'edit') {//新增状态的话无需调用接口
       loadExperimentData(experimentId.value? experimentId.value : props.toEexperimentInfoId)
-    // }
+    }
     
   }
 }
@@ -679,7 +678,7 @@ const getCourseSystemOptionList = (schoolType, academicStage) => {
   getCourseSystemOptions(schoolType, academicStage).then(response => {
       courseSystemOptions.value = response.data
       courseSystemOptions.value.forEach(item => {
-      item.label = getSubjectName(item.value);
+      item.label = getSubjectName(item.value, schoolType);
       })
   })
 }
@@ -697,8 +696,8 @@ const handleCourseSystemChange = (values) => {
 
 
 //获取科目名称
-const getSubjectName = (subjectType) => {
-    return mt_school_subject.value ?.find(item => item.value === subjectType).label
+const getSubjectName = (subjectType, schoolType) => {
+    return schoolType == '1'? mt_school_subject.value ?.find(item => item.value === subjectType).label : mt_vocal_school_subject.value ?.find(item => item.value === subjectType).label
 }
 
 // 实验基本信息表单验证规则
@@ -749,7 +748,7 @@ onMounted(async () => {
   // 从路由参数判断操作类型和学校ID
   const { type, id } = route.query
   
-  operateType.value = true
+  operateType.value = type
   if (type === 'edit' && id) {
     // 编辑模式
     experimentId.value = id
@@ -859,9 +858,11 @@ const handleClose = () => {
   resetBasicForm()
   dialogVisible.value = false
   
-  //加载挂载科目体系
-  if(experimentData.value.schoolType && experimentData.value.academicStageType) {
-    getCourseSystemOptionList(experimentData.value.schoolType, experimentData.value.academicStageType)
+  //编辑的时候，加载挂载科目体系
+  if(operateType.value == 'edit') {    
+    if(experimentData.value.schoolType && experimentData.value.academicStageType) {
+      getCourseSystemOptionList(experimentData.value.schoolType, experimentData.value.academicStageType)
+    }
   }
 }
 //===================================================================实验说明===================================================================
@@ -953,7 +954,7 @@ function getExperimentInfoDescribeList() {
   loading.value = true;
   //获取实验id
   experimentDescQueryParams.value.experimentInfoId = experimentId.value?(experimentId.value?experimentId.value:route.query.id):props.toEexperimentInfoId;
-  debugger
+  // debugger
   if(experimentDescQueryParams.value.experimentInfoId) {
     listExperimentInfoDescribe(experimentDescQueryParams.value).then(response => {
       experimentDescribeList.value = response.rows;

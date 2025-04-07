@@ -281,7 +281,7 @@ const handleSearch = () => {
 }
 
 // 监听搜索关键词变化
-watch(queryParams.value.name, () => {
+watch(() => queryParams.value.name, () => {
   queryParams.value.pageNum = 1 // 重置页码
   handleSearch()
 })

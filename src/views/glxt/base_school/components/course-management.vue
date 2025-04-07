@@ -17,6 +17,7 @@
           <div class="info-item">
             <div class="info-row">
               <span class="label">学校类型：</span>
+              <!-- {{ schoolInfo.educationLevel }} -->
               <span class="value">{{ schoolInfo?.educationLevelName }}</span>
             </div>
           </div>
@@ -73,12 +74,17 @@
 
         <div class="table-container">
           <el-table :data="courseList" style="width: 100%" v-loading="loading" element-loading-text="Loading..."> 
+            <el-table-column label="缩略图" align="center" prop="thumbnail">
+            <template #default="scope">
+              <image-preview v-if="scope.row.mtEduColumn != null" :src="scope.row.mtEduColumn.thumbnail" :width="70" :height="70"/>
+            </template>
+          </el-table-column>
             <el-table-column prop="gradeName" label="年级" align="center">
               {{ currentGrade?.name }}
             </el-table-column>
             <!-- <el-table-column prop="enrollmentYear" label="入学时间" align="center"/> -->
             <el-table-column prop="name" label="科目" align="center"/>
-            <el-table-column label="课程体系" align="center">
+            <!-- <el-table-column label="课程体系" align="center">
               <template #default="{ row }">
                 <div class="course-systems">
                   <el-tag
@@ -91,8 +97,17 @@
                   </el-tag>
                 </div>
               </template>
+            </el-table-column> -->
+            <el-table-column prop="columnId" label="栏目ID" align="center">
+              <template #default="scope">
+                <span v-if="scope.row.mtEduColumn != null">{{scope.row.mtEduColumn.id}}</span>
+              </template>
             </el-table-column>
-            <!-- <el-table-column prop="teacher" label="任课教师" align="center"/> -->
+            <el-table-column prop="columnName" label="栏目名称" align="center">
+              <template #default="scope">
+                <span v-if="scope.row.mtEduColumn != null">{{scope.row.mtEduColumn.columnName}}</span>
+              </template>
+            </el-table-column>
             <el-table-column label="操作" width="200" align="center">
               <template #default="scope">
                 <el-button type="primary" link @click="editCourse(scope.row)">
@@ -144,7 +159,7 @@
           <el-input v-model="courseForm.enrollmentYear" disabled />
         </el-form-item> -->
         <el-form-item label="科目" prop="subject">
-          <el-select v-model="courseForm.subjectId" placeholder="请选择科目" class="w-full">
+          <el-select v-model="courseForm.subjectId" placeholder="请选择科目" class="w-full" @change="subjectChange">
             <el-option
               v-for="item in subjectOptions"
               :key="item.id"
@@ -153,7 +168,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="课程体系" required>
+        <!-- <el-form-item label="课程体系" required>
           <el-cascader
             v-model="courseForm.courseSystems"
             :options="courseSystemOptions"
@@ -169,18 +184,17 @@
             class="w-full"
             @change="handleCourseSystemChange"
           />
-          {{ courseForm.courseSystems }}
-        </el-form-item>
-        <!-- <el-form-item label="任课教师" prop="teacher">
-          <el-select v-model="editingCourse.teacher" placeholder="请选择教师" class="w-full">
+        </el-form-item> -->
+        <el-form-item label="栏目" prop="columnId">
+          <el-select v-model="courseForm.columnId" placeholder="请选择栏目" class="w-full">
             <el-option
-              v-for="item in teacherOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
+              v-for="item in columnOptions"
+              :key="item.id"
+              :label="item.columnName"
+              :value="item.id"
             />
           </el-select>
-        </el-form-item> -->
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -218,6 +232,12 @@ const { proxy } = getCurrentInstance();
 const { mt_school_subject } = proxy.useDict('mt_school_subject');
 //获取教材版本
 import {getLibrary, getVolumeDetail } from '@/api/glxt/library';
+
+//栏目API
+import { listColumn } from "@/api/glxt/column";
+
+
+
 const loading = ref(false);
 const props = defineProps({
   grades: {
@@ -230,11 +250,11 @@ const props = defineProps({
     required: true,
     default: () => ({})
   },
-  classList: {
-    type: Array,
-    required: true,
-    default: () => []
-  }
+  // classList: {
+  //   type: Array,
+  //   required: true,
+  //   default: () => []
+  // }
 })
 
 const currentGrade = ref(null)
@@ -273,6 +293,8 @@ const courseForm = ref({
   subjectId: '',
   name: '',
   courseSystems: [[]],
+  columnId:'',
+  schoolColumnId:''
 })
 //重置
 const reset = () => {
@@ -282,8 +304,37 @@ const reset = () => {
     subjectId: null,
     name: null,
     courseSystems: [[]],
+    columnId: null,
+    schoolColumnId: null
   }
 }
+
+//科目下拉改变时候获取栏目列表
+const subjectChange = (value) => {
+  getColumnList()
+}
+
+
+//获取栏目列表
+const columnOptions = ref([])
+const getColumnList = () => {
+  try{
+    let queryParams = {
+      pageNum: 1,
+      pageSize: 100000,
+      contentType: props.schoolInfo.educationLevel 
+    }
+    listColumn(queryParams).then(response => {
+      if(response.code == 200){
+        columnOptions.value = response.rows
+      
+      }
+    })
+  }catch(err){
+    ElMessage.error('获取栏目数据失败')
+  }
+}
+
 
 
 // 处理页码改变
@@ -339,7 +390,7 @@ const handleSearch = () => {
 
 
 // 监听搜索关键词变化
-watch(queryParams.value.name, () => {
+watch(() => queryParams.value.name, () => {
   queryParams.value.pageNum = 1 // 重置页码
   handleSearch()
 })
@@ -352,7 +403,7 @@ const initSubjectList = () => {
       if(response.code == 200){
         subjectOptions.value = response.rows
         //获取科目名称
-        console.log('subjectOptions',subjectOptions.value)
+        // console.log('subjectOptions',subjectOptions.value)
         subjectOptions.value.forEach(item => {
           item.subjectName = getSubjectName(item.subjectType)
         })
@@ -391,14 +442,22 @@ const editCourse = (row) => {
   reset();
    //调用初始化科目下拉列表
   initSubjectList();
-  //获取挂载课程  学校类型   学段
-  getCourseSystemOptionList(props.schoolInfo.educationLevel, props.schoolInfo.schoolType);
+  //获取挂载课程  学校类型   学段   需求问题暂时去掉挂载课程体系
+  // getCourseSystemOptionList(props.schoolInfo.educationLevel, props.schoolInfo.schoolType);
+
+  //获取栏目
+  getColumnList()
   dialogType.value = 'edit'
   //获取课程信息
   getCourse(row.id, props.schoolInfo.id, props.schoolInfo.educationLevel).then(response => {
-    courseForm.value = response.data
-    //开启弹框
-    dialogVisible.value = true
+    if(response.code == 200) {
+
+      courseForm.value = response.data
+      courseForm.value.columnId = response.data.mtSchoolColumn.columnId
+      courseForm.value.schoolColumnId = response.data.mtSchoolColumn.id
+      //开启弹框
+      dialogVisible.value = true
+    }
   })
 
 }
@@ -436,6 +495,8 @@ const saveCourse = () => {
     courseFormRef.value.validate((valid) => {
     if (valid) {
       if (courseForm.value.id != null) {
+        courseForm.value.schoolId = props.schoolInfo.id;
+        courseForm.value.schoolType = props.schoolInfo.educationLevel;
         updateCourse(courseForm.value).then(response => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("修改成功");
@@ -470,7 +531,6 @@ const saveCourse = () => {
 const initDefaultGrade = () => {
   if (props.grades && props.grades.length > 0) {
     // 默认选中一年级
-    console.log('监听到了》》》》')
     handleGradeClick(props.grades[0])
   }
 }
@@ -514,9 +574,9 @@ const getCourseSystemOptionList = (schoolType, academicStage) => {
   getCourseSystemOptions(schoolType, academicStage).then(response => {
     courseSystemOptions.value = response.data
 
-    console.log('courseSystemOptions',courseSystemOptions.value)
+    // console.log('courseSystemOptions',courseSystemOptions.value)
     courseSystemOptions.value.forEach(item => {
-      console.log('item',item.value)
+      // console.log('item',item.value)
       item.label = getSubjectName(item.value);
     })
   })

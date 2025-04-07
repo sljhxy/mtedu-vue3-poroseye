@@ -101,7 +101,7 @@
             <div class="qrcode-wrapper">
               <div class="qrcode-img">
                 <!-- 这里放置微信二维码图片或组件 -->
-                <img v-if="qrUrl" :src="qrUrl" alt="微信登录二维码" />
+                <img v-if="ticket" :src="ticket" alt="微信登录二维码" @click="refesimg"/>
                 <div v-else class="qrcode-loading">
                   <el-icon class="is-loading"><Loading /></el-icon>
                 </div>
@@ -144,7 +144,7 @@
 </template>
 
 <script setup>
-import { getCodeImg } from "@/api/login";
+import { getCodeImg, getQRCodeMsg, checkQRCode } from "@/api/login";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from "@/utils/jsencrypt";
 import useUserStore from '@/store/modules/user'
@@ -157,6 +157,69 @@ import { getToken } from '@/utils/auth'
 import { getLoginUUid, bindOpenid, uuidLogin} from '@/api/system/user'
 //引入vueQr组件
 import VueQr from 'vue-qr'
+
+
+function getQRCodeMethod() {
+  return getQRCodeMsg().then((res) => {
+    if (res.code === 200) {
+      return res.data;
+    }
+  });
+}
+
+function refesimg() {
+  console.log('refesimg')
+  // scan()
+}
+const ticket = ref('')
+const resData = ref('')
+const userInfo = ref({})
+    // 微信发送请求【轮询】
+    const scan = async () => {
+        //调用二维码接口，获取ticket
+        const res = await getQRCodeMethod()
+        // debugger
+        resData.value = res.ticket;
+        console.log(resData)
+        //固定链接+拼接ticket,获取二维码图片
+        ticket.value = `https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=${resData.value}`;
+        if (ticket.value) {
+            //设置定时器轮询check()轮询登录接口
+            let loginTimer = setInterval(async () => {
+              
+                const res = await checkQRCode({ ticket: resData.value })
+                //条件判断，!= -1 表示关注成功
+                if (res.data.scanResult != -1) {
+                    //停止轮询
+                    clearInterval(loginTimer);
+                    //用户信息赋值
+                    userInfo.access_token = res.data.token.access_token
+                    userInfo.avatar = res.data.user.avatar
+                    userInfo.nickname = res.data.user.nickname
+                    userInfo.userId = res.data.user.userId
+                } else if (res.data.scanResult == -2) {
+                    //== -2 二维码过期
+                    clearInterval(loginTimer);
+                }
+                //判断如果用户token存在提示登录成功
+                if (userInfo.access_token) {
+                  console.log('登录成功')
+                    // ElMessage({ type: "success", message: "登录成功" });
+                    // // 2.关闭弹窗
+                    // dialogTableVisible.value = false;
+                    const query = route.query;
+                    const otherQueryParams = Object.keys(query).reduce((acc, cur) => {
+                      if (cur !== "redirect") {
+                        acc[cur] = query[cur];
+                      }
+                      return acc;
+                    }, {});
+                    router.push({ path: redirect.value || "/", query: otherQueryParams });
+                }
+              }, 3000);
+        }
+    }
+
 
 
 const userStore = useUserStore()
@@ -261,7 +324,7 @@ function wxlogin() {
         console.log(response.uuid)
         const uuid = response.uuid
         const redirect_uri = `http://localhost/dev-api/system/weixin/uuid/bind/openid?uuid=${uuid}`
-         const appid = 'wxf2f18512ae0adebc'
+        const appid = 'wxf2f18512ae0adebc'
         const codeUrl = `https://open.weixin.qq.com/connect/oauth2/authorize?appid=${appid}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=snsapi_userinfo&state=123456#wechat_redirect`
         qrUrl.value = codeUrl
         console.log('----------------------------------')
@@ -418,7 +481,7 @@ const startQrCodeCheck = () => {
 // 监听登录方式切换
 watch(loginType, (newVal) => {
   if (newVal === 'wechat') {
-    getWechatQrCode()
+    scan()
   } else {
     clearInterval(qrCodeTimer)
   }

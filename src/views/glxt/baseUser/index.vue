@@ -517,7 +517,7 @@ import { listBaseUser, getBaseUser, delBaseUser, addBaseUser, updateBaseUser,
           configCourse,editConfigCourse,deleteConfigCourse,selectConfigCourseById,selectConfigCourseList } from "@/api/glxt/baseUser";
 const { proxy } = getCurrentInstance();
 const { mt_user_type, sys_user_sex, mt_school_subject } = proxy.useDict('mt_user_type', 'sys_user_sex', 'mt_school_subject');
-
+import { encrypt, decrypt } from "@/utils/jsencrypt";
 //导入学校API
 import { baseListSchool } from "@/api/glxt/base_school";
 
@@ -715,6 +715,7 @@ function handleUpdate(row) {
   }
   getBaseUser(_id).then(response => {
     form.value = response.data;
+    // form.value.password = decrypt(response.data.password)
     form.value.rconfirmPassword = response.data.password;
 
     if(row.userType == '2') {//如果是学生
@@ -730,9 +731,10 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["baseUserRef"].validate(valid => {
     if (valid) {
+      // form.value.password = encrypt(form.value.password);
       if (form.value.id != null) {
         if(form.value.userType == '2') {//如果是学生
-
+          
           form.value.mtStudentGradeId = form.value.mtStudentGrade.id//学生年级的主键，并不是本身的年级ID
           form.value.mtStudentClassId = form.value.mtStudentClass.id//学生班级的主键，并不是本身的班级ID
         }
@@ -807,7 +809,7 @@ const handleClassChange = (row) => {
   // 分页相关
   const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 10000,
       gradeId: row.grade
   }
   listCourse(queryParams).then(response => {
@@ -882,7 +884,7 @@ const handleGradeChange = (row) => {
   // 分页相关
   const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 10000,
       gradeId: row.grade
   }
   listClass(queryParams).then(response => {
@@ -941,7 +943,7 @@ const gradeList = (schoolId) => {
     // 分页相关
     const queryParams = {
         pageNum: 1,
-        pageSize: 1000,
+        pageSize: 10000,
         schoolId: schoolId
       }
       listGrade(queryParams).then(response => {
@@ -962,7 +964,7 @@ const classList = (gradeId) => {
     // 分页相关
     const queryParams = {
         pageNum: 1,
-        pageSize: 1000,
+        pageSize: 10000,
         gradeId: gradeId
     }
     listClass(queryParams).then(response => {
@@ -990,7 +992,7 @@ const handleAddSubject = () => {
   // 分页相关
   const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 10000,
       schoolId: configForm.value.schoolId
     }
     listGrade(queryParams).then(response => {
@@ -1028,7 +1030,7 @@ const handleConfigUpdate = (row) => {
   // 分页相关
   const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 10000,
       schoolId: configForm.value.schoolId
     }
     listGrade(queryParams).then(response => {
@@ -1038,7 +1040,7 @@ const handleConfigUpdate = (row) => {
         // 分页相关
         const queryParams = {
             pageNum: 1,
-            pageSize: 1000,
+            pageSize: 10000,
             gradeId: row.gradeId
         }
         listClass(queryParams).then(response => {

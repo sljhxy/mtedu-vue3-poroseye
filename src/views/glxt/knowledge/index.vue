@@ -236,7 +236,7 @@ const data = reactive({
   form: {},
   queryParams: {
     pageNum: 1,
-    pageSize: 10000,
+    pageSize: 100000,
     knowledge: null,
     schoolTypeId: null,
     subjectId: null,

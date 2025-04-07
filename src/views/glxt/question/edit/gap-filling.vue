@@ -143,6 +143,8 @@ const formLoading = ref(false)
 const form = ref({
   id: null,
   questionType: 4,
+  schoolType: '',//学校类型 1-普教  2-职教
+  academicStageType: '',//学段
   title: '',
   items: [],
   analyze: '',
@@ -220,6 +222,11 @@ onMounted(async () => {
     try {
         const response = await getQuestion(id)
         const questionData = response.data
+        // const uuid = 'gap_' + new Date().getTime();
+        // const count = editor.getContent().match(/<span class="gapfilling-span/g)?.length || 0;
+        // const number = count + 1;
+        // editor.insertContent(`<span class="gapfilling-span ${uuid}">${number}</span>`);
+        console.log(questionData)
         form.value = {
         ...questionData,
         knowledgePoints: Array.isArray(questionData.knowledgePoints) 
@@ -232,9 +239,9 @@ onMounted(async () => {
           //       academicStageType: questionData.academicStageType,
           //       courseSystems: questionData.courseSystems
           //   })
-        console.log('加载的表单数据:', formData.value)
+        // console.log('加载的表单数据:', formData.value)
     } catch (error) {
-        console.error('加载题目数据失败:', error)
+        // console.error('加载题目数据失败:', error)
     } finally {
         formLoading.value = false
     }
@@ -245,7 +252,7 @@ onMounted(async () => {
 
 // 监听知识点的变化
 watch(() => form.value.knowledgePoints, (newVal) => {
-  console.log('选中的知识点:', newVal)
+  // console.log('选中的知识点:', newVal)
   form.value.knowledgePoints = newVal
 }, { deep: true })
 
@@ -254,6 +261,13 @@ watch(() => form.value.knowledgePoints, (newVal) => {
 const inputClick = (object, parameterName) => {
   richEditor.value.object = object
   richEditor.value.parameterName = parameterName
+  
+   // 设置初始内容
+  if (object === form.value) {
+    richEditor.value.content = form.value[parameterName] || ''
+  } else {
+    richEditor.value.content = object[parameterName] || ''
+  }
   richEditor.value.dialogVisible = true
 }
 
@@ -327,7 +341,7 @@ const questionItemReset = (content) => {
 
   // 更新表单数据
   form.value.items = newItems
-  console.log('newItems',form.value.items)
+  // console.log('newItems',form.value.items)
   return true
 }
 
@@ -341,7 +355,7 @@ const submitForm = async () => {
   try {
     await formRef.value.validate()
     formLoading.value = true
-    console.log('formData',form.value)
+    // console.log('formData',form.value)
     if (form.value.id) {
       // formData.value.id = route.query.id
       const res = await updateQuestion(form.value)
@@ -361,7 +375,7 @@ const submitForm = async () => {
       }
     }
   } catch (error) {
-    console.error(error)
+    // console.error(error)
     ElMessage.error('操作失败')
   } finally {
     formLoading.value = false

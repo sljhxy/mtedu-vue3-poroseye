@@ -1,6 +1,7 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParam" ref="queryFormRef" :inline="true" v-show="showSearch">
+    <!-- <el-form :model="queryParam" ref="queryFormRef" :inline="true" v-show="showSearch"> -->
+    <el-form :model="queryParam" ref="queryFormRef" :inline="true" >
       <!-- <el-form-item label="题目ID：">
         <el-input v-model="queryParam.id" clearable></el-input>
       </el-form-item>
@@ -19,6 +20,12 @@
                     :label="item.name+' ( '+item.levelName+' )'"></el-option>
         </el-select>
       </el-form-item> -->
+      <el-form-item label="类型：">
+        <el-select v-model="queryParam.schoolType" clearable style="width: 100px;">
+          <el-option v-for="item in mt_school_type" :key="item.value" :value="item.value"
+                    :label="item.label"></el-option>
+        </el-select>
+      </el-form-item>
       <el-form-item label="题型：">
         <el-select v-model="queryParam.questionType" clearable style="width: 100px;">
           <el-option v-for="item in mt_question_type" :key="item.value" :value="item.value" :label="item.label"></el-option>
@@ -32,7 +39,7 @@
       </el-form-item>
     </el-form>
   
-    <right-toolbar v-model:showSearch="showSearch" @queryTable="submitForm" style="margin-bottom: 10px;float: right;"></right-toolbar>
+    <!-- <right-toolbar v-model:showSearch="showSearch" @queryTable="submitForm" style="margin-bottom: 10px;float: right;"></right-toolbar> -->
     <!-- v-loading="listLoading"  -->
     <!-- 添加按钮 按照后续需要再进行添加 -->
     
@@ -114,6 +121,7 @@ const router = useRouter()
 const queryParam = reactive({
   id: null,
   questionType: null,
+  schoolType: null,
   level: null,
   subjectId: null,
   pageNum: 1,

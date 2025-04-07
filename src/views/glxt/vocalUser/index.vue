@@ -587,7 +587,7 @@ import { listVocalUser, getVocalUser, delVocalUser, addVocalUser, updateVocalUse
 const { proxy } = getCurrentInstance();
 const { mt_user_type, sys_user_sex, mt_vocal_school_subject } = proxy.useDict('mt_user_type', 'sys_user_sex', 'mt_vocal_school_subject');
 
-
+import { encrypt, decrypt } from "@/utils/jsencrypt";
 //导入学校API
 import { vocalListSchool, getSchool } from "@/api/glxt/vocal_school";
 
@@ -798,7 +798,7 @@ const collegeList = (schoolId) => {
     // 分页相关
     const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 100000,
       vocalEduSchoolId: schoolId
     }
     listCollege(queryParams).then(response => {
@@ -818,7 +818,7 @@ const systemList = (schoolOrCollegeId) => {
     // 分页相关
     const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 100000,
       schoolOrCollegeId: schoolOrCollegeId
     }
     listSystem(queryParams).then(response => {
@@ -838,7 +838,7 @@ const specialityList = (systemId) => {
     // 分页相关
     const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 100000,
       vocalEduSystemId: systemId
     }
     listSpeciality(queryParams).then(response => {
@@ -859,7 +859,7 @@ const gradeList = (specialityId) => {
      // 分页相关
   const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 100000,
       vocalEduSpecialityId: specialityId
     }
     listVocalGrade(queryParams).then(response => {
@@ -880,7 +880,7 @@ const classList = (gradeId) => {
       // 分页相关
       const queryParams = {
             pageNum: 1,
-            pageSize: 1000,
+            pageSize: 100000,
             vocalEduGradeId: gradeId
         }
     listVocalClass(queryParams).then(response => {
@@ -1028,7 +1028,8 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["vocalUserRef"].validate(valid => {
     if (valid) {
-      debugger
+      // debugger
+      // form.value.password = encrypt(form.value.password);
       if (form.value.id != null) {
         if(form.value.userType == '2') {//如果是学生
           form.value.mtStudentGradeId = form.value.mtStudentGrade.id//学生年级的主键，并不是本身的年级ID
@@ -1169,7 +1170,7 @@ const handleAddSubject = () => {
   // 分页相关
   const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 100000,
       vocalEduSpecialityId: configForm.value.specialityId
     }
     listVocalGrade(queryParams).then(response => {
@@ -1206,7 +1207,7 @@ const handleConfigUpdate = (row) => {
   // 分页相关
   const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 100000,
       vocalEduSpecialityId: configForm.value.specialityId
     }
     listVocalGrade(queryParams).then(response => {
@@ -1216,7 +1217,7 @@ const handleConfigUpdate = (row) => {
         // 分页相关
         const queryParams = {
             pageNum: 1,
-            pageSize: 1000,
+            pageSize: 100000,
             gradeId: row.gradeId
         }
         listVocalClass(queryParams).then(response => {
@@ -1226,7 +1227,7 @@ const handleConfigUpdate = (row) => {
             // 分页相关
             const queryParams = {
                 pageNum: 1,
-                pageSize: 1000,
+                pageSize: 100000,
                 vocalEduGradeId: row.gradeId
             }
             listVocalCourse(queryParams).then(response => {
@@ -1335,7 +1336,7 @@ const handleGradeChange = (row) => {
   // 分页相关
   const queryParams = {
       pageNum: 1,
-      pageSize: 1000,
+      pageSize: 100000,
       vocalEduGradeId: row.grade
   }
   listVocalClass(queryParams).then(response => {
@@ -1354,7 +1355,7 @@ const handleClassChange = (row) => {
 // 分页相关
 const queryParams = {
     pageNum: 1,
-    pageSize: 1000,
+    pageSize: 100000,
     vocalEduGradeId: row.grade
 }
 listVocalCourse(queryParams).then(response => {

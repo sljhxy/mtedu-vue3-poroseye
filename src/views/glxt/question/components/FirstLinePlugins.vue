@@ -110,7 +110,7 @@ const getCourseSystemOptionList = (schoolType, academicStage) => {
 
     getCourseSystemOptions(schoolType, academicStage).then(response => {
         courseSystemOptions.value = response.data
-        console.log(courseSystemOptions.value)
+        // console.log(courseSystemOptions.value)
         courseSystemOptions.value.forEach(item => {
         item.label = getSubjectName(schoolType,item.value);
         })

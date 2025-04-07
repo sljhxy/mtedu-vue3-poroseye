@@ -48,8 +48,7 @@
             </div>
             <div class="current-specialty">
               <el-tag 
-                type="primary" 
-                effect="success" 
+                type="success" 
                 class="specialty-indicator" round
               >
                 当前专业：{{ currentSpeciality.specialityName }}
@@ -89,7 +88,7 @@
                 <el-icon><Search /></el-icon>
               </template>
             </el-input>
-            <el-button type="primary" plain @click="clickAddVocalClass">
+            <el-button type="primary" plain @click="clickAddVocalClass" v-permission="['glxt:vocalClass:add']">
               <el-icon><Plus /></el-icon>新增
             </el-button>
           </div>
@@ -104,10 +103,10 @@
             <el-table-column prop="className" label="班级名称" align="center"/>
             <el-table-column label="操作" align="center">
               <template #default="scope">
-                <el-button type="primary" link @click="editVocalClass(scope.row)" v-permission="['glxt:class:edit']">
+                <el-button type="primary" link @click="editVocalClass(scope.row)" v-permission="['glxt:vocalClass:edit']">
                   <el-icon><Edit /></el-icon>编辑
                 </el-button>
-                <el-button type="danger" link @click="deleteVocalClass(scope.row)" v-permission="['glxt:class:remove']">
+                <el-button type="danger" link @click="deleteVocalClass(scope.row)" v-permission="['glxt:vocalClass:remove']">
                   <el-icon><Delete /></el-icon>删除
                 </el-button>
               </template>
@@ -261,13 +260,17 @@ const getGradesBySpeciality = (params) => {
 
 // 处理专业点击
 const handleSpecialityClick = (speciality) => {
+  console.log('speciality')
+  console.log(speciality)
+  console.log('speciality')
   currentSpeciality.value = speciality
   currentGrade.value = null // 清空当前选中的年级
   classList.value = [] // 清空班级列表
   let params = {
     pageNum: 1,
     pageSize: 1000000,
-    vocalEduSpecialityId: speciality.id
+    vocalEduSpecialityId: speciality.id,
+    schoolId: props.schoolInfo.id
   }
   getGradesBySpeciality(params)
   
@@ -306,7 +309,7 @@ const rules = {
 
 // 处理页码改变
 const handleCurrentChange = (val) => {
-  console.log(val + '=--------')
+  
   queryParams.value.pageNum = val
   // 这里可以调用获取数据的方法
   getVocalClassesByGrade(currentSpeciality.value)
@@ -365,10 +368,10 @@ const handleSearch = () => {
 }
 
 // 监听搜索关键词变化
-watch(queryParams.value.name, () => {
+watch(() => queryParams.value.name, (val) => {
   queryParams.value.pageNum = 1 // 重置页码
   handleSearch()
-})
+});
 
 // 监听年级数据变化
 // watch(() => props.grades, (newGrades) => {
@@ -469,7 +472,7 @@ const cancel = () => {
 
 // 保存/修改班级
 const saveVocalClass = () => {
-  console.log(classForm.value)
+  
   if (!classFormRef.value) return
   try{
     classFormRef.value.validate((valid) => {

@@ -785,7 +785,7 @@ const queryParams = ref({
 )
 const loading = ref(true);
 const total = ref(0);
-/** 查询知识点列表 */
+/** 查询实验步骤列表 */
 function getStepsList() {
   loading.value = true;
   queryParams.value.experimentInfoId = props.experimentId

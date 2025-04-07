@@ -6,7 +6,8 @@ export function login(username, password, code, uuid) {
     url: '/auth/login',
     headers: {
       isToken: false,
-      repeatSubmit: false
+      repeatSubmit: false,
+      'login_type': 'web_user'
     },
     method: 'post',
     data: { username, password, code, uuid }
@@ -37,6 +38,7 @@ export function refreshToken() {
 export function getInfo() {
   return request({
     url: '/system/user/getInfo',
+    headers: { 'login_type': 'web_user' },
     method: 'get'
   })
 }
@@ -60,3 +62,25 @@ export function getCodeImg() {
     timeout: 20000
   })
 }
+
+// 二维码的接口
+export function getQRCodeMsg(){
+  return request({
+    url: '/auth/getQRCode',
+    headers: {
+      isToken: false
+    },
+    method: 'post',
+    timeout: 20000
+  })
+}
+
+// 二维码扫码的登录轮询接口
+export function checkQRCode(data){
+  return request({
+    url: '/auth/wxcheck',
+    method: 'get',
+    params: data
+  })
+}
+

@@ -267,19 +267,18 @@ const deleteCollege = (row) => {
 
 // 修改保存方法
 const saveCollege = () => {
-  console.log(collegeFrom.value)
+  // console.log(collegeFrom.value)
   try{
     proxy.$refs["collegeFromRef"].validate(valid => {
     if (valid) {
       if (collegeFrom.value.id != null) {
-        console.log(1)
         updateCollege(collegeFrom.value).then(response => {
           proxy.$modal.msgSuccess("修改成功");
           getList();
         });
       } else {
-        console.log(2)
-        console.log(collegeFrom.value)
+        // console.log(2)
+        // console.log(collegeFrom.value)
         addCollege(collegeFrom.value).then(response => {
           proxy.$modal.msgSuccess("新增成功");
           getList();

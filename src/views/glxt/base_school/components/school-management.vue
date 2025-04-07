@@ -384,7 +384,7 @@ const handleNext = async () => {
   try {
     emit('next-step', formData.value)
   } catch (error) {
-    console.error('下一步操作失败:', error)
+    // console.error('下一步操作失败:', error)
     ElMessage.error('操作失败，请重试')
   }
 }
@@ -557,7 +557,6 @@ const handleEdit = async (id) => {
     }
 
   } catch (error) {
-    console.error('加载学校数据失败:', error);
     ElMessage.error('加载学校数据失败');
   }
 }
@@ -703,8 +702,9 @@ onMounted(async () => {
   // 从路由参数判断操作类型和学校ID
   const { type, id } = route.query
   
-  console.log(route.query)
-  console.log(type,id)
+  
+  // console.log(route.query)
+  // console.log(type,id)
   if (type === 'edit' && id) {
     // 编辑模式
     schoolId.value = id

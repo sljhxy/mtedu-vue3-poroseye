@@ -69,8 +69,8 @@
         <div class="table-container">
           <el-table :data="gradeList" v-loading="loading" style="width: 100%">
             <el-table-column type="index" width="70" label="序号" align="center"/>
-            <el-table-column prop="collegeName" label="学院" align="center"/>
-            <el-table-column prop="systemName" label="系" align="center"/>
+            <el-table-column prop="collegeName" label="学院" align="center" v-if="schoolInfo.isCollege === '1'"/>
+            <el-table-column prop="systemName" label="系" align="center"  v-if="schoolInfo.isCollege === '1'"/>
             <el-table-column prop="specialityName" label="专业" align="center"/>
             <el-table-column prop="gradeName" label="年级" align="center"/>
             <el-table-column prop="academicYear" label="所属学年" align="center"/>
@@ -199,6 +199,7 @@ const gradeFormRef = ref(null)
 
 const gradeForm = ref({
   id: null,
+  schoolId: '',
   vocalEduSpecialityId: '',//专业id
   academicYear: '',//所属学年
   gradeName: ''//年级名称
@@ -234,7 +235,8 @@ const queryParams = ref({
   pageNum: 1,
   pageSize: 10,
   vocalEduSpecialityId: '',
-  gradeName: ''
+  gradeName: '',
+  schoolId:''
 });
 
 
@@ -250,6 +252,8 @@ const reset = () => {
 const loading = ref(false);
 // 根据年级id获取年级列表的方法，添加分页逻辑
 const getVocalGradeesBySpeciality = (speciality) => {
+
+  queryParams.value.schoolId = props.schoolInfo.id;
   queryParams.value.vocalEduSpecialityId = speciality.id;
   getList(queryParams.value);
   // 设置总数和更新表格数据
@@ -274,10 +278,11 @@ const handleSearch = () => {
 }
 
 // 监听搜索关键词变化
-watch(queryParams.value.name, () => {
+watch(() => queryParams.value.name, (val) => {
   queryParams.value.pageNum = 1 // 重置页码
   handleSearch()
-})
+});
+
 
 // 处理年级点击
 const handleSpecialityClick = (speciality) => {
@@ -372,6 +377,7 @@ const saveGrade = () => {
   try{
     gradeFormRef.value.validate((valid) => {
     if (valid) {
+      gradeForm.value.schoolId = props.schoolInfo.id
       if (gradeForm.value.id != null) {
         updateVocalGrade(gradeForm.value).then(response => {
           if(response.code == 200){

@@ -203,7 +203,7 @@ const getList = (params) => {
 
 
 // 监听搜索关键词(设备号)变化  
-watch(queryParams.value.deviceNo, () => {
+watch(() => queryParams.value.deviceNo, () => {
   queryParams.value.pageNum = 1 // 重置页码
   handleSearch()
 })
