@@ -5,7 +5,7 @@ import Cookies from 'js-cookie'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import locale from 'element-plus/es/locale/lang/zh-cn'
-import mitt from "mitt"//兄弟组件相传要用到的JS
+// import mitt from "mitt"//兄弟组件相传要用到的JS
 //百度编辑器引入配置文件
 // import '../public/admin/components/ueditor/ueditor.config.js';
 // import '../public/admin/components/ueditor/ueditor.all.js';
@@ -63,7 +63,7 @@ app.config.globalProperties.handleTree = handleTree
 app.config.globalProperties.addDateRange = addDateRange
 app.config.globalProperties.selectDictLabel = selectDictLabel
 app.config.globalProperties.selectDictLabels = selectDictLabels
-app.config.globalProperties.$bus = new mitt()
+// app.config.globalProperties.$bus = new mitt()
 // 全局组件挂载
 app.component('DictTag', DictTag)
 app.component('Pagination', Pagination)
