@@ -132,10 +132,24 @@
           <el-input v-model="form.equipmentName" placeholder="请输入器材名称" />
         </el-form-item>
         <el-form-item label="操作说明" prop="equipmentAttr">
-          <el-input v-model="form.equipmentAttr" placeholder="请输入操作说明" />
+          <el-input 
+            v-model="form.equipmentAttr" 
+            type="textarea" 
+            :rows="2"
+            placeholder="请输入操作说明" 
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
         <el-form-item label="注意事项" prop="usageAttention">
-          <el-input v-model="form.usageAttention" placeholder="请输入注意事项" />
+          <el-input 
+            v-model="form.usageAttention" 
+            type="textarea" 
+            :rows="2"
+            placeholder="请输入注意事项" 
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>
