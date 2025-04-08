@@ -143,7 +143,19 @@
             >{{dict.label}}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="栏目名称" prop="columnName">
+
+
+        <!-- 新增栏目分类 -->
+        <el-form-item label="分类" prop="classification">
+              <el-radio-group v-model="form.classification">
+                <el-radio
+                  v-for="dict in column_classification"
+                  :key="dict.value"
+                  :value="dict.value"
+                >{{dict.label}}</el-radio>
+              </el-radio-group>
+        </el-form-item>
+        <el-form-item label="名称" prop="columnName">
           <el-input v-model="form.columnName" placeholder="请输入栏目名称" />
         </el-form-item>
         <el-form-item label="版本教材" required>
@@ -184,7 +196,8 @@ import { listColumn, getColumn, delColumn, addColumn, updateColumn, changeRealTi
 import { getCourseSystemOptions } from '@/api/glxt/subject'
 
 const { proxy } = getCurrentInstance();
-const { mt_real_time_update, mt_school_type,mt_academic_stage, mt_vocal_education_type, mt_school_subject,mt_vocal_school_subject } = proxy.useDict('mt_real_time_update', 'mt_school_type','mt_academic_stage', 'mt_vocal_education_type', 'mt_school_subject', 'mt_vocal_school_subject');
+const { mt_real_time_update, mt_school_type,mt_academic_stage, mt_vocal_education_type, mt_school_subject,mt_vocal_school_subject, column_classification } = 
+proxy.useDict('mt_real_time_update', 'mt_school_type','mt_academic_stage', 'mt_vocal_education_type', 'mt_school_subject', 'mt_vocal_school_subject', 'column_classification');
 
 
 const columnList = ref([]);
@@ -207,6 +220,9 @@ const data = reactive({
     columnName: null,
   },
   rules: {
+    classification: [
+      { required: true, message: "分类不能为空", trigger: "blur" }
+    ],
     columnName: [
       { required: true, message: "栏目名称不能为空", trigger: "blur" }
     ],
@@ -313,7 +329,8 @@ function reset() {
     createTime: null,
     updateBy: null,
     updateTime: null,
-    delFlag: null
+    delFlag: null,
+    classification: null,
   };
   proxy.resetForm("columnRef");
 }
@@ -343,6 +360,8 @@ function handleSelectionChange(selection) {
 function handleAdd() {
   reset();
   form.value.contentType = '1'//默认学校为普教
+
+  form.value.classification = '1'//默认分类为学科
   schoolTypeChange('1')//调用普教下的学段
   //获取挂载课程体系
   getCourseSystemOptionList(form.value.contentType, form.value.periodType)

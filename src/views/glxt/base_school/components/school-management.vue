@@ -222,6 +222,19 @@
                 </el-radio-group>
               </el-form-item>
             </div>
+
+            <!-- 新增登录类型 -->
+            <div class="form-row">
+              <el-form-item label="登录类型:" prop="loginType">
+                <el-radio-group v-model="formData.loginType">
+                  <el-radio
+                    v-for="dict in login_type"
+                    :key="dict.value"
+                    :value="dict.value"
+                  >{{dict.label}}</el-radio>
+              </el-radio-group>
+              </el-form-item>
+            </div>
           </div>
         </div>
       </el-form>
@@ -259,7 +272,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 const { proxy } = getCurrentInstance();
 //字典引入
-const { mt_base_education_type, mt_school_type, mt_academic_stage } = proxy.useDict('mt_base_education_type', 'mt_school_type', 'mt_academic_stage');
+const { mt_base_education_type, mt_school_type, mt_academic_stage, login_type } = proxy.useDict('mt_base_education_type', 'mt_school_type', 'mt_academic_stage', 'login_type');
 const router = useRouter()
 //引入区域接口
 import { getAreaTree } from "@/api/glxt/area";
@@ -301,7 +314,8 @@ const formData = ref({
   schoolTypeName: '',//学段名称
   schoolSystem: '',//学制
   schoolSystemName: '',//学制名称
-  isActive: true
+  isActive: true,
+  loginType: '',//登录类型
 })
 
 const rules = {
@@ -568,7 +582,10 @@ const handleCancel = () => {
   schoolForm.value?.resetFields()
 
   //取消重新调用获取学校数据
-  getSchoolData(formData.value.id)
+  //新增的时候不走获取学校数据  修复取消报错的BUG
+  if (formData.value.id) {
+   getSchoolData(formData.value.id)
+  }
 }
 
 // 修改显示添加弹框函数
@@ -576,6 +593,10 @@ const showAddDialog = () => {
   reset()
   // 确保教育类型默认为普教
   formData.value.educationLevel = '1'
+
+  //登录类型默认为1  账号登录
+  formData.value.loginType = '1'
+
   isEdit.value = false // 重置编辑状态
   dialogVisible.value = true
 }

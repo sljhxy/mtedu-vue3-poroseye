@@ -6,6 +6,7 @@
             placeholder="请选择学校类型"
             class="fixed-width-select"
             @change="schoolTypeChange"
+            clearable
             >
                 <el-option 
                     v-for="item in mt_school_type" 
@@ -21,6 +22,7 @@
                     placeholder="请选择学段"
                     class="fixed-width-select"
                     @change="academicStageChange"
+                    clearable
                 >
                 <el-option 
                     v-for="item in formData.schoolType=='1'?mt_academic_stage:mt_vocal_education_type" 
@@ -37,7 +39,7 @@
                     :options="courseSystemOptions"
                     :props="{ 
                         expandTrigger: 'hover',
-                        multiple: true,
+                        multiple: false,
                         emitPath: true
                     }"
                     placeholder="请选择课程体系"
@@ -46,6 +48,7 @@
                     collapse-tags-tooltip
                     class="w-full"
                     @change="handleCourseSystemChange"
+                    
                 />
                 <!-- {{formData.courseSystems}} -->
             </el-form-item>

@@ -18,7 +18,7 @@
               <div class="search-section" v-show="isSearchVisible">
                 <el-form :inline="false" :model="queryExperimentQuestionParams">
                   <el-row :gutter="20">
-                    <el-col :span="3">
+                    <el-col :span="5">
                       <el-form-item label="题型">
                         <el-select v-model="queryExperimentQuestionParams.questionType" placeholder="请选择题型" 
                         @change="handleQuestionSearch('questionType', queryExperimentQuestionParams.questionType)"
@@ -115,7 +115,7 @@
               <div class="search-section" v-show="isSearchVisible">
                 <el-form :inline="false" :model="queryExperimentSourceMaterialParams">
                   <el-row :gutter="20">
-                    <el-col :span="3">
+                    <el-col :span="5">
                       <el-form-item label="文件名称">
                         <el-input 
                           v-model="queryExperimentSourceMaterialParams.fileName" 
@@ -125,7 +125,7 @@
                         />
                       </el-form-item>
                     </el-col>
-                    <el-col :span="3">
+                    <el-col :span="5">
                       <el-form-item label="文件类型">
                         <el-input 
                             v-model="queryExperimentSourceMaterialParams.fileType" 
@@ -135,7 +135,7 @@
                           />
                       </el-form-item>
                     </el-col>
-                    <el-col :span="3">
+                    <el-col :span="6">
                       <el-form-item label="素材类别">
                         <el-select 
                           style="width: 150px;" 

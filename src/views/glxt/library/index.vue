@@ -88,7 +88,7 @@
     <!-- 添加或修改教程版本对话框 -->
     <el-dialog :title="title" v-model="open" width="700px" append-to-body>
       <el-form ref="libraryRef" :model="form" :rules="rules" label-width="110">
-        {{ form.id }}
+        <!-- {{ form.id }} -->
         <el-form-item label="教材版本名称" prop="textbookVersionName">
           <el-input v-model="form.textbookVersionName" placeholder="请输入教材版本名称" />
         </el-form-item>
@@ -102,7 +102,7 @@
           </el-col>
         </el-row>
         <el-scrollbar :height="mtVolumeList.length > 0 ? '500px' : '100px'"> 
-          {{ mtVolumeList }}
+          <!-- {{ mtVolumeList }} -->
             <el-table :data="mtVolumeList" :row-class-name="rowMtVolumeIndex" @selection-change="handleMtVolumeSelectionChange" ref="mtVolume">
               <el-table-column type="selection" width="50" align="center" />
               <!-- <el-table-column label="序号" align="center" prop="index" width="50"/> -->

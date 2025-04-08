@@ -120,8 +120,9 @@
       </el-table-column>
       <el-table-column label="来源说明" align="center" prop="sourceDesc" />
       <!-- <el-table-column label="是否选择" align="center" prop="isSelect" /> -->
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="300px">
         <template #default="scope">
+          <el-button plain type="info" icon="Download" @click="handleDownload(scope.row)" v-hasPermi="['glxt:sourceMaterial:export']">下载</el-button>
           <el-button plain type="success" icon="Edit" color="#6EDC93" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:sourceMaterial:edit']">修改</el-button>
           <el-button plain type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['glxt:sourceMaterial:remove']">删除</el-button>
         </template>
@@ -137,7 +138,7 @@
 
     <!-- 添加或修改素材对话框 -->
     <el-dialog :title="title" v-model="open" width="800px" append-to-body>
-      <el-form ref="sourceMaterialRef" :model="form" :rules="rules" label-width="80px">
+      <el-form ref="sourceMaterialRef" :model="form" :rules="rules" label-width="110px">
         <el-form-item label="素材" prop="fileUrl">
           <file-upload v-model="form.fileUrl" @fileData="fileSuccessData"/>
         </el-form-item>
@@ -157,10 +158,54 @@
               v-for="dict in form.contentType=='1'?mt_academic_stage:mt_vocal_education_type"
               :key="dict.value"
               :value="dict.value"
-            
+              @change="academicStageChange"
             >{{dict.label}}</el-radio>
           </el-radio-group>
         </el-form-item>
+
+        <!-- 新增教材体系和知识点体系 -->
+        {{ form.courseSystems }}
+        <el-form-item label="教材体系" prop="courseSystems">
+                <el-cascader
+                    style="width: 100%;"
+                    v-model="form.courseSystems"
+                    :options="courseSystemOptions"
+                    :props="{ 
+                        expandTrigger: 'hover',
+                        multiple: false,
+                        emitPath: true
+                    }"
+                    placeholder="请选择课程体系"
+                    clearable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    class="w-full"
+                    @change="handleCourseSystemChange"
+                    
+                />
+        </el-form-item>
+
+        {{ form.knowledgePoints }}
+        <el-form-item label="知识点体系" prop="knowledgePoints">
+          <el-tree-select
+              v-model="form.knowledgePoints"
+              :data="knowledgeTreeList"
+              :props="{
+                value: 'id',
+                label: 'knowledge',
+                children: 'children'
+              }"
+              multiple
+              show-checkbox
+              check-strictly
+              node-key="id"
+              placeholder="请选择知识点"
+              clearable
+              class="knowledge-select"
+              collapse-tags-tooltip
+            />
+          </el-form-item>
+
         <el-form-item label="文件名称" prop="fileName">
           <el-input v-model="form.fileName" placeholder="请输入文件名称" disabled/>
         </el-form-item>
@@ -196,7 +241,13 @@
 <script setup name="SourceMaterial">
 import { listSourceMaterial, getSourceMaterial, delSourceMaterial, addSourceMaterial, updateSourceMaterial } from "@/api/glxt/sourceMaterial";
 const { proxy } = getCurrentInstance();
-const { mt_academic_stage, mt_source_material_type, mt_school_type, mt_vocal_education_type } = proxy.useDict('mt_academic_stage', 'mt_source_material_type', 'mt_school_type','mt_vocal_education_type');
+const { mt_academic_stage, mt_source_material_type, mt_school_type, mt_vocal_education_type,mt_school_subject,mt_vocal_school_subject } = 
+proxy.useDict('mt_academic_stage', 'mt_source_material_type', 'mt_school_type','mt_vocal_education_type','mt_school_subject','mt_vocal_school_subject');
+
+
+import {getCourseSystemOptions } from '@/api/glxt/subject'
+//获取知识点树形结构
+import { getKnowledgeTree } from '@/api/glxt/knowledge';
 
 const sourceMaterialList = ref([]);
 const open = ref(false);
@@ -226,6 +277,12 @@ const data = reactive({
     periodType: [
       { required: true, message: "学段不能为空", trigger: "change" }
     ],
+    courseSystems: [
+      { required: true, message: "教材体系不能为空", trigger: "change" }
+    ],
+    knowledgePoints: [
+      { required: true, message: "知识点体系不能为空", trigger: "change" }
+    ],
     fileName: [
       { required: true, message: "文件名称不能为空", trigger: "blur" }
     ],
@@ -242,6 +299,127 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
+
+
+//选完学段获取科目教材列表
+const academicStageChange = (value) => {
+
+    //清空教材体系和知识点的数据
+    form.value.courseSystems = []
+    form.value.knowledgePoints = []
+
+    getCourseSystemOptionList(form.value.contentType, value)
+}
+
+const courseSystemOptions = ref([])//获取挂载课程
+const getCourseSystemOptionList = (schoolType, academicStage) => {
+
+    getCourseSystemOptions(schoolType, academicStage).then(response => {
+        courseSystemOptions.value = response.data
+        // console.log(courseSystemOptions.value)
+        courseSystemOptions.value.forEach(item => {
+        item.label = getSubjectName(schoolType,item.value);
+        })
+    })
+}
+
+
+//获取科目名称
+const getSubjectName = (schoolType, subjectType) => {
+    return schoolType=='1' ? 
+    mt_school_subject.value ?.find(item => item.value === subjectType).label : 
+    mt_vocal_school_subject.value ?.find(item => item.value === subjectType).label
+}
+
+
+//知识点树形结构
+const knowledgeTreeList = ref([])
+const getKnowledgeTreeList = async (subjectId) => {
+  try {
+     // 确保所有必要参数都有值
+     if (!form.value.contentType || !form.value.periodType ) {
+      console.log('缺少获取知识点所需的参数');
+      return;
+    }
+    
+     // 构建请求参数
+     let params = {
+      schoolTypeId: form.value.contentType,
+      academicStageId: form.value.periodType,
+      subjectId: subjectId
+    }
+
+     // 显示加载状态
+     loading.value = true;
+
+    // 发起请求       
+    const response = await getKnowledgeTree(params)
+    console.log(params)
+    const processTreeData = (items) => {
+      if (!items) return []
+      return items.map(item => ({
+        id: item.id,
+        knowledge: item.knowledge || item.knowledge,
+        label: item.knowledge || item.knowledge, // 用于显示
+        value: item.id, // 用于值绑定
+        children: processTreeData(item.children)
+      }))
+    }
+    
+    knowledgeTreeList.value = processTreeData(response.rows)
+
+  } catch (error) {
+    console.error('获取知识点数据失败:', error);
+    ElMessage.error('获取知识点数据失败');
+  } finally {
+    loading.value = false;
+  }
+  
+}
+
+
+const handleCourseSystemChange = (data) => {
+  if(data == '' || data == undefined || data == null){
+    console.log('data为空')
+    //清空知识点的数据
+    form.value.knowledgePoints = []
+    return
+  }
+    form.value.courseSystems = data
+    console.log(form.value.courseSystems)
+    console.log('进来了')
+    console.log(data)
+    console.log('进来了')
+
+    //清空知识点的数据
+     form.value.knowledgePoints = []
+
+    // 如果所有必要参数都有值，则获取知识点
+   if (data[0].length > 0 && data[0][0].length > 0) {
+        let subjectId = data[0][0]
+        getKnowledgeTreeList(subjectId);
+        // getKnoledgeList(subjectId);
+  }
+}
+
+
+/** 查询知识点列表 */
+const knowledgeList = ref();
+function getKnoledgeList(value) {
+  debugger
+  loading.value = true;
+  let params = {
+      schoolTypeId: form.value.contentType,
+      academicStageId: form.value.periodType,
+      subjectId: value
+  }
+  getKnowledgeTree(params).then(response => {
+      knowledgeList.value = response.rows;
+      console.log(response)
+      console.log(knowledgeTreeList.value)
+      loading.value = false;
+  });
+}
 
 //接收到子组件的数据
 const fileSuccessData = (data) => {
@@ -328,6 +506,7 @@ function handleAdd() {
   reset();
   form.value.contentType = '1'//默认学校为普教
   schoolTypeChange('1')//调用普教下的学段
+  getCourseSystemOptionList('1','1')//调用普教下的课程体系
   open.value = true;
   title.value = "添加素材";
 }
@@ -382,5 +561,21 @@ function handleExport() {
   }, `sourceMaterial_${new Date().getTime()}.xlsx`)
 }
 
+
+/** 下载文件操作 */
+function handleDownload(row) {
+  if (!row.fileUrl) {
+    proxy.$modal.msgError("文件URL不存在");
+    return;
+  }
+  
+  // 创建一个隐藏的a标签
+  const link = document.createElement('a');
+  link.href = row.fileUrl;
+  link.download = row.fileName || `文件_${new Date().getTime()}`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 getList();
 </script>

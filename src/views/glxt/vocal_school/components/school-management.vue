@@ -192,7 +192,7 @@
         <div class="form-section">
           <div class="section-header">
             <el-icon><Reading /></el-icon>
-            <span>教育信息</span>
+            <span>教育信息及登录类型</span>
           </div>
           <div class="form-content">
             <div class="form-row">
@@ -225,6 +225,19 @@
                   <el-radio :value="false">否</el-radio>
                 </el-radio-group>
               </el-form-item>
+            </div>
+
+             <!-- 新增登录类型 -->
+             <div class="form-row">
+              <el-form-item label="登录类型:" prop="loginType">
+              <el-radio-group v-model="formData.loginType">
+                <el-radio
+                  v-for="dict in login_type"
+                  :key="dict.value"
+                  :value="dict.value"
+                >{{dict.label}}</el-radio>
+              </el-radio-group>
+            </el-form-item>
             </div>
           </div>
         </div>
@@ -263,7 +276,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、 学段、 学制
-const { mt_school_type, mt_vocal_education_type, mt_vocal_education_system_type} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_vocal_education_system_type');
+const { mt_school_type, mt_vocal_education_type, mt_vocal_education_system_type, login_type} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_vocal_education_system_type', 'login_type');
 const router = useRouter()
 //引入区域接口
 import { getAreaTree } from "@/api/glxt/area";
@@ -308,7 +321,8 @@ const formData = ref({
   educationLevelName: '',//类型名称
   isCollege: '0',//是否有学院
   isSystem: '1',//是否有系
-  isActive: true
+  isActive: true,
+  loginType: '1',//登录类型
 })
 
 const rules = {
@@ -649,6 +663,8 @@ const showAddDialog = () => {
   reset()
   // 确保教育类型默认为职教
   formData.value.educationLevel = '2'
+  //登录类型默认为1  账号登录
+  formData.value.loginType = '1'
   // formData.value.isCollege = '0' 
   // formData.value.isSystem = '0' 
   formData.value.isCollege = true 

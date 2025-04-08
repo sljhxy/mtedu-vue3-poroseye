@@ -191,12 +191,38 @@ const handleSelectData = (data) => {
   form.value.schoolType = data.schoolType
   form.value.academicStageType = data.academicStageType
   form.value.courseSystems = data.courseSystems
+
+    // 如果所有必要参数都有值，则获取知识点
+    if (data.schoolType && data.academicStageType && 
+        data.courseSystems && data.courseSystems.length > 0 && 
+        data.courseSystems[0].length > 0) {
+       getKnowledgeTreeList();
+  }
 }
 
 //知识点树形结构
 const knowledgeTreeList = ref([])
 const getKnowledgeTreeList = () => {
-    getKnowledgeTree({}).then(response => {
+    // 确保所有必要参数都有值
+    if (!form.value.schoolType || !form.value.academicStageType || 
+        !form.value.courseSystems || form.value.courseSystems.length === 0 || 
+        form.value.courseSystems[0].length === 0) {
+      console.log('缺少获取知识点所需的参数');
+      return;
+    }
+    
+    console.log(form.value.courseSystems[0]);
+    console.log(form.value.courseSystems[0][0]);
+    console.log(form.value.courseSystems);
+    
+
+     // 构建请求参数
+     let params = {
+      schoolTypeId: form.value.schoolType,
+      academicStageId: form.value.academicStageType,
+      subjectId: form.value.courseSystems[0]
+    }
+    getKnowledgeTree(params).then(response => {
       // 递归处理树形数据，确保每个节点都有正确的属性
       const processTreeData = (items) => {
           return items.map(item => ({

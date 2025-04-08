@@ -128,7 +128,7 @@
                                   :show-all-levels="false"
                                   :props="{ 
                                       expandTrigger: 'hover',
-                                      multiple: true,
+                                      multiple: false,
                                       emitPath: true
                                   }"
                                   placeholder="请选择课程体系"
@@ -167,7 +167,7 @@
               :destroy-on-close="true"
               class="experiment-dialog"
             >
-              <el-form :model="basicForm" label-width="90px" :rules="rules" ref="basicFormRef" class="compact-form">
+              <el-form :model="basicForm" label-width="100px" :rules="rules" ref="basicFormRef" class="compact-form">
                 <!-- 缩略图行 -->
                 <el-row class="thumbnail-row" :gutter="20">
                   <el-col :span="24">
@@ -272,10 +272,10 @@
                       <el-cascader
                           v-model="basicForm.courseSystems"
                           :options="courseSystemOptions"
-                          :show-all-levels="false"
+                          :show-all-levels="true"
                           :props="{ 
                               expandTrigger: 'hover',
-                              multiple: true,
+                              multiple: false,
                               emitPath: true
                           }"
                           placeholder="请选择课程体系"
@@ -288,6 +288,34 @@
                     </el-form-item>
                   </el-col>
                 </el-row>
+
+
+                   <!-- 新增知识体系挂接 -->
+                   <el-row :gutter="20">
+                    <el-col :span="24">
+                      {{ basicForm.knowledgePoints }}
+                      <el-form-item label="知识点体系" prop="knowledgePoints">
+                                <el-tree-select
+                                    v-model="basicForm.knowledgePoints"
+                                    :data="knowledgeTreeList"
+                                    :props="{
+                                      value: 'id',
+                                      label: 'knowledge',
+                                      children: 'children'
+                                    }"
+                                    multiple
+                                    show-checkbox
+                                    check-strictly
+                                    node-key="id"
+                                    placeholder="请选择知识点"
+                                    clearable
+                                    class="knowledge-select"
+                                    collapse-tags-tooltip
+                                  />
+                                </el-form-item>
+                    </el-col>
+                    </el-row>
+                
                 <!-- 实验简介 -->
                 <el-row :gutter="20">
                   <el-col :span="24">
@@ -475,6 +503,10 @@ import {getExperimentInfo, addExperimentInfo, updateExperimentInfo} from '@/api/
 //导入实验说明api
 import {getExperimentInfoDescribe, addExperimentInfoDescribe, updateExperimentInfoDescribe, listExperimentInfoDescribe, delExperimentInfoDescribe} from '@/api/glxt/experimentInfoDescribe'
 
+//获取知识点树形结构
+import { getKnowledgeTree } from '@/api/glxt/knowledge';
+
+
 const route = useRoute()
 const activeStep = ref(0)
 const loading = ref(true);
@@ -610,7 +642,8 @@ const basicForm = ref({
   blurb:'',//简介
   version:'',//实验版本号
   remark:'',//实验备注
-  courseSystems: [[]]//课程体系
+  courseSystems: [[]],//课程体系
+  knowledgePoints:[]//知识点体系
 })
 
 
@@ -628,7 +661,8 @@ const resetBasicForm = () => {
       blurb:null,//简介
       version:null,//实验版本号
       version:null,//实验版本号
-      courseSystems: [[]]//课程体系
+      courseSystems: [[]],//课程体系
+      knowledgePoints:[]//知识点体系
     }
   
 }
@@ -686,10 +720,28 @@ const getCourseSystemOptionList = (schoolType, academicStage) => {
 
 const handleCourseSystemChange = (values) => {
 
+  if(values == '' || values == undefined || values == null){
+    console.log('data为空')
+    //清空知识点的数据
+    basicForm.value.knowledgePoints = []
+    return
+  }
+
 // 挂载课程系统
   if (!values || values.length === 0) {
     basicForm.value.courseSystems = []
     return
+  }
+
+   //清空知识点的数据
+   basicForm.value.knowledgePoints = []
+
+   console.log(values)
+   console.log(values[0])
+  // 如果所有必要参数都有值，则获取知识点
+  if (values.length > 0 && values[0].length > 0) {
+      let subjectId = values[0]
+      getKnowledgeTreeList(subjectId);
   }
 
 }
@@ -708,11 +760,54 @@ const rules = {
   academicStageType: [{ required: true, message: '学段类型不能为空', trigger: 'blur' }],
   developerType: [{ required: true, message: '开发者不能为空', trigger: 'blur' }],
   version: [{ required: true, message: '版本号不能为空', trigger: 'blur' }],
+  knowledgePoints: [{ required: true, message: "知识点体系不能为空", trigger: "change" }],
   // 其他验规则...
 }    
 //实验说明表单验证规则
 const descFormRules = {
   title: [{ required: true, message: '请输入实验标题', trigger: 'blur' }],
+}
+
+
+//知识点树形结构
+const knowledgeTreeList = ref([])
+const getKnowledgeTreeList = async (subjectId) => {
+  try {
+     // 确保所有必要参数都有值
+     if (!basicForm.value.schoolType || !basicForm.value.academicStageType ) {
+      console.log('缺少获取知识点所需的参数');
+      return;
+    }
+    
+     // 构建请求参数
+     let params = {
+      schoolTypeId: basicForm.value.schoolType,
+      academicStageId: basicForm.value.academicStageType,
+      subjectId: subjectId
+    }
+
+ 
+    // 发起请求       
+    const response = await getKnowledgeTree(params)
+    console.log(params)
+    const processTreeData = (items) => {
+      if (!items) return []
+      return items.map(item => ({
+        id: item.id,
+        knowledge: item.knowledge || item.knowledge,
+        label: item.knowledge || item.knowledge, // 用于显示
+        value: item.id, // 用于值绑定
+        children: processTreeData(item.children)
+      }))
+    }
+    
+    knowledgeTreeList.value = processTreeData(response.rows)
+
+  } catch (error) {
+    console.error('获取知识点数据失败:', error);
+    ElMessage.error('获取知识点数据失败');
+  } finally {
+  }
 }
 
 // 实验ID

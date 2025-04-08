@@ -376,6 +376,186 @@
               </el-dialog>
             </div>
           </el-tab-pane>
+
+
+
+          <!-- 新增实验结论 conclusion-->
+          <el-tab-pane name="conclusion">
+            <template #label>
+              <div class="custom-tab-label">
+                <el-icon><Document /></el-icon>
+                <span>实验结论{{ props.experimentId }}</span>
+              </div>
+            </template>
+            
+            <div v-if="activeTab === 'conclusion' && !principleList.length" class="tab-content">
+              <div class="editor-container">
+                <!-- 空状态展示 -->
+                <div class="empty-state">
+                  <div class="welcome-content">
+                    <el-icon class="welcome-icon"><CollectionTag /></el-icon>
+                    <h2>欢迎来到【扩展信息】管理</h2>
+                    <p>开始总结您的实验结论</p>
+                    <el-button type="primary" class="add-button" @click="openPrincipleDialog" v-hasPermi="['glxt:experimentPrinciple:add']">
+                      <el-icon><Plus /></el-icon>
+                      添加实验结论
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="principleList.length" class="target-list">
+              <transition-group name="target-fade">
+                <div v-for="(principle, index) in principleList" 
+                    :key="principle.id" 
+                    class="target-item"
+                     :style="{ '--delay': `${index * 0.1}s` }"
+                >
+                  <div class="target-content">
+                    <div class="target-header">
+                      <div class="target-index-wrapper">
+                        <div class="target-badge">{{index + 1}}</div>
+                        <h3 class="target-title">实验结论</h3>
+                      </div>
+                      <div class="target-actions">
+                        <el-tooltip content="编辑结论" placement="top">
+                          <el-button 
+                            type="primary" 
+                            class="action-button edit-button"
+                            @click="handleEditPrinciple(principle)"
+                            v-hasPermi="['glxt:experimentPrinciple:edit']"
+                          >
+                            <el-icon><Edit /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                        <el-tooltip content="删除结论" placement="top">
+                          <el-button 
+                            type="danger" 
+                            class="action-button delete-button"
+                            @click="handleDeletePrinciple(principle)"
+                            v-hasPermi="['glxt:experimentPrinciple:remove']"
+                          >
+                            <el-icon><Delete /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                      </div>
+                    </div>
+                    <div class="target-body">
+                      <div class="target-text" v-html="principle.text"></div>
+                    </div>
+                    <div class="target-footer">
+                      <el-tag size="small" plain type="info">
+                        <el-icon class="clock-class"><Clock /></el-icon>
+                        <span>创建时间: {{ formatDate(principle.createTime) }}</span>
+                      </el-tag>
+                    </div>
+                  </div>
+                </div>
+              </transition-group>
+            </div>
+            <el-dialog style="margin-top: 5vh !important;" title="实验结论" v-model="principleDialogVisible">   
+                <el-form :model="formPrincipleData" ref="principleFormRef">
+                        <el-form-item class="editor-wrapper" prop="text">
+                          <Tinymce v-model="formPrincipleData.text" :height="400" />
+                        </el-form-item>
+                </el-form>
+                <template #footer>
+                <span class="dialog-footer">
+                  <el-button @click="handleClose">取消</el-button>
+                  <el-button type="primary" @click="submitPrincipleForm">确定</el-button>
+                </span>
+              </template>
+            </el-dialog>
+          </el-tab-pane>
+
+          <!-- 新增知识点延伸  knowledgeExtend  为后续的AI提示词作准备 -->
+          <el-tab-pane name="knowledgeExtend">
+            <template #label>
+              <div class="custom-tab-label">
+                <el-icon><Operation /></el-icon>
+                <span>知识点延伸{{ props.experimentId }}</span>
+              </div>
+            </template>
+            
+            <div v-if="activeTab === 'knowledgeExtend' && !principleList.length" class="tab-content">
+              <div class="editor-container">
+                <!-- 空状态展示 -->
+                <div class="empty-state">
+                  <div class="welcome-content">
+                    <el-icon class="welcome-icon"><More /></el-icon>
+                    <h2>欢迎来到【扩展信息】管理</h2>
+                    <p>开始添加您的知识点延伸</p>
+                    <el-button type="primary" class="add-button" @click="openPrincipleDialog" v-hasPermi="['glxt:experimentPrinciple:add']">
+                      <el-icon><Plus /></el-icon>
+                      添加知识点延伸
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="principleList.length" class="target-list">
+              <transition-group name="target-fade">
+                <div v-for="(principle, index) in principleList" 
+                    :key="principle.id" 
+                    class="target-item"
+                     :style="{ '--delay': `${index * 0.1}s` }"
+                >
+                  <div class="target-content">
+                    <div class="target-header">
+                      <div class="target-index-wrapper">
+                        <div class="target-badge">{{index + 1}}</div>
+                        <h3 class="target-title">知识点延伸</h3>
+                      </div>
+                      <div class="target-actions">
+                        <el-tooltip content="编辑知识点" placement="top">
+                          <el-button 
+                            type="primary" 
+                            class="action-button edit-button"
+                            @click="handleEditPrinciple(principle)"
+                            v-hasPermi="['glxt:experimentPrinciple:edit']"
+                          >
+                            <el-icon><Edit /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                        <el-tooltip content="删除知识点" placement="top">
+                          <el-button 
+                            type="danger" 
+                            class="action-button delete-button"
+                            @click="handleDeletePrinciple(principle)"
+                            v-hasPermi="['glxt:experimentPrinciple:remove']"
+                          >
+                            <el-icon><Delete /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                      </div>
+                    </div>
+                    <div class="target-body">
+                      <div class="target-text" v-html="principle.text"></div>
+                    </div>
+                    <div class="target-footer">
+                      <el-tag size="small" plain type="info">
+                        <el-icon class="clock-class"><Clock /></el-icon>
+                        <span>创建时间: {{ formatDate(principle.createTime) }}</span>
+                      </el-tag>
+                    </div>
+                  </div>
+                </div>
+              </transition-group>
+            </div>
+            <el-dialog style="margin-top: 5vh !important;" title="知识点延伸" v-model="principleDialogVisible">   
+                <el-form :model="formPrincipleData" ref="principleFormRef">
+                        <el-form-item class="editor-wrapper" prop="text">
+                          <Tinymce v-model="formPrincipleData.text" :height="400" />
+                        </el-form-item>
+                </el-form>
+                <template #footer>
+                <span class="dialog-footer">
+                  <el-button @click="handleClose">取消</el-button>
+                  <el-button type="primary" @click="submitPrincipleForm">确定</el-button>
+                </span>
+              </template>
+            </el-dialog>
+          </el-tab-pane>
         </el-tabs>
       </div>
 
@@ -876,6 +1056,9 @@ const handleTabClick = (tab) => {
   } else if(activeTab.value == 'equipment') {
     //调用器具
     getExperimentWarehouseList();
+  } else if(activeTab.value == 'conclusion') {//实验结论
+    // getWarehouseList()
+  } else if(activeTab.value == 'knowledgeExtend') {//知识点延伸
   }
 }
 

@@ -105,7 +105,7 @@
           <dict-tag :options="mt_textbooklibrary_time" :value="scope.row.versionReleaseTimeType"/>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="300px">
         <template #default="scope">
           <el-button plain type="success" color="#6EDC93" @click="handleUpdate(scope.row)" v-hasPermi="['glxt:subject:edit']">修改</el-button>
           <el-button plain type="warning" @click="chapters(scope.row)" v-hasPermi="['glxt:subject:edit']">章节体系</el-button>
@@ -217,24 +217,7 @@
                   <template v-else>
                     {{ data.chapterTxt }}
                   </template>
-                </span>
-                <!-- <span style="margin-left: 300px;">
-                  <a v-if="node.level < 3" :style="{marginRight: '0.5rem'}" @click="appendChapter(data, node, form.volumeId)">
-                    <el-icon :style="{color:'#0000FF'}">
-                      <Plus />
-                    </el-icon>
-                  </a>
-                  <a :style="{marginRight: '0.5rem'}" @click="updateChapter(data, node, form.volumeId)">
-                    <el-icon :style="{color:'#0000FF'}">
-                      <Edit />
-                    </el-icon>
-                  </a>
-                  <a :style="{marginRight: '0.5rem'}" @click="removeChapter(node, data, form.volumeId)">
-                    <el-icon :style="{color:'#DA3434'}">
-                      <Delete />
-                    </el-icon>
-                  </a>
-                </span> -->
+                </span>    
               </div>
               </template>
             </el-tree>

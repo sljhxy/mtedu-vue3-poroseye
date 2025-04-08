@@ -49,6 +49,6 @@ export function getKnowledgeTree(data) {
   return request({
     url: '/glxt/knowledge/tree',
     method: 'get',
-    data: data
+    params: data
   })
 }

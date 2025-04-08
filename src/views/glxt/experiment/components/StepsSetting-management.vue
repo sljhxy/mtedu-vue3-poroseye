@@ -5,6 +5,7 @@
       <!-- 标签页容器 -->
       <div class="tabs-wrapper">
         <el-tabs v-model="activeTab" class="custom-tabs"  @tab-click="handleTabChange">
+          <!-- 步骤 -->
           <el-tab-pane name="steps">
             <template #label>
               <div class="custom-tab-label">
@@ -66,6 +67,7 @@
             </div>
           </el-tab-pane>
 
+          <!-- 按钮定义 -->
           <el-tab-pane name="buttons">
             <template #label>
               <div class="custom-tab-label">
@@ -154,6 +156,240 @@
               />
             </div>
           </el-tab-pane>
+
+          <!-- 新增评价维度 evaluationDimension -->
+          <!-- <el-tab-pane name="evaluationDimension">
+            <template #label>
+              <div class="custom-tab-label">
+                <el-icon><Connection /></el-icon>
+                <span>评价维度</span>
+              </div>
+            </template>
+            <div class="search-wrapper">
+              <div class="search-section">
+            
+              </div>
+            </div>
+           
+          </el-tab-pane> -->
+           <!-- 新增评价维度 evaluationDimension -->
+           <el-tab-pane name="evaluationDimension">
+            <template #label>
+              <div class="custom-tab-label">
+                <el-icon><Connection /></el-icon>
+                <span>评价维度</span>
+              </div>
+            </template>
+            <!-- 评价维度内容 -->
+            <div v-if="activeTab === 'evaluationDimension' && !evaluationDimensionList.length" class="tab-content">
+              <div class="editor-container">
+                <!-- 空状态展示 -->
+                <div class="empty-state">
+                  <div class="welcome-content">
+                    <el-icon class="welcome-icon"><Connection /></el-icon>
+                    <h2>欢迎来到【评价维度】管理</h2>
+                    <p>开始添加您的评价维度</p>
+                    <el-button type="primary" class="add-button" @click="openDimensionDialog">
+                      <el-icon><Plus /></el-icon>
+                      添加评价维度
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+             <!-- 评价维度列表 -->
+             <div v-if="evaluationDimensionList.length" class="dimension-list">
+              <div class="operation-bar">
+                <div class="left-buttons">
+                  <el-button type="primary" plain icon="Plus" @click="openDimensionDialog">添加评价维度</el-button>
+                </div>
+              </div>
+              
+              <el-table 
+                v-loading="dimensionLoading" 
+                :data="evaluationDimensionList" 
+                border 
+                show-summary 
+                :summary-method="getSummaries"
+                sum-text="合计得分："
+                :span-method="dimensionSpanMethod">
+                <el-table-column type="index" label="序号" width="100" align="center" />
+                <el-table-column prop="dimensionContent" label="评价内容" align="center" />
+                <el-table-column prop="relatedSteps" label="关联步骤" align="center">
+                  <template #default="scope">
+                    <el-tag 
+                      v-for="step in scope.row.relatedSteps" 
+                      :key="step.id"
+                      class="step-tag"
+                      type="success"
+                    >
+                      {{ step.stepName }}
+                    </el-tag>
+                    <span v-if="!scope.row.relatedSteps || !scope.row.relatedSteps.length">未关联步骤</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="score" label="分数" width="100" align="center" />
+                <el-table-column label="操作" width="200" align="center">
+                  <template #default="scope">
+                    <el-button type="primary" plain @click="editDimension(scope.row)">编辑</el-button>
+                    <el-button type="danger" plain @click="deleteDimension(scope.row)">删除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+            
+            <!-- 评价维度对话框 -->
+            <el-dialog 
+              v-model="dimensionDialogVisible" 
+              :title="currentDimension.id ? '编辑评价维度' : '添加评价维度'"
+              width="650px"
+              destroy-on-close
+            >
+              <el-form :model="currentDimension" ref="dimensionFormRef" label-width="100px" :rules="dimensionRules">
+                <el-form-item label="评价内容" prop="dimensionContent">
+                  <el-input 
+                    v-model="currentDimension.dimensionContent" 
+                    type="textarea" 
+                    :rows="4"
+                    placeholder="请输入评价内容"
+                  />
+                </el-form-item>
+                
+                <el-form-item label="关联步骤" prop="relatedSteps">
+                  <el-tree-select
+                    v-model="currentDimension.relatedStepIds"
+                    :data="stepOptions"
+                    :props="{ 
+                      value: 'id', 
+                      label: 'stepName', 
+                      children: 'children' 
+                    }"
+                    multiple
+                    show-checkbox
+                    check-strictly
+                    node-key="id"
+                    placeholder="请选择关联步骤"
+                    clearable
+                    class="dimension-step-select"
+                  />
+                </el-form-item>
+                
+                <el-form-item label="分数" prop="score">
+                  <el-input-number 
+                    v-model="currentDimension.score" 
+                    :min="0" 
+                    :max="100" 
+                    :precision="1"
+                    :step="0.5"
+                    style="width: 180px;"
+                  />
+                </el-form-item>
+              </el-form>
+              
+              <template #footer>
+                <span class="dialog-footer">
+                  <el-button @click="dimensionDialogVisible = false">取消</el-button>
+                  <el-button type="primary" @click="submitDimensionForm">确定</el-button>
+                  <el-button type="success" @click="submitAndContinue">确定并继续</el-button>
+                </span>
+              </template>
+            </el-dialog>
+          </el-tab-pane>
+
+          
+          <!-- 新增评价要求 evaluationRequirements -->
+         
+          <el-tab-pane name="evaluationRequirements">
+            <template #label>
+              <div class="custom-tab-label">
+                <el-icon><Operation /></el-icon>
+                <span>评价要求{{ props.experimentId }}</span>
+              </div>
+            </template>
+            
+            <div v-if="activeTab === 'evaluationRequirements' && !evaluationRequirementsList.length" class="tab-content">
+              <div class="editor-container">
+                <!-- 空状态展示 -->
+                <div class="empty-state">
+                  <div class="welcome-content">
+                    <el-icon class="welcome-icon"><WindPower /></el-icon>
+                    <h2>欢迎来到【扩展信息】管理</h2>
+                    <p>开始添加您的评价要求</p>
+                    <el-button type="primary" class="add-button" @click="openRequirementDialog" >
+                      <el-icon><Plus /></el-icon>
+                      添加评价要求
+                    </el-button>
+                  </div>
+                </div>
+
+
+            
+              </div>
+            </div>
+            <div v-if="evaluationRequirementsList.length" class="target-list">
+              <transition-group name="target-fade">
+                <div v-for="(requirement, index) in evaluationRequirementsList" 
+                    :key="requirement.id" 
+                    class="target-item"
+                     :style="{ '--delay': `${index * 0.1}s` }"
+                >
+                  <div class="target-content">
+                    <div class="target-header">
+                      <div class="target-index-wrapper">
+                        <div class="target-badge">{{index + 1}}</div>
+                        <h3 class="target-title">评价要求</h3>
+                      </div>
+                      <div class="target-actions">
+                        <el-tooltip content="编辑评价要求" placement="top">
+                          <el-button 
+                            type="primary" 
+                            class="action-button edit-button"
+                            @click="handleEditRequirement(requirement)"
+                          >
+                            <el-icon><Edit /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                        <el-tooltip content="删除评价要求" placement="top">
+                          <el-button 
+                            type="danger" 
+                            class="action-button delete-button"
+                            @click="handleDeleteRequirement(requirement)"
+                          >
+                            <el-icon><Delete /></el-icon>
+                          </el-button>
+                        </el-tooltip>
+                      </div>
+                    </div>
+                    <div class="target-body">
+                      <div class="target-text" v-html="requirement.text"></div>
+                    </div>
+                    <div class="target-footer">
+                      <el-tag size="small" plain type="info">
+                        <el-icon class="clock-class"><Clock /></el-icon>
+                        <span>创建时间: {{ formatDate(requirement.createTime) }}</span>
+                      </el-tag>
+                    </div>
+                  </div>
+                </div>
+              </transition-group>
+            </div>
+
+            <el-dialog style="margin-top: 5vh !important;" title="评价要求" v-model="requirementDialogVisible">   
+                <el-form :model="formRequirementData" ref="requirementFormRef">
+                        <el-form-item class="editor-wrapper" prop="text">
+                          <Tinymce v-model="formRequirementData.text" :height="400" />
+                        </el-form-item>
+                </el-form>
+                <template #footer>
+                <span class="dialog-footer">
+                  <el-button @click="handleRequirementClose">取消</el-button>
+                  <el-button type="primary" @click="submitRequirementForm">确定</el-button>
+                </span>
+              </template>
+            </el-dialog>
+          </el-tab-pane>
+          
         </el-tabs>
       </div>
     </div>
@@ -341,6 +577,8 @@ import { ref, computed, reactive, onMounted, nextTick } from 'vue'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import { Plus, View, Document, Edit } from '@element-plus/icons-vue'
 const { proxy } = getCurrentInstance();
+
+import Tinymce from "@/components/Tinymce/index.vue"
 
 //导入实验步骤API
 import { getExperimentInfoStep, addExperimentInfoStep, updateExperimentInfoStep, delExperimentInfoStep, listExperimentInfoStep } from '@/api/glxt/experimentInfoStep'
@@ -832,7 +1070,12 @@ const handleTabChange = (tab) => {
     getStepsList()
   } else if(activeTab.value == 'buttons') {
     getBtnDefinitionList()//获取按钮定义列表
+  } else if(activeTab.value == 'evaluationDimension') {//评价维度
+    getDimensionList() // 加载评价维度数据
+  }else if(activeTab.value == 'evaluationRequirements') {//评价要求
+    getRequirementsList() // 加载评价要求数据
   }
+
 }
 
 
@@ -988,7 +1231,548 @@ const handleOperationSubmit = async () => {
   }
 }
 
+// 评价维度相关数据和方法
+const evaluationDimensionList = ref([])
+const dimensionDialogVisible = ref(false)
+const dimensionLoading = ref(false)
+const currentDimension = ref({
+  id: null,
+  experimentInfoId: '',
+  dimensionContent: '',
+  relatedStepIds: [],
+  relatedSteps: [],
+  score: 1
+})
 
+// 评价维度表单验证规则
+const dimensionRules = {
+  dimensionContent: [
+    { required: true, message: '请输入评价内容', trigger: 'blur' }
+  ],
+  score: [
+    { required: true, message: '请输入分数', trigger: 'blur' }
+  ]
+}
+
+// 打开评价维度对话框
+const openDimensionDialog = () => {
+  // 获取步骤树形结构，用于关联步骤选择
+  getTreeselect()
+  
+  currentDimension.value = {
+    id: null,
+    experimentInfoId: props.experimentId,
+    dimensionContent: '',
+    relatedStepIds: [],
+    relatedSteps: [],
+    score: 1
+  }
+  dimensionDialogVisible.value = true
+}
+
+// 编辑评价维度
+const editDimension = (dimension) => {
+  // 获取步骤树形结构，用于关联步骤选择
+  getTreeselect()
+  
+  // 深拷贝避免直接修改列表数据
+  currentDimension.value = JSON.parse(JSON.stringify(dimension))
+  
+  // 如果有关联步骤，提取步骤ID用于树形选择器
+  if (dimension.relatedSteps && dimension.relatedSteps.length) {
+    currentDimension.value.relatedStepIds = dimension.relatedSteps.map(step => step.id)
+  } else {
+    currentDimension.value.relatedStepIds = []
+  }
+  
+  dimensionDialogVisible.value = true
+}
+
+// 删除评价维度
+const deleteDimension = (dimension) => {
+  ElMessageBox.confirm('确定要删除该评价维度吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    // 这里添加删除评价维度的API调用
+    // delExperimentDimension(dimension.id).then(response => {
+    //   if(response.code == 200){
+    //     ElMessage.success('删除成功')
+    //     getDimensionList()
+    //   }else{
+    //     ElMessage.error('删除失败')
+    //   }
+    // })
+    
+    // 临时模拟删除成功
+    const index = evaluationDimensionList.value.findIndex(item => item.id === dimension.id)
+    if (index !== -1) {
+      evaluationDimensionList.value.splice(index, 1)
+      ElMessage.success('删除成功')
+    }
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+}
+
+// 提交评价维度表单
+const submitDimensionForm = () => {
+  proxy.$refs.dimensionFormRef.validate(valid => {
+    if (!valid) return
+    
+    // 准备提交的数据
+    const submitData = {
+      ...currentDimension.value
+    }
+    
+    if (currentDimension.value.id) {
+      // 编辑现有评价维度
+      // updateExperimentDimension(submitData).then(response => {
+      //   if(response.code == 200){
+      //     ElMessage.success('更新成功')
+      //     getDimensionList()
+      //     dimensionDialogVisible.value = false
+      //   }else{
+      //     ElMessage.error('更新失败')
+      //   }
+      // })
+      
+      // 临时模拟更新成功
+      const index = evaluationDimensionList.value.findIndex(item => item.id === currentDimension.value.id)
+      if (index !== -1) {
+        // 模拟获取关联步骤信息
+        const relatedSteps = []
+        if (currentDimension.value.relatedStepIds && currentDimension.value.relatedStepIds.length) {
+          currentDimension.value.relatedStepIds.forEach(stepId => {
+            // 从步骤树中查找步骤信息
+            const findStep = (nodes) => {
+              for (const node of nodes) {
+                if (node.id === stepId) {
+                  relatedSteps.push({
+                    id: node.id,
+                    stepName: node.stepName
+                  })
+                  return true
+                }
+                if (node.children && node.children.length) {
+                  if (findStep(node.children)) return true
+                }
+              }
+              return false
+            }
+            
+            findStep(steps.value)
+          })
+        }
+        
+        evaluationDimensionList.value[index] = {
+          ...currentDimension.value,
+          relatedSteps
+        }
+        ElMessage.success('更新成功')
+        dimensionDialogVisible.value = false
+      }
+    } else {
+      // 新增评价维度
+      // addExperimentDimension(submitData).then(response => {
+      //   if(response.code == 200){
+      //     ElMessage.success('添加成功')
+      //     getDimensionList()
+      //     dimensionDialogVisible.value = false
+      //   }else{
+      //     ElMessage.error('添加失败')
+      //   }
+      // })
+      
+      // 临时模拟添加成功
+      // 模拟获取关联步骤信息
+      const relatedSteps = []
+      if (currentDimension.value.relatedStepIds && currentDimension.value.relatedStepIds.length) {
+        currentDimension.value.relatedStepIds.forEach(stepId => {
+          // 从步骤树中查找步骤信息
+          const findStep = (nodes) => {
+            for (const node of nodes) {
+              if (node.id === stepId) {
+                relatedSteps.push({
+                  id: node.id,
+                  stepName: node.stepName
+                })
+                return true
+              }
+              if (node.children && node.children.length) {
+                if (findStep(node.children)) return true
+              }
+            }
+            return false
+          }
+          
+          findStep(steps.value)
+        })
+      }
+      
+      const newDimension = {
+        ...currentDimension.value,
+        id: Date.now(), // 临时ID
+        relatedSteps,
+        createTime: new Date().toISOString()
+      }
+      evaluationDimensionList.value.push(newDimension)
+      ElMessage.success('添加成功')
+      dimensionDialogVisible.value = false
+    }
+  })
+}
+
+// 提交并继续添加
+const submitAndContinue = () => {
+  proxy.$refs.dimensionFormRef.validate(valid => {
+    if (!valid) return
+    
+    // 准备提交的数据
+    const submitData = {
+      ...currentDimension.value
+    }
+    
+    if (currentDimension.value.id) {
+      // 编辑现有评价维度
+      // updateExperimentDimension(submitData).then(response => {
+      //   if(response.code == 200){
+      //     ElMessage.success('更新成功')
+      //     getDimensionList()
+      //     // 重置表单但不关闭对话框
+      //     resetDimensionForm()
+      //   }else{
+      //     ElMessage.error('更新失败')
+      //   }
+      // })
+      
+      // 临时模拟更新成功
+      const index = evaluationDimensionList.value.findIndex(item => item.id === currentDimension.value.id)
+      if (index !== -1) {
+        // 模拟获取关联步骤信息
+        const relatedSteps = []
+        if (currentDimension.value.relatedStepIds && currentDimension.value.relatedStepIds.length) {
+          currentDimension.value.relatedStepIds.forEach(stepId => {
+            // 从步骤树中查找步骤信息
+            const findStep = (nodes) => {
+              for (const node of nodes) {
+                if (node.id === stepId) {
+                  relatedSteps.push({
+                    id: node.id,
+                    stepName: node.stepName
+                  })
+                  return true
+                }
+                if (node.children && node.children.length) {
+                  if (findStep(node.children)) return true
+                }
+              }
+              return false
+            }
+            
+            findStep(steps.value)
+          })
+        }
+        
+        evaluationDimensionList.value[index] = {
+          ...currentDimension.value,
+          relatedSteps
+        }
+        ElMessage.success('更新成功')
+        // 重置表单但不关闭对话框
+        resetDimensionForm()
+      }
+    } else {
+      // 新增评价维度
+      // addExperimentDimension(submitData).then(response => {
+      //   if(response.code == 200){
+      //     ElMessage.success('添加成功')
+      //     getDimensionList()
+      //     // 重置表单但不关闭对话框
+      //     resetDimensionForm()
+      //   }else{
+      //     ElMessage.error('添加失败')
+      //   }
+      // })
+      
+      // 临时模拟添加成功
+      // 模拟获取关联步骤信息
+      const relatedSteps = []
+      if (currentDimension.value.relatedStepIds && currentDimension.value.relatedStepIds.length) {
+        currentDimension.value.relatedStepIds.forEach(stepId => {
+          // 从步骤树中查找步骤信息
+          const findStep = (nodes) => {
+            for (const node of nodes) {
+              if (node.id === stepId) {
+                relatedSteps.push({
+                  id: node.id,
+                  stepName: node.stepName
+                })
+                return true
+              }
+              if (node.children && node.children.length) {
+                if (findStep(node.children)) return true
+              }
+            }
+            return false
+          }
+          
+          findStep(steps.value)
+        })
+      }
+      
+      const newDimension = {
+        ...currentDimension.value,
+        id: Date.now(), // 临时ID
+        relatedSteps,
+        createTime: new Date().toISOString()
+      }
+      evaluationDimensionList.value.push(newDimension)
+      ElMessage.success('添加成功')
+      // 重置表单但不关闭对话框
+      resetDimensionForm()
+    }
+  })
+}
+
+// 重置评价维度表单
+const resetDimensionForm = () => {
+  currentDimension.value = {
+    id: null,
+    experimentInfoId: props.experimentId,
+    dimensionContent: '',
+    relatedStepIds: [],
+    relatedSteps: [],
+    score: 1
+  }
+  // 如果表单引用存在，重置验证状态
+  if (proxy.$refs.dimensionFormRef) {
+    proxy.$refs.dimensionFormRef.resetFields()
+  }
+}
+
+// 获取评价维度列表
+const getDimensionList = () => {
+  dimensionLoading.value = true
+  // 这里添加获取评价维度列表的API调用
+  // listExperimentDimension({ experimentInfoId: props.experimentId }).then(response => {
+  //   if(response.code == 200){
+  //     evaluationDimensionList.value = response.rows
+  //   }else{
+  //     ElMessage.error('获取评价维度列表失败')
+  //   }
+  //   dimensionLoading.value = false
+  // })
+  
+  // 临时模拟数据
+  setTimeout(() => {
+    // 这里可以添加一些模拟数据用于测试
+    // evaluationDimensionList.value = [
+    //   {
+    //     id: 1,
+    //     experimentInfoId: props.experimentId,
+    //     dimensionContent: '实验操作规范性',
+    //     relatedSteps: [
+    //       { id: 1, stepName: '步骤1' },
+    //       { id: 2, stepName: '步骤2' }
+    //     ],
+    //     score: 5,
+    //     createTime: new Date().toISOString()
+    //   }
+    // ]
+    dimensionLoading.value = false
+  }, 500)
+}
+
+// 计算评价维度表格的合计行
+const getSummaries = (param) => {
+  const { columns, data } = param
+  const sums = []
+  columns.forEach((column, index) => {
+    if (index === 0) {
+      sums[index] = '合计'
+      return
+    }
+    if (index === 3) { // 分数列的索引
+      const values = data.map(item => Number(item.score))
+      const totalScore = values.reduce((prev, curr) => {
+        return prev + curr
+      }, 0)
+      sums[index] = totalScore.toFixed(1)
+    } else {
+      sums[index] = ''
+    }
+  })
+  return sums
+}
+
+// 评价维度表格单元格合并方法
+const dimensionSpanMethod = ({ row, column, rowIndex, columnIndex }) => {
+  // 判断是否是合计行（通过检查是否有特定属性来判断）
+  if (row && row.isSummary) {
+    if (columnIndex === 0) {
+      // 第一列显示"合计得分："
+      return { colspan: 3, rowspan: 1 };
+    } else if (columnIndex === 3) {
+      // 分数列正常显示
+      return { colspan: 1, rowspan: 1 };
+    } else if (columnIndex > 0 && columnIndex < 3) {
+      // 中间列不显示
+      return { colspan: 0, rowspan: 0 };
+    } else if (columnIndex === 4) {
+      // 操作列不显示
+      return { colspan: 0, rowspan: 0 };
+    }
+  }
+  return undefined;
+}
+
+
+
+
+
+
+
+
+
+
+// 评价要求相关数据和方法
+const evaluationRequirementsList = ref([])
+const requirementDialogVisible = ref(false)
+const formRequirementData = ref({
+  id: null,
+  experimentInfoId: '',
+  text: ''
+})
+
+// 打开评价要求对话框
+const openRequirementDialog = () => {
+  formRequirementData.value = {
+    id: null,
+    experimentInfoId: props.experimentId,
+    text: ''
+  }
+  requirementDialogVisible.value = true
+}
+
+// 编辑评价要求
+const handleEditRequirement = (requirement) => {
+  formRequirementData.value = { ...requirement }
+  requirementDialogVisible.value = true
+}
+
+
+// 删除评价要求
+const handleDeleteRequirement = (requirement) => {
+  ElMessageBox.confirm('确定要删除该评价要求吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    // 这里添加删除评价要求的API调用
+    // delExperimentRequirement(requirement.id).then(response => {
+    //   if(response.code == 200){
+    //     ElMessage.success('删除成功')
+    //     getRequirementsList()
+    //   }else{
+    //     ElMessage.error('删除失败')
+    //   }
+    // })
+    
+    // 临时模拟删除成功
+    const index = evaluationRequirementsList.value.findIndex(item => item.id === requirement.id)
+    if (index !== -1) {
+      evaluationRequirementsList.value.splice(index, 1)
+      ElMessage.success('删除成功')
+    }
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+}
+
+// 关闭评价要求对话框
+const handleRequirementClose = () => {
+  requirementDialogVisible.value = false
+  formRequirementData.value = {
+    id: null,
+    experimentInfoId: '',
+    text: ''
+  }
+}
+
+// 提交评价要求表单
+const submitRequirementForm = () => {
+  if (!formRequirementData.value.text) {
+    ElMessage.warning('请输入评价要求内容')
+    return
+  }
+  
+  // 如果是编辑现有评价要求
+  if (formRequirementData.value.id) {
+    // 这里添加更新评价要求的API调用
+    // updateExperimentRequirement(formRequirementData.value).then(response => {
+    //   if(response.code == 200){
+    //     ElMessage.success('更新成功')
+    //     getRequirementsList()
+    //     requirementDialogVisible.value = false
+    //   }else{
+    //     ElMessage.error('更新失败')
+    //   }
+    // })
+    
+    // 临时模拟更新成功
+    const index = evaluationRequirementsList.value.findIndex(item => item.id === formRequirementData.value.id)
+    if (index !== -1) {
+      evaluationRequirementsList.value[index] = { ...formRequirementData.value }
+      ElMessage.success('更新成功')
+      requirementDialogVisible.value = false
+    }
+  } else {
+    // 这里添加新增评价要求的API调用
+    // addExperimentRequirement(formRequirementData.value).then(response => {
+    //   if(response.code == 200){
+    //     ElMessage.success('添加成功')
+    //     getRequirementsList()
+    //     requirementDialogVisible.value = false
+    //   }else{
+    //     ElMessage.error('添加失败')
+    //   }
+    // })
+    
+    // 临时模拟添加成功
+    const newRequirement = {
+      ...formRequirementData.value,
+      id: Date.now(), // 临时ID
+      createTime: new Date().toISOString()
+    }
+    evaluationRequirementsList.value.push(newRequirement)
+    ElMessage.success('添加成功')
+    requirementDialogVisible.value = false
+  }
+}
+
+// 获取评价要求列表
+const getRequirementsList = () => {
+  // 这里添加获取评价要求列表的API调用
+  // listExperimentRequirement({ experimentInfoId: props.experimentId }).then(response => {
+  //   if(response.code == 200){
+  //     evaluationRequirementsList.value = response.rows
+  //   }else{
+  //     ElMessage.error('获取评价要求列表失败')
+  //   }
+  // })
+  
+  // 临时模拟数据
+  // evaluationRequirementsList.value = [
+  //   {
+  //     id: 1,
+  //     experimentInfoId: props.experimentId,
+  //     text: '<p>这是一个示例评价要求内容</p>',
+  //     createTime: new Date().toISOString()
+  //   }
+  // ]
+}
 </script>
 
 <style scoped>
@@ -1242,5 +2026,244 @@ const handleOperationSubmit = async () => {
   display: flex;
   justify-content: flex-end;
 }
+
+
+/* 评价维度相关样式 */
+.dimension-list {
+  /* padding: 20px; */
+}
+
+.dimension-step-select {
+  width: 100%;
+}
+
+.step-tag {
+  margin-right: 5px;
+  margin-bottom: 5px;
+}
+
+.operation-bar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tab-content {
+  padding: 20px;
+}
+
+.editor-container {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  /* background-color: #f9f9f9; */
+  border-radius: 8px;
+}
+
+.welcome-content {
+  text-align: center;
+  padding: 30px;
+}
+
+.welcome-icon {
+  font-size: 48px;
+  color: var(--el-color-primary);
+  margin-bottom: 20px;
+}
+
+.add-button {
+  margin-top: 20px;
+}
+
+/* 评价维度表格合计行样式 */
+:deep(.el-table__footer-wrapper) {
+  font-weight: bold;
+}
+
+:deep(.el-table__footer td:first-child) {
+  text-align: right;
+  padding-right: 20px;
+}
+
+:deep(.el-table__footer td) {
+  background-color: #f5f7fa;
+  border: none !important; /* 移除所有单元格的边框 */
+}
+
+:deep(.el-table__footer td:nth-child(4)) {
+  color: #f56c6c;
+  font-size: 16px;
+}
+
+/* 移除表格底部边框 */
+:deep(.el-table__footer) {
+  border-top: none !important;
+}
+
+/* 确保表格底部没有边框 */
+:deep(.el-table__footer-wrapper::before) {
+  display: none;
+}
+
+:deep(.el-table__footer-wrapper::after) {
+  display: none;
+}
+
+
+
+
+
+
+/* 评价要求相关样式 */
+.tab-content {
+  padding: 20px;
+}
+
+.editor-container {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  /* background-color: #f9f9f9; */
+  border-radius: 8px;
+}
+
+.welcome-content {
+  text-align: center;
+  padding: 30px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.welcome-icon {
+  font-size: 48px;
+  color: var(--el-color-primary);
+  margin-bottom: 20px;
+}
+
+.add-button {
+  margin-top: 20px;
+}
+
+.target-list {
+  padding: 20px;
+}
+
+.target-item {
+  margin-bottom: 20px;
+  animation: fadeIn 0.5s ease forwards;
+  animation-delay: var(--delay);
+  opacity: 0;
+}
+
+.target-content {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.target-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.target-index-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.target-badge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  background-color: var(--el-color-primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.target-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.target-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  padding: 6px !important;
+}
+
+.target-body {
+  padding: 16px;
+  background-color: white;
+}
+
+.target-text {
+  line-height: 1.6;
+}
+
+.target-footer {
+  padding: 12px 16px;
+  background-color: #f5f7fa;
+  border-top: 1px solid #e4e7ed;
+}
+
+.clock-class {
+  margin-right: 4px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.target-fade-enter-active,
+.target-fade-leave-active {
+  transition: all 0.5s ease;
+}
+
+.target-fade-enter-from,
+.target-fade-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.editor-wrapper {
+  margin-bottom: 0;
+}
+
 
 </style>

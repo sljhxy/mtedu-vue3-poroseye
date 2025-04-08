@@ -35,6 +35,7 @@
           </div>
         </div>
 
+        {{ formData }}
         <!-- 题目内容区域 -->
         <div class="form-section">
           <el-form-item label="题干：" prop="title" required>
@@ -217,7 +218,31 @@ const formLoading = ref(false)
 const knowledgeTreeList = ref([])
 const getKnowledgeTreeList = async () => {
   try {
-    const response = await getKnowledgeTree({})
+     // 确保所有必要参数都有值
+     if (!formData.value.schoolType || !formData.value.academicStageType || 
+        !formData.value.courseSystems || formData.value.courseSystems.length === 0 || 
+        formData.value.courseSystems[0].length === 0) {
+      console.log('缺少获取知识点所需的参数');
+      return;
+    }
+    
+    console.log(formData.value.courseSystems[0]);
+    console.log(formData.value.courseSystems[0][0]);
+    console.log(formData.value.courseSystems);
+    
+
+     // 构建请求参数
+     let params = {
+      schoolTypeId: formData.value.schoolType,
+      academicStageId: formData.value.academicStageType,
+      subjectId: formData.value.courseSystems[0]
+    }
+
+     // 显示加载状态
+     formLoading.value = true;
+
+    const response = await getKnowledgeTree(params)
+    console.log(params)
     const processTreeData = (items) => {
       if (!items) return []
       return items.map(item => ({
@@ -230,10 +255,60 @@ const getKnowledgeTreeList = async () => {
     }
     
     knowledgeTreeList.value = processTreeData(response.rows)
+
+      // 如果当前已选择的知识点不在新的树中，则清空选择
+      if (formData.value.knowledgePoints && formData.value.knowledgePoints.length > 0) {
+      const validateKnowledgePoints = () => {
+        const allIds = [];
+        const collectIds = (nodes) => {
+          if (!nodes) return;
+          for (const node of nodes) {
+            allIds.push(node.id);
+            if (node.children) {
+              collectIds(node.children);
+            }
+          }
+        };
+        collectIds(knowledgeTreeList.value);
+        
+        // 过滤掉不在新树中的知识点
+        formData.value.knowledgePoints = formData.value.knowledgePoints.filter(id => 
+          allIds.includes(Number(id))
+        );
+      };
+      
+      validateKnowledgePoints();
+    }
   } catch (error) {
-    ElMessage.error('获取知识点数据失败')
+    console.error('获取知识点数据失败:', error);
+    ElMessage.error('获取知识点数据失败');
+  } finally {
+    formLoading.value = false;
   }
+
+  // } catch (error) {
+  //   ElMessage.error('获取知识点数据失败')
+  // }
 }
+
+
+// 监听科目教材体系变化  
+// watch(
+//   () => [
+//     formData.value.schoolType,
+//     formData.value.academicStageType,
+//     formData.value.courseSystems
+//   ],
+//   async (newValues, oldValues) => {
+//     // 确保所有必要参数都有值
+//     const [schoolType, academicStageType, courseSystems] = newValues;
+//     if (schoolType && academicStageType && courseSystems && courseSystems.length > 0 && courseSystems[0].length > 0) {
+//       // 重新获取知识点树形结构
+//       await getKnowledgeTreeList();
+//     }
+//   },
+//   { deep: true }
+// )
 
 // 使用 ref 不是 reactive 来管理表单数据
 const formData = ref({
@@ -284,10 +359,17 @@ const questionShow = ref({
 
 
 // 处理firstLinePlugins组件传过来的数据
-const handleSelectData = (data) => {
+const handleSelectData = async (data) => {
   formData.value.schoolType = data.schoolType
   formData.value.academicStageType = data.academicStageType
   formData.value.courseSystems = data.courseSystems
+
+   // 如果所有必要参数都有值，则获取知识点
+   if (data.schoolType && data.academicStageType && 
+        data.courseSystems && data.courseSystems.length > 0 && 
+        data.courseSystems[0].length > 0) {
+      await getKnowledgeTreeList();
+  }
 }
 
 
@@ -432,7 +514,7 @@ const showQuestion = () => {
 
 // 生命周期钩子
 onMounted(async () => {
-  await getKnowledgeTreeList()
+  // await getKnowledgeTreeList()
 
   const id = route.query.id
   if (id && parseInt(id) !== 0) {
@@ -480,6 +562,7 @@ onMounted(async () => {
     }
   }
 })
+
 
 
 
