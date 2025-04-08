@@ -27,8 +27,8 @@
         <div class="college-section" v-show="schoolInfo.isCollege == '1'">
           <div class="college-header">
             <span class="label">学院列表</span>
-            {{ currentCollege }}
-            {{ colleges }}
+            <!-- {{ currentCollege }}
+            {{ colleges }} -->
           </div>
           <div class="college-tags">
             <el-tag
@@ -38,7 +38,8 @@
               class="college-tag"
               @click="handleCollegeClick(college)"
             >
-              {{ college.collegeName }}-{{ college.id }}-{{ currentCollege.id }}
+              <!-- {{ college.collegeName }}-{{ college.id }}-{{ currentCollege.id }} -->
+              {{ college.collegeName }}
             </el-tag>
           </div>
         </div>
@@ -266,7 +267,7 @@ const reset = () => {
 const loading = ref(false);
 // 根据年级id获取院系列表的方法，添加分页逻辑
 const getSystemsByCollege = (college) => {
-  queryParams.value.schoolOrCollegeId = college.id;
+  queryParams.value.schoolOrCollegeId = college.id;   
   getList(queryParams.value);
   // 设置总数和更新表格数据
   // handleSearch()
