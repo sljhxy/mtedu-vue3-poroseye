@@ -873,12 +873,20 @@ const loadExperimentData = async (id) => {
     //属性转字符串
     experimentData.value.attrType = experimentData.value.attrType + ''
 
+    // console.log('获取的实验数据为: ', experimentData.value)
+    // 更新表单数据
     //获取学段
     schoolTypeChange(experimentData.value.academicStageType)
 
     //加载挂载科目体系
     getCourseSystemOptionList(experimentData.value.schoolType, experimentData.value.academicStageType)
     
+    // console.log('加载的课程体系为: ', experimentData.value.courseSystems[0])
+    //供调用知识点使用
+    basicForm.value.schoolType = experimentData.value.schoolType//学校类型
+    basicForm.value.academicStageType = experimentData.value.academicStageType//学段
+    //加载知识点
+    getKnowledgeTreeList(experimentData.value.courseSystems[0])
     // 更新表单数据
     basicForm.value = {
       ...experimentData.value
@@ -1078,13 +1086,14 @@ const validateForm = () => {
   //   }
   // }
   // debugger
-  console.log('total.value', total.value)
-  console.log('total.value', !basicForm.value)
-  console.log('total.value', experimentDescribeList.value.length == 0)
-  if (basicForm.value && total.value == 0) {
-      throw new Error('请完成实验信息和实验说明的添加')
+  // console.log('total.value', total.value)
+  // console.log('total.value', !basicForm.value)
+  // console.log('total.value', experimentDescribeList.value.length == 0)
+  //去掉校验实验说明
+  // if (basicForm.value && total.value == 0) {
+  //     throw new Error('请完成实验信息和实验说明的添加')
       // return false
-  }
+  // }
   return true
 }
 

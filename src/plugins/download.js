@@ -16,7 +16,11 @@ export default {
       method: 'get',
       url: url,
       responseType: 'blob',
-      headers: { 'Authorization': 'Bearer ' + getToken() }
+      headers: { 
+        'Authorization': 'Bearer ' + getToken(),
+        'login_type': 'web_user'
+
+       }
     }).then((res) => {
       const isBlob = blobValidate(res.data);
       if (isBlob) {

@@ -225,7 +225,15 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="来源说明" prop="sourceDesc">
-          <el-input v-model="form.sourceDesc" placeholder="请输入来源说明" />
+          <!-- <el-input v-model="form.sourceDesc" placeholder="请输入来源说明" /> -->
+          <el-input 
+            v-model="form.sourceDesc" 
+            type="textarea" 
+            :rows="2"
+            placeholder="请输入来源说明" 
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>

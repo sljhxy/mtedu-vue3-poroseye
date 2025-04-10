@@ -219,9 +219,9 @@ const knowledgeTreeList = ref([])
 const getKnowledgeTreeList = async () => {
   try {
      // 确保所有必要参数都有值
+     console.log(formData.value);
      if (!formData.value.schoolType || !formData.value.academicStageType || 
-        !formData.value.courseSystems || formData.value.courseSystems.length === 0 || 
-        formData.value.courseSystems[0].length === 0) {
+        !formData.value.courseSystems || formData.value.courseSystems.length === 0) {
       console.log('缺少获取知识点所需的参数');
       return;
     }
@@ -329,7 +329,7 @@ const formData = ref({
   difficult: 0,
   infoTextContentId: null,
   knowledgePoints: [],//知识点
-  courseSystems: [[]],//挂载课程
+  courseSystems: [],//挂载课程
 })
 
 const rules = {
@@ -522,6 +522,12 @@ onMounted(async () => {
       formLoading.value = true
       const response = await getQuestion(id)
       const questionData = response.data
+
+      formData.value = questionData;
+      console.log(questionData);
+      console.log(questionData);
+      console.log(questionData);
+      await getKnowledgeTreeList();
       
       // 处理知识点数据
       const knowledgePoints = Array.isArray(questionData.knowledgePoints) 

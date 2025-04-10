@@ -333,8 +333,7 @@ const knowledgeTreeList = ref([])
 const getKnowledgeTreeList = () => {
     // 确保所有必要参数都有值
     if (!formData.value.schoolType || !formData.value.academicStageType || 
-        !formData.value.courseSystems || formData.value.courseSystems.length === 0 || 
-        formData.value.courseSystems[0].length === 0) {
+        !formData.value.courseSystems || formData.value.courseSystems.length === 0 ) {
       console.log('缺少获取知识点所需的参数');
       return;
     }
@@ -377,6 +376,13 @@ onMounted(async () => {
     try {
         const response = await getQuestion(id)
         const questionData = response.data
+
+        formData.value = questionData;
+        console.log(questionData);
+        console.log(questionData);
+        console.log(questionData);
+        getKnowledgeTreeList();
+      
          //数组中字符串类型转换为整型
         const newKnowledgePoints = Array.from(questionData.knowledgePoints).map(item => Number(item))
         formData.value = {

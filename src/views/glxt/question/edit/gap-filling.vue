@@ -205,8 +205,7 @@ const knowledgeTreeList = ref([])
 const getKnowledgeTreeList = () => {
     // 确保所有必要参数都有值
     if (!form.value.schoolType || !form.value.academicStageType || 
-        !form.value.courseSystems || form.value.courseSystems.length === 0 || 
-        form.value.courseSystems[0].length === 0) {
+        !form.value.courseSystems || form.value.courseSystems.length === 0 ) {
       console.log('缺少获取知识点所需的参数');
       return;
     }

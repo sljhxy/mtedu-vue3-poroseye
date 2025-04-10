@@ -177,7 +177,15 @@
           <!-- {{ form.courseSystems }} -->
         </el-form-item>
         <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" placeholder="请输入备注" />
+          <!-- <el-input v-model="form.remark" placeholder="请输入备注" /> -->
+          <el-input 
+            v-model="form.remark" 
+            type="textarea" 
+            :rows="2"
+            placeholder="请输入备注" 
+            maxlength="500"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>

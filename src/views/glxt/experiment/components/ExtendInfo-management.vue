@@ -14,7 +14,8 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Notebook /></el-icon>
-                <span>实验原理{{ props.experimentId }}</span>
+                <!-- {{ props.experimentId }} -->
+                <span>实验原理</span>
               </div>
             </template>
             
@@ -384,11 +385,11 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Document /></el-icon>
-                <span>实验结论{{ props.experimentId }}</span>
+                <span>实验结论</span>
               </div>
             </template>
             
-            <div v-if="activeTab === 'conclusion' && !principleList.length" class="tab-content">
+            <div v-if="activeTab === 'conclusion' && !experimentConclusionList.length" class="tab-content">
               <div class="editor-container">
                 <!-- 空状态展示 -->
                 <div class="empty-state">
@@ -396,7 +397,7 @@
                     <el-icon class="welcome-icon"><CollectionTag /></el-icon>
                     <h2>欢迎来到【扩展信息】管理</h2>
                     <p>开始总结您的实验结论</p>
-                    <el-button type="primary" class="add-button" @click="openPrincipleDialog" v-hasPermi="['glxt:experimentPrinciple:add']">
+                    <el-button type="primary" class="add-button" @click="openExperimentConclusionDialog" v-hasPermi="['glxt:experimentConclusion:add']">
                       <el-icon><Plus /></el-icon>
                       添加实验结论
                     </el-button>
@@ -404,10 +405,10 @@
                 </div>
               </div>
             </div>
-            <div v-if="principleList.length" class="target-list">
+            <div v-if="experimentConclusionList.length" class="target-list">
               <transition-group name="target-fade">
-                <div v-for="(principle, index) in principleList" 
-                    :key="principle.id" 
+                <div v-for="(experimentConclusion, index) in experimentConclusionList" 
+                    :key="experimentConclusion.id" 
                     class="target-item"
                      :style="{ '--delay': `${index * 0.1}s` }"
                 >
@@ -422,8 +423,8 @@
                           <el-button 
                             type="primary" 
                             class="action-button edit-button"
-                            @click="handleEditPrinciple(principle)"
-                            v-hasPermi="['glxt:experimentPrinciple:edit']"
+                            @click="handleEditExperimentConclusion(experimentConclusion)"
+                            v-hasPermi="['glxt:experimentConclusion:edit']"
                           >
                             <el-icon><Edit /></el-icon>
                           </el-button>
@@ -432,8 +433,8 @@
                           <el-button 
                             type="danger" 
                             class="action-button delete-button"
-                            @click="handleDeletePrinciple(principle)"
-                            v-hasPermi="['glxt:experimentPrinciple:remove']"
+                            @click="deleteExperimentConclusionHandler(experimentConclusion)"
+                            v-hasPermi="['glxt:experimentConclusion:remove']"
                           >
                             <el-icon><Delete /></el-icon>
                           </el-button>
@@ -441,28 +442,28 @@
                       </div>
                     </div>
                     <div class="target-body">
-                      <div class="target-text" v-html="principle.text"></div>
+                      <div class="target-text" v-html="experimentConclusion.text"></div>
                     </div>
                     <div class="target-footer">
                       <el-tag size="small" plain type="info">
                         <el-icon class="clock-class"><Clock /></el-icon>
-                        <span>创建时间: {{ formatDate(principle.createTime) }}</span>
+                        <span>创建时间: {{ formatDate(experimentConclusion.createTime) }}</span>
                       </el-tag>
                     </div>
                   </div>
                 </div>
               </transition-group>
             </div>
-            <el-dialog style="margin-top: 5vh !important;" title="实验结论" v-model="principleDialogVisible">   
-                <el-form :model="formPrincipleData" ref="principleFormRef">
+            <el-dialog style="margin-top: 5vh !important;" title="实验结论" v-model="experimentConclusionDialogVisible">   
+                <el-form :model="formExperimentConclusionData" ref="experimentConclusionFormRef">
                         <el-form-item class="editor-wrapper" prop="text">
-                          <Tinymce v-model="formPrincipleData.text" :height="400" />
+                          <Tinymce v-model="formExperimentConclusionData.text" :height="400" />
                         </el-form-item>
                 </el-form>
                 <template #footer>
                 <span class="dialog-footer">
-                  <el-button @click="handleClose">取消</el-button>
-                  <el-button type="primary" @click="submitPrincipleForm">确定</el-button>
+                  <el-button @click="handleExperimentConclusionClose">取消</el-button>
+                  <el-button type="primary" @click="submitExperimentConclusionForm">确定</el-button>
                 </span>
               </template>
             </el-dialog>
@@ -473,11 +474,11 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Operation /></el-icon>
-                <span>知识点延伸{{ props.experimentId }}</span>
+                <span>知识点延伸</span>
               </div>
             </template>
             
-            <div v-if="activeTab === 'knowledgeExtend' && !principleList.length" class="tab-content">
+            <div v-if="activeTab === 'knowledgeExtend' && !experimentKowledgeExtendList.length" class="tab-content">
               <div class="editor-container">
                 <!-- 空状态展示 -->
                 <div class="empty-state">
@@ -485,7 +486,7 @@
                     <el-icon class="welcome-icon"><More /></el-icon>
                     <h2>欢迎来到【扩展信息】管理</h2>
                     <p>开始添加您的知识点延伸</p>
-                    <el-button type="primary" class="add-button" @click="openPrincipleDialog" v-hasPermi="['glxt:experimentPrinciple:add']">
+                    <el-button type="primary" class="add-button" @click="openExperimentKowledgeDialog" v-hasPermi="['glxt:experimentKowledgeExtend:add']">
                       <el-icon><Plus /></el-icon>
                       添加知识点延伸
                     </el-button>
@@ -493,10 +494,10 @@
                 </div>
               </div>
             </div>
-            <div v-if="principleList.length" class="target-list">
+            <div v-if="experimentKowledgeExtendList.length" class="target-list">
               <transition-group name="target-fade">
-                <div v-for="(principle, index) in principleList" 
-                    :key="principle.id" 
+                <div v-for="(experimentKowledgeExtend, index) in experimentKowledgeExtendList" 
+                    :key="experimentKowledgeExtend.id" 
                     class="target-item"
                      :style="{ '--delay': `${index * 0.1}s` }"
                 >
@@ -511,8 +512,8 @@
                           <el-button 
                             type="primary" 
                             class="action-button edit-button"
-                            @click="handleEditPrinciple(principle)"
-                            v-hasPermi="['glxt:experimentPrinciple:edit']"
+                            @click="handleEditExperimentKowledge(experimentKowledgeExtend)"
+                            v-hasPermi="['glxt:experimentKowledgeExtend:edit']"
                           >
                             <el-icon><Edit /></el-icon>
                           </el-button>
@@ -521,8 +522,8 @@
                           <el-button 
                             type="danger" 
                             class="action-button delete-button"
-                            @click="handleDeletePrinciple(principle)"
-                            v-hasPermi="['glxt:experimentPrinciple:remove']"
+                            @click="deleteExperimentKowledgeExtendHandler(experimentKowledgeExtend)"
+                            v-hasPermi="['glxt:experimentKowledgeExtend:remove']"
                           >
                             <el-icon><Delete /></el-icon>
                           </el-button>
@@ -530,28 +531,28 @@
                       </div>
                     </div>
                     <div class="target-body">
-                      <div class="target-text" v-html="principle.text"></div>
+                      <div class="target-text" v-html="experimentKowledgeExtend.text"></div>
                     </div>
                     <div class="target-footer">
                       <el-tag size="small" plain type="info">
                         <el-icon class="clock-class"><Clock /></el-icon>
-                        <span>创建时间: {{ formatDate(principle.createTime) }}</span>
+                        <span>创建时间: {{ formatDate(experimentKowledgeExtend.createTime) }}</span>
                       </el-tag>
                     </div>
                   </div>
                 </div>
               </transition-group>
             </div>
-            <el-dialog style="margin-top: 5vh !important;" title="知识点延伸" v-model="principleDialogVisible">   
-                <el-form :model="formPrincipleData" ref="principleFormRef">
+            <el-dialog style="margin-top: 5vh !important;" title="知识点延伸" v-model="experimentKnowledgeDialogVisible">   
+                <el-form :model="formExperimentKowledgeData" ref="experimentKowledgeFormRef">
                         <el-form-item class="editor-wrapper" prop="text">
-                          <Tinymce v-model="formPrincipleData.text" :height="400" />
+                          <Tinymce v-model="formExperimentKowledgeData.text" :height="400" />
                         </el-form-item>
                 </el-form>
                 <template #footer>
                 <span class="dialog-footer">
-                  <el-button @click="handleClose">取消</el-button>
-                  <el-button type="primary" @click="submitPrincipleForm">确定</el-button>
+                  <el-button @click="handleExperimentKnowledgeClose">取消</el-button>
+                  <el-button type="primary" @click="submitExperimentKowledgeForm">确定</el-button>
                 </span>
               </template>
             </el-dialog>
@@ -583,7 +584,11 @@ import {listWarehouse} from '@/api/glxt/warehouse'
 //导入实验warehouseAPI
 import {insertBatchMtExperimentWarehouse, delExperimentWarehouse, listExperimentWarehouse} from '@/api/glxt/experimentWarehouse'
 
+//导入实验结论API
+import {addExperimentConclusion, updateExperimentConclusion, delExperimentConclusion, listExperimentConclusion, getExperimentConclusion} from '@/api/glxt/experimentConclusion' 
 
+//导入实验知识点API
+import {addExperimentKowledgeExtend, updateExperimentKowledgeExtend, delExperimentKowledgeExtend, listExperimentKowledgeExtend, getExperimentKowledgeExtend} from '@/api/glxt/experimentKowledgeExtend'
 import principleImage from "@/assets/icons/svg/原理.svg";
 
 const route = useRoute()
@@ -593,6 +598,8 @@ const experimentData = ref(null)
 const loading = ref(true);
 const principleDialogVisible = ref(false)//实验原理弹框
 const targetDialogVisible = ref(false)//实验原理弹框
+const experimentConclusionDialogVisible = ref(false)//实验结论弹框
+const experimentKnowledgeDialogVisible = ref(false)//实验知识点弹框
 
 // 接收父组件传递的数据
 const props = defineProps({
@@ -653,7 +660,6 @@ const resetTarget = () => {
 
 
 
-
 //开启实验原理弹框
 const openPrincipleDialog = () => {
   //清空表单数据
@@ -661,8 +667,8 @@ const openPrincipleDialog = () => {
   principleDialogVisible.value = true
 }
 
+
 //开启实验目标弹框
-//开启实验原理弹框
 const openTargetDialog = () => {
   //清空表单数据
   resetTarget()
@@ -677,6 +683,76 @@ const handleClose = () => {
   targetDialogVisible.value = false
   principleDialogVisible.value = false
 }
+
+
+//实验结论表单数据
+const formExperimentConclusionData = ref({
+  id: null,
+  text: '',
+  experimentInfoId:''
+})
+
+
+//重置实验结论
+const resetExperimentConclusion = () => {
+  formExperimentConclusionData.value = {
+    id: null,
+    text: null,
+    experimentInfoId: null
+  }
+}
+
+
+//开启实验结论弹框
+const openExperimentConclusionDialog = () => {
+  //清空表单数据
+  resetExperimentConclusion()
+  experimentConclusionDialogVisible.value = true
+}
+
+// 添加关闭实验结论弹框的方法
+const handleExperimentConclusionClose = () => {
+  //重置表单
+  resetExperimentConclusion()//实验结论
+  experimentConclusionDialogVisible.value = false
+}
+
+
+
+//实验知识点表单数据
+const formExperimentKowledgeData = ref({
+  id: null,
+  text: '',
+  experimentInfoId:''
+})
+
+
+//重置实验结论
+const resetExperimentKowledge = () => {
+  formExperimentKowledgeData.value = {
+    id: null,
+    text: null,
+    experimentInfoId: null
+  }
+}
+
+
+//开启实验结论弹框
+const openExperimentKowledgeDialog = () => {
+  //清空表单数据
+  resetExperimentKowledge()
+  experimentKnowledgeDialogVisible.value = true
+}
+
+// 添加关闭实验知识点弹框的方法
+const handleExperimentKnowledgeClose = () => {
+  //重置表单
+  resetExperimentKowledge()//实验知识点
+  experimentKnowledgeDialogVisible.value = false
+}
+
+
+
 
 
 
@@ -722,6 +798,7 @@ const queryPrincipleParams =ref({
 )
 
 const principleList = ref([])
+
 const principleTotal = ref(0);
 //获取实验原理数据
 function getPrincipleList() {
@@ -779,6 +856,193 @@ const queryTargetParams =ref({
   }
 )
 
+//实验结论
+const experimentConclusionList = ref([])
+const experimentConclusionTotal = ref(0);
+
+
+//实验结论请求参数
+const queryExperimentConclusionParams =ref({
+    pageNum: 1,
+    pageSize: 10,
+    experimentInfoId: ''
+  }
+)
+
+
+// 编辑实验结论
+const handleEditExperimentConclusion = (experimentConclusion) => {
+  formExperimentConclusionData.value = { ...experimentConclusion }
+  experimentConclusionDialogVisible.value = true
+}
+
+//获取实验结论数据
+function getExperimentConclusionList() {
+  loading.value = true;
+  queryExperimentConclusionParams.value.experimentInfoId = props.experimentId
+  if(queryExperimentConclusionParams.value.experimentInfoId) {
+    listExperimentConclusion(queryExperimentConclusionParams.value).then(response => {
+      experimentConclusionList.value = response.rows;
+      experimentConclusionTotal.value = response.total;
+      loading.value = false;
+    });
+  }
+}
+
+
+//提交实验结论
+const submitExperimentConclusionForm = async () => {
+  try {
+    if (!formExperimentConclusionData.value.text) {
+      proxy.$modal.msgError("请输入实验结论")
+      // targetDialogVisible.value = true
+      return
+    }
+    proxy.$refs["experimentConclusionFormRef"].validate(valid => {
+    if (valid) {
+      formExperimentConclusionData.value.experimentInfoId = props.experimentId;
+      if (formExperimentConclusionData.value.id != null) {
+        updateExperimentConclusion(formExperimentConclusionData.value).then(response => {
+          proxy.$modal.msgSuccess("修改成功");
+          // 关闭对话框
+          experimentConclusionDialogVisible.value = false
+          getExperimentConclusionList();
+        });
+      } else {
+        addExperimentConclusion(formExperimentConclusionData.value).then(response => {
+          proxy.$modal.msgSuccess("新增成功");
+          // 关闭对话框
+          experimentConclusionDialogVisible.value = false
+          getExperimentConclusionList();
+        });
+      }
+    }
+  });
+  } catch (error) {
+    ElMessage.error('编辑失败，请重试')
+  }
+}
+
+//删除实验结论
+const deleteExperimentConclusionHandler = (row) => {
+  ElMessageBox.confirm('确定要删除该数据吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    delExperimentConclusion(row.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('删除成功')
+        getExperimentConclusionList()
+      }else{
+        ElMessage.error('删除失败')
+      }
+    })
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+
+}
+
+
+
+
+//实验知识点延伸
+
+const experimentKowledgeExtendList = ref([])
+const experimentKowledgeTotal = ref(0);
+
+
+//实验-知识点延伸请求参数
+const queryExperimentKowledgeParams =ref({
+    pageNum: 1,
+    pageSize: 10,
+    experimentInfoId: ''
+  }
+)
+
+
+// 编辑实验知识点延伸
+const handleEditExperimentKowledge = (experimentKowledge) => {
+  formExperimentKowledgeData.value = { ...experimentKowledge }
+  experimentKnowledgeDialogVisible.value = true
+}
+
+
+//获取实验-知识点延伸数据
+function getexperimentKowledgeExtendList() {
+  loading.value = true;
+  queryExperimentKowledgeParams.value.experimentInfoId = props.experimentId
+  if(queryExperimentKowledgeParams.value.experimentInfoId) {
+    listExperimentKowledgeExtend(queryExperimentKowledgeParams.value).then(response => {
+      experimentKowledgeExtendList.value = response.rows;
+      experimentKowledgeTotal.value = response.total;
+      loading.value = false;
+    });
+  }
+}
+
+
+//提交实验-知识点
+const submitExperimentKowledgeForm = async () => {
+  try {
+    if (!formExperimentKowledgeData.value.text) {
+      proxy.$modal.msgError("请输入知识点")
+      // targetDialogVisible.value = true
+      return
+    }
+    proxy.$refs["experimentKowledgeFormRef"].validate(valid => {
+    if (valid) {
+      formExperimentKowledgeData.value.experimentInfoId = props.experimentId;
+      if (formExperimentKowledgeData.value.id != null) {
+        updateExperimentKowledgeExtend(formExperimentKowledgeData.value).then(response => {
+          proxy.$modal.msgSuccess("修改成功");
+          // 关闭对话框
+          experimentKnowledgeDialogVisible.value = false
+          getexperimentKowledgeExtendList();
+        });
+      } else {
+        addExperimentKowledgeExtend(formExperimentKowledgeData.value).then(response => {
+          proxy.$modal.msgSuccess("新增成功");
+          // 关闭对话框
+          experimentKnowledgeDialogVisible.value = false
+          getexperimentKowledgeExtendList();
+        });
+      }
+    }
+  });
+  } catch (error) {
+    ElMessage.error('编辑失败，请重试')
+  }
+}
+
+//删除知识点延伸
+const deleteExperimentKowledgeExtendHandler = (row) => {
+  ElMessageBox.confirm('确定要删除该数据吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    delExperimentKowledgeExtend(row.id).then(response => {
+      if(response.code == 200){
+        ElMessage.success('删除成功')
+        getexperimentKowledgeExtendList()
+      }else{
+        ElMessage.error('删除失败')
+      }
+    })
+  }).catch(() => {
+    ElMessage.info('取消删除')
+  })
+
+}
+
+
+
+
+
+
+//============================================
 const targetList = ref([])
 const targetTotal = ref(0);
 //获取实验目标数据
@@ -1057,8 +1321,11 @@ const handleTabClick = (tab) => {
     //调用器具
     getExperimentWarehouseList();
   } else if(activeTab.value == 'conclusion') {//实验结论
-    // getWarehouseList()
+    // 调用实验结论
+    getExperimentConclusionList();
   } else if(activeTab.value == 'knowledgeExtend') {//知识点延伸
+    // 调用知识点延伸
+    getexperimentKowledgeExtendList();
   }
 }
 

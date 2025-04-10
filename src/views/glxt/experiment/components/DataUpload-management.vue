@@ -247,7 +247,74 @@
       <el-form ref="submitFormRef" :model="submitForm" :rules="rules" label-width="120px">
         <el-form-item :label="fileBtnName" prop="fileUrl">
           <file-upload v-model="submitForm.fileUrl" @fileData="fileSuccessData" :fileSuffix="currentUploadType"/>
+                  
         </el-form-item>
+
+        <el-form-item>
+          <el-button 
+            v-if="currentUploadType === 'ab'" 
+            type="info" 
+            text 
+            size="small" 
+            class="format-help-btn"
+            @click="toggleFormatGuide"
+          >
+            <el-icon class="format-help-icon"><QuestionFilled /></el-icon>
+            查看命名规则
+          </el-button>
+        </el-form-item>
+       
+        <!-- AB包上传说明 -->
+        <!-- <transition name="fade">
+
+          <div v-if="currentUploadType === 'ab'" class="upload-guide-wrapper">
+            <div class="upload-guide-content">
+              <el-icon class="guide-icon"><InfoFilled /></el-icon>
+              <div class="guide-text">
+                <div class="guide-title">命名规则</div>
+                <div class="guide-format-container">
+                  <div class="guide-format">
+                    <span class="format-part">文件名</span>
+                    <span class="format-separator">_v</span>
+                    <span class="format-part">框架版本</span>
+                    <span class="format-separator">_v</span>
+                    <span class="format-part">SDK版本</span>
+                    <span class="format-separator">_v</span>
+                    <span class="format-part">包版本</span>
+                    <span class="format-suffix">.assetbundle</span>
+                  </div>
+                  <span class="guide-example">例：experiment_v1.0.0_v2.0.0_v3.0.0.assetbundle</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </transition> -->
+           <!-- AB包上传说明 - 可折叠版 -->
+           <!-- AB包上传说明 - 样式优化 -->
+        <transition name="fade">
+          <div v-if="currentUploadType === 'ab' && showFormatGuide" class="upload-guide-wrapper">
+            <div class="upload-guide-content">
+              <el-icon class="guide-icon"><InfoFilled /></el-icon>
+              <div class="guide-text">
+                <div class="guide-title">AB包命名规则</div>
+                <div class="guide-format-container">
+                  <div class="guide-format">
+                    <span class="format-part">文件名</span>
+                    <span class="format-separator">_v</span>
+                    <span class="format-part">框架版本</span>
+                    <span class="format-separator">_v</span>
+                    <span class="format-part">SDK版本</span>
+                    <span class="format-separator">_v</span>
+                    <span class="format-part">包版本</span>
+                    <span class="format-suffix">.assetbundle</span>
+                  </div>
+                  <span class="guide-example">例：experiment_v1.0.0_v2.0.0_v3.0.0.assetbundle</span>
+                </div>
+              </div>
+              <el-icon class="close-guide-icon" @click="showFormatGuide = false"><Close /></el-icon>
+            </div>
+          </div>
+        </transition>
         <el-form-item label="文件名" prop="fileName">
           <el-input v-model="submitForm.fileName" disabled placeholder="文件名将自动生成" />
         </el-form-item>
@@ -364,7 +431,7 @@ const currentUploadType = ref('')
 const handleUpload = (type) => {
   currentUploadType.value = type
   uploadDialogVisible.value = true
-
+  showFormatGuide.value = false // 每次打开上传对话框时，默认隐藏命名规则
   //重置表单
   if(currentUploadType.value == 'ab') {
     resetForm()
@@ -648,6 +715,16 @@ const validateForm = async () => {
   return true
 }
 
+
+// 控制命名规则说明的显示与隐藏
+const showFormatGuide = ref(false)
+
+// 切换命名规则说明的显示状态
+const toggleFormatGuide = () => {
+  showFormatGuide.value = !showFormatGuide.value
+}
+
+
 //暴漏给父组件
 defineExpose({
   validateForm
@@ -807,4 +884,324 @@ defineExpose({
   align-items: center;
   padding: 8px 0;
 }
+
+
+/* AB包上传说明样式 */
+/* .ab-upload-guide {
+  margin-bottom: 15px;
+  border-radius: 4px;
+  font-size: 12px;
+  box-shadow: none;
+  border: 1px dashed #d9ecff;
+  background-color: #f0f9ff;
+}
+
+.ab-upload-guide :deep(.el-alert__icon) {
+  font-size: 14px;
+  color: #409EFF;
+  margin-right: 8px;
+}
+
+.ab-upload-guide :deep(.el-alert__title) {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.ab-upload-guide :deep(.el-alert__content) {
+  padding: 0 8px 8px;
+}
+
+.guide-title {
+  font-weight: 500;
+  color: #409EFF;
+}
+
+.guide-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: #606266;
+  margin-top: 4px;
+}
+
+.format-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.format-label {
+  font-weight: 500;
+  min-width: 36px;
+  color: #606266;
+}
+
+.format-row code {
+  background-color: rgba(64, 158, 255, 0.1);
+  border-radius: 2px;
+  padding: 1px 3px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #409EFF;
+  border: none;
+} */
+/* 优化后的AB包上传说明样式 - 动态版 */
+/* .upload-guide-wrapper {
+  margin: 0 0 16px;
+  padding: 8px 12px;
+  background-color: #f9f9f9;
+  border-left: 3px solid #909399;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.upload-guide-content {
+  display: flex;
+  align-items: flex-start;
+}
+
+.guide-icon {
+  color: #909399;
+  margin-right: 8px;
+  font-size: 16px;
+  margin-top: 2px;
+  transition: transform 0.3s ease;
+}
+
+.guide-text {
+  flex: 1;
+}
+
+.guide-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #606266;
+  margin-bottom: 4px;
+}
+
+.guide-format-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.guide-format {
+  font-family: monospace;
+  color: #606266;
+  font-size: 12px;
+  background-color: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+}
+
+.format-part {
+  color: #409EFF;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.format-separator {
+  color: #67c23a;
+  font-weight: bold;
+  margin: 0 1px;
+}
+
+.format-suffix {
+  color: #e6a23c;
+  font-weight: 500;
+}
+
+.guide-example {
+  color: #909399;
+  font-size: 12px;
+  font-style: italic;
+  padding-left: 8px;
+}
+
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+
+.upload-guide-wrapper:hover {
+  background-color: #f5f7fa;
+  border-left-color: #409EFF;
+}
+
+.upload-guide-wrapper:hover .guide-icon {
+  transform: scale(1.1);
+  color: #409EFF;
+} */
+
+/* .upload-guide-wrapper:hover .format-part {
+  color: #409EFF;
+} */
+
+/* 文件上传容器 */
+.upload-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+
+/* 命名规则帮助按钮容器 */
+.format-help-wrapper {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+}
+
+
+.format-help-btn:hover {
+  color: #66b1ff;
+  background-color: #ecf5ff;
+  border-radius: 4px;
+}
+
+.format-help-icon {
+  margin-right: 4px;
+  font-size: 14px;
+}
+
+/* 命名规则帮助按钮 */
+.format-help-btn {
+  font-size: 12px;
+  color: #409EFF;
+  transition: all 0.3s;
+  height: 28px;
+  padding: 0 8px;
+}
+
+.format-help-btn:hover {
+  color: #66b1ff;
+  background-color: #ecf5ff;
+  border-radius: 4px;
+}
+
+.format-help-icon {
+  margin-right: 4px;
+  font-size: 14px;
+}
+
+/* 上传说明样式优化 */
+.upload-guide-wrapper {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background-color: #ecf5ff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  margin-left: 120px;
+}
+
+.upload-guide-content {
+  display: flex;
+  align-items: flex-start;
+}
+
+.guide-icon {
+  color: #409EFF;
+  margin-right: 10px;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.guide-text {
+  flex: 1;
+}
+
+.guide-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.guide-format-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guide-format {
+  font-family: monospace;
+  color: #606266;
+  font-size: 13px;
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 6px 10px;
+  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  border-left: 2px solid #409EFF;
+}
+
+.format-part {
+  color: #409EFF;
+  font-weight: 500;
+}
+
+.format-separator {
+  color: #67c23a;
+  font-weight: bold;
+  margin: 0 2px;
+}
+
+.format-suffix {
+  color: #e6a23c;
+  font-weight: 500;
+}
+
+.guide-example {
+  color: #606266;
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+/* 关闭按钮 */
+.close-guide-icon {
+  cursor: pointer;
+  color: #909399;
+  font-size: 16px;
+  transition: all 0.3s;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.close-guide-icon:hover {
+  color: #f56c6c;
+  transform: scale(1.1);
+}
+
+/* 淡入淡出动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+
 </style>
