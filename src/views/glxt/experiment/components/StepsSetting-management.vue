@@ -51,7 +51,7 @@
                       <el-button plain type="info" color="#ff6f21" @click.stop="handleOperation(data)" >
                         关联操作
                       </el-button>
-                      <el-button v-if="getLevel(node) < 5" plain type="primary" @click.stop="addStep(data)" v-hasPermi="['glxt:experimentInfoStep:add']">
+                      <el-button v-if="getLevel(node) < 3" plain type="primary" @click.stop="addStep(data)" v-hasPermi="['glxt:experimentInfoStep:add']">
                         添加子步骤
                       </el-button>
                       <el-button plain type="success" @click.stop="editStep(data)" v-hasPermi="['glxt:experimentInfoStep:edit']">
