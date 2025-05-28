@@ -140,7 +140,7 @@
       :close-on-click-modal="false"
       :destroy-on-close="true"
     >
-    {{ operateTypeNum }}
+    <!-- {{ operateTypeNum }} -->
       <el-form ref="knowledgeRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="类型" prop="schoolTypeId">
           <el-select 

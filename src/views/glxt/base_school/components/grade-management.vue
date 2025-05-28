@@ -5,7 +5,7 @@
       <div class="info-card">
         <div class="info-header">
           <el-icon><School /></el-icon>
-          <h3>学校信息</h3>
+          <h3>基本信息</h3>
         </div>
         <div class="info-content">
           <div class="info-item">
@@ -19,12 +19,18 @@
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
+            <span class="label">学制：</span>
+            <span class="value">{{ schoolInfo.schoolSystemName }}</span>
+          </div>
+          <div class="info-divider"></div>
+          <div class="info-item">
             <span class="label">学段：</span>
+
             <span class="value">{{ schoolInfo.schoolTypeName }}</span>
           </div>
         </div>
       </div>
-
+      <!-- {{ schoolInfo }} -->
       <!-- 年级管理表格 -->
       <div class="table-card">
         <div class="table-header">
@@ -44,8 +50,13 @@
           <el-table-column prop="educationLevelName" label="学校类型" align="center">
             {{ schoolInfo.educationLevelName }}
           </el-table-column>
-          <el-table-column prop="schoolTypeName" label="学段" align="center">
-            {{ schoolInfo.schoolTypeName }}
+          <el-table-column prop="academicStageType" label="学段" align="center">
+            <!-- <el-tag type="success">
+              {{ schoolInfo.schoolTypeName }}  
+            </el-tag> -->
+            <template #default="scope">
+              <dict-tag :options="mt_academic_stage" :value="scope.row.academicStageType"/>
+            </template>
           </el-table-column>
           <el-table-column prop="name" label="年级" align="center"/>
           <el-table-column label="操作" width="200" align="center">
@@ -99,12 +110,22 @@
       :title="dialogType === 'add' ? '添加年级' : '编辑年级'"
       width="500px"
       destroy-on-close>
-      <el-form :model="editingGrade" label-width="100px" :rules="rules" ref="gradeFormRef">
+      <el-form ref="gradeFormRef" :model="geadeFrom" label-width="100px" :rules="rules" >
         <el-form-item label="学校类型" prop="type">
           <el-input v-model="geadeFrom.educationLevel" :value="schoolInfo.educationLevelName" disabled/>
         </el-form-item>
-        <el-form-item label="学段" prop="educationLevel">
+        <!-- <el-form-item label="学段" prop="educationLevel">
           <el-input v-model="geadeFrom.schoolType" :value="schoolInfo.schoolTypeName" disabled/>
+        </el-form-item> -->
+        <el-form-item label="学段" prop="academicStageType">
+          <el-select v-model="geadeFrom.academicStageType" placeholder="请选择">
+            <el-option
+              v-for="item in academicStageOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="年级" prop="name">
             <el-input v-model="geadeFrom.name"  placeholder="请输入年级"/>
@@ -129,6 +150,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 const { proxy } = getCurrentInstance();
 //导入年级相关接口
 import { listGrade, getGrade, addGrade, updateGrade, delGrade } from '@/api/glxt/base_grade'
+
+//字典引入
+const {mt_academic_stage} = proxy.useDict('mt_academic_stage');
 const gradeFormRef = ref(null)
 // 接收父组件传递的学校信息
 const props = defineProps({
@@ -168,35 +192,35 @@ const reset = () => {
 }
 
 // 表单校验规则
-// const rules = {
-//   name: [
-//     { required: true, message: '请输入年级名称', trigger: 'blur' }
-//   ]
-// }
+const rules = {
+  name: [
+    { required: true, message: '请输入年级名称', trigger: 'blur' }
+  ],
+  academicStageType: [
+    { required: true, message: '请选择学段', trigger: 'blur' }
+  ]
+}
 // 加载状态
 const loading = ref(false)
 
 
 const dialogVisible = ref(false)
 const dialogType = ref('add')
-const editingGrade = ref({
-  id: null,
-  name: '',
-  schoolId: props.schoolInfo.id
-})
+
 
 const geadeFrom = ref({
   id: null,
   name: '',
   schoolId: props.schoolInfo.id,//学校id  
   educationLevel: props.schoolInfo.educationLevel,//学校类型
-  schoolType: props.schoolInfo.schoolType//学段
+  schoolType: props.schoolInfo.schoolType,//学段
+  academicStageType:''
 })
 
 //年级列表
 const gradeList = ref([]);
 
-//获取年级列���
+//获取年级列表
 const getList = () =>{
   loading.value = true;
   listGrade(queryParams.value).then(response => {
@@ -206,12 +230,33 @@ const getList = () =>{
   });
 };
 
+//存二级学段下拉
+const academicStageOptions = ref([])
+//组装二级学段（新增学校选择的学段）下拉数据
+const academicStageTypeMethod = (schoolInfoData) => {
+  const schoolTypes = schoolInfoData.schoolType?.split(',') || [];
+  const schoolTypeNames = schoolInfoData.schoolTypeName?.split('，') || [];
+  return {
+        ...schoolInfoData,
+        schoolTypeOptions: schoolTypes.map((type, index) => ({
+          value: type,
+          label: schoolTypeNames[index] || ''
+        })),
+        selectedSchoolType: schoolTypes[0] // 默认选中第一个
+      };
+}
+
 
 // 添加年级弹框
 const clickAddHandle = () => {
   reset();
   dialogType.value = 'add'
   dialogVisible.value = true
+
+   //加载学段数据
+  const tmpData = academicStageTypeMethod(props.schoolInfo)
+  academicStageOptions.value = tmpData.schoolTypeOptions
+  console.log(a.schoolTypeOptions)
 }
 
 const editGrade = (row) => {
@@ -221,6 +266,11 @@ const editGrade = (row) => {
   //获取年级信息
   getGrade(row.id).then(response => {
     geadeFrom.value = response.data
+
+    //加载学段数据
+    const tmpData = academicStageTypeMethod(props.schoolInfo)
+    academicStageOptions.value = tmpData.schoolTypeOptions
+
     //开启弹框
     dialogVisible.value = true
   })
@@ -248,13 +298,14 @@ const deleteGrade = (row) => {
 // 修改保存方法
 const saveGrade = () => {
   console.log(geadeFrom.value)
-  try{
+  // try{
     proxy.$refs["gradeFormRef"].validate(valid => {
     if (valid) {
       if (geadeFrom.value.id != null) {
         console.log(1)
         updateGrade(geadeFrom.value).then(response => {
           proxy.$modal.msgSuccess("修改成功");
+          dialogVisible.value = false//关闭弹框
           getList();
         });
       } else {
@@ -262,16 +313,18 @@ const saveGrade = () => {
         console.log(geadeFrom.value)
         addGrade(geadeFrom.value).then(response => {
           proxy.$modal.msgSuccess("新增成功");
+          dialogVisible.value = false//关闭弹框
           getList();
         });
       }
     }
   });
-  }catch(error){
-    ElMessage.error('操作失败')
-  } finally {
-    dialogVisible.value = false//关闭弹框
-  }
+
+  // }catch(error){
+  //   ElMessage.error('操作失败')
+  // } finally {
+  //   dialogVisible.value = false//关闭弹框
+  // }
 }
 
 //取消

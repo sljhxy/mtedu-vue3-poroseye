@@ -35,7 +35,7 @@
           </div>
         </div>
 
-        {{ formData }}
+        <!-- {{ formData }} -->
         <!-- 题目内容区域 -->
         <div class="form-section">
           <el-form-item label="题干：" prop="title" required>

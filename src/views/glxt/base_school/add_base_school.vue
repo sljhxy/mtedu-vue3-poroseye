@@ -28,6 +28,7 @@
       @next-step="handleSchoolNext"
     />
 
+    <!-- {{ schoolInfo }} -->
     <!-- 创建年级 -->
     <grade-management 
       v-if="currentStep === 1"

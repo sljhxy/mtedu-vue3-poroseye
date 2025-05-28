@@ -19,6 +19,11 @@
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
+            <span class="label">学制：</span>
+            <span class="value">{{ schoolInfo.schoolSystemName }}</span>
+          </div>
+          <div class="info-divider"></div>
+          <div class="info-item">
             <span class="label">学段：</span>
             <span class="value">{{ schoolInfo.schoolTypeName }}</span>
           </div>
@@ -195,13 +200,7 @@ const importDialogVisible = ref(false)
 const dialogType = ref('add')
 const classFormRef = ref(null)
 
-const editingClass = reactive({
-  id: null,
-  gradeName: '',
-  enrollmentYear: '',
-  className: '',
-  studentCount: 0
-})
+
 
 const classForm = ref({
   id: null,
@@ -213,8 +212,8 @@ const classForm = ref({
 // 表单校验规则
 const rules = {
   // gradeId: [{ required: true, message: '请选择年级', trigger: 'change' }],
-  // baseEduLevelType: [{ required: true, message: '请选入学时间', trigger: 'change' }],
-  // name: [{ required: true, message: '请输入班级名称', trigger: 'blur' }]
+  baseEduLevelType: [{ required: true, message: '请选入学时间', trigger: 'change' }],
+  name: [{ required: true, message: '请输入班级名称', trigger: 'blur' }]
 }
 
 // 添加分页相关的响应式数据
@@ -394,7 +393,7 @@ const cancel = () => {
 const saveClass = () => {
   console.log(classForm.value)
   if (!classFormRef.value) return
-  try{
+  // try{
     classFormRef.value.validate((valid) => {
     if (valid) {
       if (classForm.value.id != null) {
@@ -402,6 +401,7 @@ const saveClass = () => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("修改成功");
             queryParams.value.gradeId = classForm.value.gradeId
+            dialogVisible.value = false//关闭弹框
             getList(queryParams.value);
           } 
         });
@@ -410,17 +410,18 @@ const saveClass = () => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("新增成功");
             queryParams.value.gradeId = classForm.value.gradeId
+            dialogVisible.value = false//关闭弹框
             getList(queryParams.value);
           }
         });
       }
     }
   })
-  }catch(err){
-    ElMessage.error('操作失败')
-  } finally {
-    dialogVisible.value = false//关闭弹框
-  }
+  // }catch(err){
+  //   ElMessage.error('操作失败')
+  // } finally {
+  //   dialogVisible.value = false//关闭弹框
+  // }
 
 
 }

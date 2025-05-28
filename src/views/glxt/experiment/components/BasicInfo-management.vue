@@ -293,7 +293,7 @@
                    <!-- 新增知识体系挂接 -->
                    <el-row :gutter="20">
                     <el-col :span="24">
-                      {{ basicForm.knowledgePoints }}
+                      <!-- {{ basicForm.knowledgePoints }} -->
                       <el-form-item label="知识点体系" prop="knowledgePoints">
                                 <el-tree-select
                                     v-model="basicForm.knowledgePoints"

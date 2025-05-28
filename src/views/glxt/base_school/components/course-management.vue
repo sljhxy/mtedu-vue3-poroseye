@@ -9,23 +9,23 @@
         </div>
         <div class="info-content">
           <div class="info-item">
-            <div class="info-row">
-              <span class="label">学校名称：</span>
-              <span class="value">{{ schoolInfo?.name }}</span>
-            </div>
+            <span class="label">学校名称：</span>
+            <span class="value">{{ schoolInfo?.name }}</span>
           </div>
+          <div class="info-divider"></div>
           <div class="info-item">
-            <div class="info-row">
-              <span class="label">学校类型：</span>
-              <!-- {{ schoolInfo.educationLevel }} -->
-              <span class="value">{{ schoolInfo?.educationLevelName }}</span>
-            </div>
+            <span class="label">学校类型：</span>
+            <span class="value">{{ schoolInfo.educationLevelName }}</span>
           </div>
+          <div class="info-divider"></div>
           <div class="info-item">
-            <div class="info-row">
-              <span class="label">学段：</span>
-              <span class="value">{{ schoolInfo?.schoolTypeName }}- {{schoolInfo?.schoolType  }}</span>
-            </div>
+            <span class="label">学制：</span>
+            <span class="value">{{ schoolInfo.schoolSystemName }}</span>
+          </div>
+          <div class="info-divider"></div>
+          <div class="info-item">
+            <span class="label">学段：</span>
+            <span class="value">{{ schoolInfo.schoolTypeName }}</span>
           </div>
         </div>
         <div class="grade-section">
@@ -630,33 +630,33 @@ const handleCourseSystemChange = (values) => {
 
 /* 调整基本信息内容区域样式 */
 .info-content {
-  padding: 12px 20px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  display: flex;
+  align-items: center;
+  padding: 20px 20px;
 }
 
 .info-item {
-  display: flex;
-  align-items: center;
+  flex: 1;
+  padding: 0 20px;
 }
 
-.info-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.label {
-  color: #86909c;
+.info-item .label {
   font-size: 14px;
+  color: #909399;
   white-space: nowrap;
 }
 
-.value {
-  color: #1d2129;
+.info-item .value {
   font-size: 14px;
-  font-weight: 400;
+  color: #909399;
+  font-weight: bold;
+}
+
+.info-divider {
+  width: 1px;
+  height: 24px;
+  background-color: #ebeef5;
+  margin: 0;
 }
 
 /* 调整卡片样式 */
@@ -755,7 +755,7 @@ const handleCourseSystemChange = (values) => {
   margin-right: 8px;
 }
 
-.info-content {
+/* .info-content {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
@@ -782,7 +782,7 @@ const handleCourseSystemChange = (values) => {
   color: #909399;
   font-size: 14px;
   font-weight: bold;
-}
+} */
 
 
 

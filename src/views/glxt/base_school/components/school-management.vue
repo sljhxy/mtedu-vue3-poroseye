@@ -22,6 +22,7 @@
           </div>
         </div>
 
+        
         <!-- 学校详细信息 -->
         <div class="card-body">
           <!-- 地址信息 -->
@@ -79,13 +80,15 @@
               </div>
               <div class="info-item">
                 <label>学段：</label>
-                <span>
-                  <dict-tag :options="mt_academic_stage" :value="formEditData.schoolType"/>
+                <span> 
+                    <dict-tag :options="mt_academic_stage" :value="formEditData.schoolType"/>
                 </span>
               </div>
+              <!-- {{ formData }} -->
               <div class="info-item">
                 <label>学制：</label>
                 <span>
+                
                   <dict-tag :options="mt_base_education_type" :value="formEditData.schoolSystem"/>
                 </span>
               </div>
@@ -112,7 +115,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑学校' : '新增学校'"
-      width="670px"
+      width="900px"
       :close-on-click-modal="false"
       :destroy-on-close="true"
       class="school-dialog"
@@ -205,12 +208,14 @@
                   <el-select v-model="formData.educationLevel" placeholder="普教类型" disabled>
                     <el-option v-for="item in educationLevels" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
-                  <el-select v-model="formData.schoolType" placeholder="请选择学段" clearable>
-                    <el-option v-for="item in mt_academic_stage" :key="item.value" :label="item.label" :value="item.value" />
-                  </el-select>
                   <el-select v-model="formData.schoolSystem" placeholder="请选择学制" clearable>
                     <el-option v-for="item in mt_base_education_type" :key="item.value" :label="item.label" :value="item.value" />
                   </el-select>
+                  <!-- {{ formData.schoolType }} -->
+                  <el-select v-model="formData.schoolType" placeholder="请选择学段" multiple clearable>
+                    <el-option v-for="item in mt_academic_stage" :key="item.value" :label="item.label" :value="item.value" />
+                  </el-select>
+                
                 </div>
               </el-form-item>
             </div>
@@ -311,6 +316,7 @@ const formData = ref({
   educationLevel: '1',//类型
   educationLevelName: '',//类型名称
   schoolType: '',//学段
+  schoolTypeArr: [],
   schoolTypeName: '',//学段名称
   schoolSystem: '',//学制
   schoolSystemName: '',//学制名称
@@ -543,7 +549,7 @@ const handleEdit = async (id) => {
       ...response.data,
       isActive: response.data.isActive === 'true' || response.data.isActive === true,
       educationLevel: '1',  // 固定为普教
-      schoolType: response.data.schoolType.toString(),
+      schoolType: response.data.schoolType.split(","),
       schoolSystem: response.data.schoolSystem.toString(),
       // 设置省市区的值
       province: response.data.province,
@@ -584,7 +590,7 @@ const handleCancel = () => {
   //取消重新调用获取学校数据
   //新增的时候不走获取学校数据  修复取消报错的BUG
   if (formData.value.id) {
-   getSchoolData(formData.value.id)
+    getSchoolData(formData.value.id)
   }
 }
 
@@ -613,7 +619,7 @@ const handleConfirm = async () => {
         submitData.province = formData.value.province;
         submitData.city = formData.value.city;
         submitData.district = formData.value.district;
-
+        submitData.schoolType = formData.value.schoolType.toString()
         if (submitData.id != null) {
           updateSchool(submitData).then(response => {
             proxy.$modal.msgSuccess("修改成功");
@@ -626,6 +632,7 @@ const handleConfirm = async () => {
           formData.value.province = formData.value.province
           formData.value.city = formData.value.city
           formData.value.district = formData.value.district
+          formData.value.schoolType = formData.value.schoolType.toString()
           addSchool(formData.value).then(response => {
             proxy.$modal.msgSuccess("新增成功");
              // 更新状态  判断是否是新增 如果新增 则更新状态
@@ -703,9 +710,24 @@ const getBaseEducationType = (educationType) => {
 
 //获取学段
 const getSchoolType = (schoolType) => {
-  if (!schoolType || !mt_academic_stage.value) return '';
-  const found = mt_academic_stage.value.find(item => item.value === schoolType.toString());
-  return found ? found.label : '';
+  if  (!schoolType || !mt_base_education_type.value) return '';
+  schoolType = schoolType.split(",")
+  if (!Array.isArray(schoolType) || !mt_academic_stage.value) return '';
+  // 将 schoolType 中每个值转换为字符串，并查找对应的 label
+  const labels = schoolType.map(type => {
+    const stringValue = type.toString();
+    const found = mt_academic_stage.value.find(item => item.value === stringValue);
+    return found ? found.label : '';
+  });
+
+    // 过滤掉空字符串（未找到的项）
+  const validLabels = labels.filter(label => label);
+  // 返回用逗号分隔的标签字符串
+  return validLabels.join('，');
+  
+  // if (!schoolType || !mt_academic_stage.value) return '';
+  // const found = mt_academic_stage.value.find(item => item.value === schoolType.toString());
+  // return found ? found.label : '';
 }
 
 //获取学制

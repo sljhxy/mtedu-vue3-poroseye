@@ -164,7 +164,7 @@
         </el-form-item>
 
         <!-- 新增教材体系和知识点体系 -->
-        {{ form.courseSystems }}
+        <!-- {{ form.courseSystems }} -->
         <el-form-item label="教材体系" prop="courseSystems">
                 <el-cascader
                     style="width: 100%;"
@@ -185,7 +185,7 @@
                 />
         </el-form-item>
 
-        {{ form.knowledgePoints }}
+        <!-- {{ form.knowledgePoints }} -->
         <el-form-item label="知识点体系" prop="knowledgePoints">
           <el-tree-select
               v-model="form.knowledgePoints"

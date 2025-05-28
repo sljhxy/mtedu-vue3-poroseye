@@ -12,24 +12,23 @@
         </div>
         <div class="info-content">
           <div class="info-item">
-            <div class="info-row">
-              <span class="label">学校名称：</span>
-              <span class="value">{{ schoolInfo.name }}</span>
-            </div>
+            <span class="label">学校名称：</span>
+            <span class="value">{{ schoolInfo?.name }}</span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
-            <div class="info-row">
-              <span class="label">学校类型：</span>
-              <span class="value">{{ schoolInfo.educationLevelName }}</span>
-            </div>
+            <span class="label">学校类型：</span>
+            <span class="value">{{ schoolInfo.educationLevelName }}</span>
           </div>
           <div class="info-divider"></div>
           <div class="info-item">
-            <div class="info-row">
-              <span class="label">学段：</span>
-              <span class="value">{{ schoolInfo.schoolTypeName }}</span>
-            </div>
+            <span class="label">学制：</span>
+            <span class="value">{{ schoolInfo.schoolSystemName }}</span>
+          </div>
+          <div class="info-divider"></div>
+          <div class="info-item">
+            <span class="label">学段：</span>
+            <span class="value">{{ schoolInfo.schoolTypeName }}</span>
           </div>
         </div>
       </div>

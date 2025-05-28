@@ -51,11 +51,11 @@
       <!-- <el-table-column type="selection" width="55" align="center" /> -->
       <el-table-column type="index" label="序号" width="70" align="center" />
       <el-table-column prop="schoolName" label="学校名称" min-width="150" align="center"  />
-      <el-table-column prop="schoolType" label="学段" min-width="100" align="center">
+      <!-- <el-table-column prop="schoolType" label="学段" min-width="100" align="center">
         <template #default="{ row }"> 
           {{ getSchoolType(row.schoolType) }}
         </template>
-      </el-table-column>
+      </el-table-column> -->
       <el-table-column prop="schoolSystem" label="年制" min-width="100" align="center">
         <template #default="{ row }"> 
           {{ getSchoolSystem(row.schoolSystem) }}
@@ -181,7 +181,20 @@ const getLocationLabel = (id) => {
 
 //获取学段
 const getSchoolType = (schoolType) => {
-  return mt_academic_stage.value ?.find(item => item.value === schoolType.toString()).label
+  if (!Array.isArray(schoolType) || !mt_academic_stage.value) return '';
+  // 将 schoolType 中每个值转换为字符串，并查找对应的 label
+  const labels = schoolType.map(type => {
+    const stringValue = type.toString();
+    const found = mt_academic_stage.value.find(item => item.value === stringValue);
+    return found ? found.label : '';
+  });
+
+  // 过滤掉空字符串（未找到的项）
+  const validLabels = labels.filter(label => label);
+  // 返回用逗号分隔的标签字符串
+  return validLabels.join(',');
+  
+  // return mt_academic_stage.value ?.find(item => item.value === schoolType.toString()).label
 }
 
 //获取学制

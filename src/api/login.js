@@ -38,7 +38,7 @@ export function refreshToken() {
 export function getInfo() {
   return request({
     url: '/system/user/getInfo',
-    headers: { 'login_type': 'web_user' },
+    // headers: { 'login_type': 'web_user' },
     method: 'get'
   })
 }
