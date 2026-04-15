@@ -48,6 +48,11 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/s/:code',
+    component: () => import('@/views/schoolLogin'),
+    hidden: true
+  },
+  {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404'),
     hidden: true
@@ -208,8 +213,58 @@ export const constantRoutes = [
     }
     // ... 其他路由
   ]
+},
+// 统计详情页路由
+{
+  path: '/statistics',
+  component: Layout,
+  hidden: true,
+  children: [
+    {
+      path: 'class-statistics',
+      component: () => import('@/views/statistics/class-statistics/index'),
+      name: 'ClassStatistics',
+      meta: { title: '班级整体数据' }
+    },
+    {
+      path: 'class-detail/:data(.*)',
+      component: () => import('@/views/statistics/class-statistics/class-detail'),
+      name: 'ClassDetail',
+      meta: { title: '班级情况', activeMenu: '/statistics/class-statistics', noCache: true }
+    },
+    {
+      path: 'student-detail/:data(.*)',
+      component: () => import('@/views/statistics/class-statistics/student-detail'),
+      name: 'StudentDetail',
+      meta: { title: '学生情况', activeMenu: '/statistics/class-statistics', noCache: true }
+    },
+    {
+      path: 'student-experiment-detail/:data(.*)',
+      component: () => import('@/views/statistics/class-statistics/student-experiment-detail'),
+      name: 'StudentExperimentDetail',
+      meta: { title: '学生学习情况', activeMenu: '/statistics/class-statistics', noCache: true }
+    },
+    // 内容操作数据页面
+    {
+      path: 'operation-statistics',
+      component: () => import('@/views/statistics/operation-statistics/index'),
+      name: 'OperationStatistics',
+      meta: { title: '内容操作数据' }
+    },
+    {
+      path: 'operation-statistics/student-experiment-detail/:data(.*)',
+      component: () => import('@/views/statistics/class-statistics/student-experiment-detail'),
+      name: 'OperationStudentExperimentDetail',
+      meta: { title: '学生学习情况', activeMenu: '/statistics/operation-statistics', noCache: true }
+    },
+    {
+      path: 'operation-statistics/experiment-detail/:data(.*)',
+      component: () => import('@/views/statistics/operation-statistics/experiment-detail'),
+      name: 'ExperimentDetail',
+      meta: { title: '实验详情', activeMenu: '/statistics/operation-statistics', noCache: true }
+    }
+  ]
 }
-
 ]
 
 // 动态路由，基于用户权限动态去加载
@@ -257,7 +312,7 @@ export const dynamicRoutes = [
     ]
   },
   {
-    path: '/glxt/column-data', 
+    path: '/glxt/column-data',
     component: Layout,
     hidden: true,
     permissions: ['glxt:column:list'],
@@ -297,7 +352,113 @@ export const dynamicRoutes = [
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
       }
     ]
-  }
+  },
+// 化学虚拟实验模块路由
+{
+  path: '/chemistry',
+  component: Layout,
+  name: 'Chemistry',
+  meta: { title: '化学虚拟实验', icon: 'education' },
+  hidden: false,
+  children: [
+    {
+      path: 'element',
+      name: 'ChemistryElement',
+      component: () => import('@/views/chemistry/element/index.vue'),
+      meta: { title: '元素周期表', icon: 'chart' }
+    },
+    {
+      path: 'substance',
+      name: 'ChemistrySubstance',
+      component: () => import('@/views/chemistry/substance/index.vue'),
+      meta: { title: '物质库', icon: 'documentation' }
+    },
+    {
+      path: 'equation',
+      name: 'ChemistryEquation',
+      component: () => import('@/views/chemistry/equation/index.vue'),
+      meta: { title: '化学方程式', icon: 'link' }
+    },
+    {
+      path: 'equipment',
+      name: 'ChemistryEquipment',
+      component: () => import('@/views/chemistry/equipment/index.vue'),
+      meta: { title: '实验器材', icon: 'tool' }
+    },
+    {
+      path: 'template',
+      name: 'ChemistryTemplate',
+      component: () => import('@/views/chemistry/template/index.vue'),
+      meta: { title: '实验模板', icon: 'form' }
+    },
+    {
+      path: 'reaction-stage',
+      name: 'ChemistryReactionStage',
+      component: () => import('@/views/chemistry/reaction-stage/index.vue'),
+      meta: { title: '反应阶段', icon: 'step' }
+    },
+    {
+      path: 'secondary-reaction',
+      name: 'ChemistrySecondaryReaction',
+      component: () => import('@/views/chemistry/secondary-reaction/index.vue'),
+      meta: { title: '副反应', icon: 'connection' }
+    },
+    {
+      path: 'intermediate',
+      name: 'ChemistryIntermediate',
+      component: () => import('@/views/chemistry/intermediate/index.vue'),
+      meta: { title: '中间产物', icon: 'component' }
+    },
+    {
+      path: 'reactionNarrative',
+      name: 'ChemistryNarrative',
+      component: () => import('@/views/chemistry/reactionNarrative/index.vue'),
+      meta: { title: '反应描述', icon: 'document' }
+    },
+    {
+      path: 'experimentRun',
+      name: 'ChemistryExperimentRun',
+      component: () => import('@/views/chemistry/experimentRun/index.vue'),
+      meta: { title: '实验记录', icon: 'data-analysis' }
+    },
+    {
+      path: 'simulation',
+      name: 'ChemistrySimulation',
+      component: () => import('@/views/chemistry/simulation/index.vue'),
+      meta: { title: '反应模拟器', icon: 'cpu' }
+    },
+    {
+      path: 'parameter-calculator',
+      name: 'ChemistryParameterCalculator',
+      component: () => import('@/views/chemistry/parameter-calculator/index.vue'),
+      meta: { title: '物质参数计算器', icon: 'calculator' }
+    },
+    {
+      path: 'realtime-simulation',
+      name: 'ChemistryRealtimeSimulation',
+      component: () => import('@/views/chemistry/realtime-simulation/index.vue'),
+      meta: { title: '实时模拟器', icon: 'cpu' }
+    },
+    {
+      path: 'status-category',
+      name: 'ChemistryStatusCategory',
+      component: () => import('@/views/chemistry/status-category/index.vue'),
+      meta: { title: '状态码分类', icon: 'tree' }
+    },
+    {
+      path: 'status-code',
+      name: 'ChemistryStatusCode',
+      component: () => import('@/views/chemistry/status-code/index.vue'),
+      meta: { title: '状态码管理', icon: 'document' }
+    },
+    {
+      path: 'status-ref',
+      name: 'ChemistryStatusRef',
+      component: () => import('@/views/chemistry/status-ref/index.vue'),
+      meta: { title: '状态码关联', icon: 'link' }
+    }
+  ]
+}
 ]
 
 const router = createRouter({

@@ -21,7 +21,7 @@
         </el-select>
       </el-form-item> -->
       <el-form-item label="类型：">
-        <el-select v-model="queryParam.schoolType" clearable style="width: 100px;">
+        <el-select v-model="queryParam.schoolType" clearable style="width: 100px;" :disabled="isTeacher">
           <el-option v-for="item in mt_school_type" :key="item.value" :value="item.value"
                     :label="item.label"></el-option>
         </el-select>
@@ -107,8 +107,10 @@ import Pagination from '@/components/Pagination'
 import QuestionShow from './components/Show'
 import { listQuestion, getQuestion, delQuestion} from '@/api/glxt/question'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useTeacherInfo } from '@/store/modules/teacherInfo'
 
 const showSearch = ref(false);//默认隐藏
+const { isTeacher, schoolType: userSchoolType } = useTeacherInfo()
 
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
@@ -234,6 +236,10 @@ const  deleteQuestion= async (row) => {
 // 生命周期钩子
 onMounted(() => {
   queryParam.pageNum = 1
+  // 教师用户自动填充学校类型
+  if (isTeacher.value) {
+    queryParam.schoolType = userSchoolType.value
+  }
   search()
 })
 </script>

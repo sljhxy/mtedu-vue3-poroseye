@@ -57,6 +57,13 @@
       >
          <el-table-column prop="deptName" label="部门名称" width="260"></el-table-column>
          <el-table-column prop="orderNum" label="排序" width="200"></el-table-column>
+         <el-table-column label="类型" width="120" align="center">
+            <template #default="scope">
+               <el-tag v-if="scope.row.schoolType === 'base'" type="success">普教学校</el-tag>
+               <el-tag v-else-if="scope.row.schoolType === 'vocal'" type="warning">职教学校</el-tag>
+               <span v-else>-</span>
+            </template>
+         </el-table-column>
          <el-table-column prop="status" label="状态" width="100">
             <template #default="scope">
                <dict-tag :options="sys_normal_disable" :value="scope.row.status" />
@@ -69,9 +76,51 @@
          </el-table-column>
          <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
             <template #default="scope">
-               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:dept:edit']">修改</el-button>
-               <el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)" v-hasPermi="['system:dept:add']">新增</el-button>
-               <el-button v-if="scope.row.parentId != 0" link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:dept:remove']">删除</el-button>
+               <el-button
+                  v-if="!scope.row.schoolType"
+                  link
+                  type="primary"
+                  icon="Edit"
+                  @click="handleUpdate(scope.row)"
+                  v-hasPermi="['system:dept:edit']">修改</el-button>
+               <el-tooltip
+                  v-else
+                  content="该部门关联了学校，请前往【学校管理】进行修改"
+                  placement="top">
+               <el-button link type="primary" icon="Edit" disabled>修改</el-button>
+               </el-tooltip>
+               <el-button
+                  v-if="!scope.row.schoolType && scope.row.deptName !== '普教' && scope.row.deptName !== '职教'"
+                  link
+                  type="primary"
+                  icon="Plus"
+                  @click="handleAdd(scope.row)"
+                  v-hasPermi="['system:dept:add']">新增</el-button>
+               <el-tooltip
+                  v-else-if="scope.row.schoolType"
+                  content="该部门关联了学校，请前往【学校管理】新增"
+                  placement="top">
+               <el-button link type="primary" icon="Plus" disabled>新增</el-button>
+               </el-tooltip>
+               <el-tooltip
+                  v-else
+                  content="该分类下只能通过【学校管理】新增学校"
+                  placement="top">
+               <el-button link type="primary" icon="Plus" disabled>新增</el-button>
+               </el-tooltip>
+               <el-button
+                  v-if="scope.row.parentId != 0 && !scope.row.schoolType"
+                  link
+                  type="primary"
+                  icon="Delete"
+                  @click="handleDelete(scope.row)"
+                  v-hasPermi="['system:dept:remove']">删除</el-button>
+               <el-tooltip
+                  v-if="scope.row.parentId != 0 && scope.row.schoolType"
+                  content="该部门关联了学校，请前往【学校管理】进行删除"
+                  placement="top">
+               <el-button link type="primary" icon="Delete" disabled>删除</el-button>
+               </el-tooltip>
             </template>
          </el-table-column>
       </el-table>

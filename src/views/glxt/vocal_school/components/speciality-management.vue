@@ -294,6 +294,7 @@ const queryParams = ref({
 const reset = () => {
   specialityForm.value = {
     id: null,
+    schoolId: null,//学校ID（始终需要）
     vocalEduSystemId: null,//系列id
     specialityName: null,//专业名称
     specialityAbbreviation: null,//专业简称
@@ -304,18 +305,20 @@ const loading = ref(false);
 
 
 
-// 根据年级id获取专业列表的方法，添加分页逻辑
+// 根据系获取专业列表的方法，添加分页逻辑
 const getSpecialityesBySystem = (system) => {
-  if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
-    queryParams.value.vocalEduSystemId = system.id;//获取学系id
-  }else{//专科院校
-    queryParams.value.schoolId = props.schoolInfo.id
-    queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
+  // 始终设置学校ID，确保只查询当前学校的专业
+  queryParams.value.schoolId = props.schoolInfo.id
+
+  if(props.schoolInfo.isSystem == '1'){//有系的情况
+    queryParams.value.vocalEduSystemId = system.id//设置系ID，过滤该系下的专业
+    queryParams.value.withoutSystem = undefined//清除无系标识
+  }else{//无系的情况
+    queryParams.value.vocalEduSystemId = undefined//清空系ID
+    queryParams.value.withoutSystem = true//查询无系的专业
   }
-  // queryParams.value.vocalEduSystemId = system.id;
+
   getList(queryParams.value);
-  // 设置总数和更新表格数据
-  // handleSearch()
 }
 
 // 获取专业列表
@@ -331,18 +334,28 @@ const getList = (params) => {
 
 // 监听学院数据变化
 watch(() => props.schoolInfo.isSystem, (newSystems) => {
-  
+
   if(newSystems == '0') {
-    queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
-    getList(queryParams.value);  
+    // 无系的情况：始终设置schoolId，并查询无系的专业
+    queryParams.value.schoolId = props.schoolInfo.id
+    queryParams.value.vocalEduSystemId = undefined
+    queryParams.value.withoutSystem = true
+    getList(queryParams.value);
   }
-  
-  
+
+
 }, { immediate: true })
 
 // 添加搜索处理方法
 const handleSearch = () => {
-  queryParams.value.vocalEduSystemId = currentSystem.value.id;
+  // 始终设置学校ID
+  queryParams.value.schoolId = props.schoolInfo.id
+
+  if(currentSystem.value) {
+    queryParams.value.vocalEduSystemId = currentSystem.value.id;
+    queryParams.value.withoutSystem = undefined
+  }
+
   getList(queryParams.value);
 
 }
@@ -388,15 +401,14 @@ watch(() => props.systems, (newSystems) => {
 const clickAddSpeciality = () => {
   reset();
 
-  if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
-      specialityForm.value.vocalEduSystemId = currentSystem.value.id//获取学系id
-  }else{//专科院校
-    specialityForm.value.schoolId = props.schoolInfo.id
-    specialityForm.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
-  }
+  // 始终设置学校ID，确保数据一致性
+  specialityForm.value.schoolId = props.schoolInfo.id
 
-  //给系赋值获取当前选中的系id
-  // specialityForm.value.vocalEduSystemId = currentSystem.value.id
+  if(props.schoolInfo.isSystem == '1'){//有系的情况
+    specialityForm.value.vocalEduSystemId = currentSystem.value.id//获取学系id
+  }else{//无系的情况
+    specialityForm.value.vocalEduSystemId = null//无系时清空系ID
+  }
 
   if(props.schoolInfo.isSystem == '1'){
     if (!currentSystem.value) {
@@ -405,7 +417,6 @@ const clickAddSpeciality = () => {
   }
   }
 
-  
   dialogType.value = 'add'
   dialogVisible.value = true
 
@@ -455,36 +466,37 @@ const cancel = () => {
 
 // 保存/修改专业
 const saveSpeciality = () => {
-  // console.log(specialityForm.value)
   if (!specialityFormRef.value) return
   try{
     specialityFormRef.value.validate((valid) => {
     if (valid) {
-      // if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
-      //   specialityForm.value.vocalEduSystemId = currentSystem.value.id//获取学系id
-      // }else{//专科院校
-      //   specialityForm.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
-      // }
-      if(props.schoolInfo.isSystem == '1'){//专科院校 并且没有系的情况下
-        queryParams.value.vocalEduSystemId = currentSystem.value.id//获取学系id
-      }else{//专科院校
-        queryParams.value.schoolId = props.schoolInfo.id
-        queryParams.value.vocalEduSystemId = props.schoolInfo.id//获取学校id
-      }
+      // 确保schoolId始终被设置（在clickAddSpeciality中已设置，这里再次确保）
+      specialityForm.value.schoolId = props.schoolInfo.id
+
       if (specialityForm.value.id != null) {
+        // 修改专业
         updateSpeciality(specialityForm.value).then(response => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("修改成功");
-           // queryParams.value.vocalEduSystemId = currentSystem.value.id
-            getList(queryParams.value);
-          } 
+            // 刷新列表：根据当前选中的系重新获取
+            if(currentSystem.value) {
+              getSpecialityesBySystem(currentSystem.value);
+            } else {
+              getList(queryParams.value);
+            }
+          }
         });
       } else {
+        // 新增专业
         addSpeciality(specialityForm.value).then(response => {
           if(response.code == 200){
             proxy.$modal.msgSuccess("新增成功");
-            // queryParams.value.vocalEduSystemId = currentSystem.value.id
-            getList(queryParams.value);
+            // 刷新列表：根据当前选中的系重新获取
+            if(currentSystem.value) {
+              getSpecialityesBySystem(currentSystem.value);
+            } else {
+              getList(queryParams.value);
+            }
           }
         });
       }
@@ -495,7 +507,6 @@ const saveSpeciality = () => {
   } finally {
     dialogVisible.value = false//关闭弹框
   }
-
 
 }
 

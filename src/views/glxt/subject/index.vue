@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="40px">
       <el-form-item label="类型" prop="schoolType" >
-        <el-select v-model="queryParams.schoolType" clearable style="width: 100px;" @change="schoolTypeChange">
+        <el-select v-model="queryParams.schoolType" clearable style="width: 100px;" :disabled="isTeacher" @change="schoolTypeChange">
           <el-option
             v-for="dict in mt_school_type"
             :key="dict.value"
@@ -362,8 +362,10 @@
 import { listSubject, getSubject, delSubject, addSubject, updateSubject, addOrUpdateChapter, delChapter, getChapterList, getChapterMaxId, subjectExist} from "@/api/glxt/subject";
 import { selectTextBookLibraryAndVolumeList } from "@/api/glxt/library";
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useTeacherInfo } from '@/store/modules/teacherInfo'
 const { proxy } = getCurrentInstance();
 const { mt_academic_stage, mt_school_subject,mt_vocal_school_subject, mt_textbooklibrary_time, mt_school_type, mt_vocal_education_type } = proxy.useDict('mt_academic_stage', 'mt_school_subject','mt_vocal_school_subject', 'mt_textbooklibrary_time', 'mt_school_type', 'mt_vocal_education_type');
+const { isTeacher, schoolType: userSchoolType } = useTeacherInfo()
 const subjectList = ref([]);
 const open = ref(false);
 const loading = ref(true);
@@ -584,6 +586,9 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
+  console.log('row');
+  console.log(row);
+  console.log('row');
   schoolTypeChange('1')//调用普教下的学段
   getTextBookLibraryAndVolumeList();//获取教材版本-分册列表
   findChapterList(row.volumeId);//章节列表
@@ -829,6 +834,11 @@ function handleExport() {
   }, `subject_${new Date().getTime()}.xlsx`)
 }
 
+// 教师用户自动填充学校类型
+if (isTeacher.value) {
+  queryParams.value.schoolType = userSchoolType.value
+  schoolTypeChange(userSchoolType.value)
+}
 getList();
 </script>
 <style scoped lang="scss">

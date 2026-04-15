@@ -201,6 +201,7 @@ const systemFormRef = ref(null)
 
 const systemForm = ref({
     id: null,
+    schoolId: props.schoolInfo.id,
     schoolOrCollegeId: '',
     educationLevel: '',
     systemName: '',
@@ -256,6 +257,7 @@ const queryParams = ref({
 const reset = () => {
   systemForm.value = {
     id: null,
+    schoolId: props.schoolInfo.id,
     schoolOrCollegeId: null,
     educationLevel: null,
     systemName: null,

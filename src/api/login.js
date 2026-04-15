@@ -1,7 +1,12 @@
 import request from '@/utils/request'
 
 // 登录方法
-export function login(username, password, code, uuid) {
+export function login(username, password, code, uuid, schoolCode, expectedSchoolId) {
+  const data = { username, password, code, uuid }
+  if (schoolCode && expectedSchoolId) {
+    data.schoolCode = schoolCode
+    data.expectedSchoolId = expectedSchoolId
+  }
   return request({
     url: '/auth/login',
     headers: {
@@ -10,7 +15,7 @@ export function login(username, password, code, uuid) {
       'login_type': 'web_user'
     },
     method: 'post',
-    data: { username, password, code, uuid }
+    data: data
   })
 }
 

@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="学校类型" prop="contentType">
-        <el-select v-model="queryParams.contentType" placeholder="请选择" style="width: 100px;" clearable  @change="schoolTypeChange">
+        <el-select v-model="queryParams.contentType" placeholder="请选择" style="width: 100px;" clearable :disabled="isTeacher" @change="schoolTypeChange">
           <el-option
             v-for="dict in mt_school_type"
             :key="dict.value"
@@ -248,9 +248,11 @@
 
 <script setup name="SourceMaterial">
 import { listSourceMaterial, getSourceMaterial, delSourceMaterial, addSourceMaterial, updateSourceMaterial } from "@/api/glxt/sourceMaterial";
+import { useTeacherInfo } from '@/store/modules/teacherInfo'
 const { proxy } = getCurrentInstance();
 const { mt_academic_stage, mt_source_material_type, mt_school_type, mt_vocal_education_type,mt_school_subject,mt_vocal_school_subject } = 
 proxy.useDict('mt_academic_stage', 'mt_source_material_type', 'mt_school_type','mt_vocal_education_type','mt_school_subject','mt_vocal_school_subject');
+const { isTeacher, schoolType: userSchoolType } = useTeacherInfo()
 
 
 import {getCourseSystemOptions } from '@/api/glxt/subject'
@@ -584,6 +586,11 @@ function handleDownload(row) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+// 教师用户自动填充学校类型
+if (isTeacher.value) {
+  queryParams.value.contentType = userSchoolType.value
+  schoolTypeChange(userSchoolType.value)
 }
 getList();
 </script>

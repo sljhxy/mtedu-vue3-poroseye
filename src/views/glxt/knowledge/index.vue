@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="58px">
       <el-form-item label="类型" prop="schoolTypeId">
-        <el-select v-model="queryParams.schoolTypeId" placeholder="请选择类型" @change="handleSchoolTypeChange" style="width: 130px" clearable>
+        <el-select v-model="queryParams.schoolTypeId" placeholder="请选择类型" @change="handleSchoolTypeChange" style="width: 130px" clearable :disabled="isTeacher">
           <el-option
             v-for="dict in mt_school_type"
             :key="dict.value"
@@ -216,9 +216,11 @@
 import { listKnowledge, getKnowledge, delKnowledge, addKnowledge, updateKnowledge } from "@/api/glxt/knowledge";
 import { Document, Folder } from '@element-plus/icons-vue'
 import { listSubject} from "@/api/glxt/subject";
+import { useTeacherInfo } from '@/store/modules/teacherInfo'
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
 const { mt_vocal_education_type, mt_academic_stage, mt_school_subject, mt_school_type,mt_vocal_school_subject} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject', 'mt_school_type','mt_vocal_school_subject');
+const { isTeacher, schoolType: userSchoolType } = useTeacherInfo()
 
 const knowledgeList = ref([]);
 const knowledgeOptions = ref([]);
@@ -459,6 +461,11 @@ function handleDelete(row) {
   }).catch(() => {});
 }
 
+// 教师用户自动填充学校类型
+if (isTeacher.value) {
+  queryParams.value.schoolTypeId = userSchoolType.value
+  handleSchoolTypeChange(userSchoolType.value)
+}
 getList();
 getSubjectList();//科目列表
 </script>

@@ -34,7 +34,12 @@
             <div class="info-content">
               <div class="info-item">
                 <label>所在地区：</label>
-                <span>{{ getLocationLabel(formEditData.province) }}-{{ getLocationLabel(formEditData.city) }}-{{ getLocationLabel(formEditData.district) }}</span>
+                <span v-if="getLocationLabel(formEditData.province) === getLocationLabel(formEditData.city)">
+                  {{ getLocationLabel(formEditData.province) }}-{{ getLocationLabel(formEditData.district) }}
+                </span>
+                <span v-else>
+                  {{ getLocationLabel(formEditData.province) }}-{{ getLocationLabel(formEditData.city) }}-{{ getLocationLabel(formEditData.district) }}
+                </span>
               </div>
               <div class="info-item">
                 <label>详细地址：</label>
@@ -59,8 +64,8 @@
                 <span>{{ formEditData.contactPhone }}</span>
               </div>
               <div class="info-item">
-                <label>学校网址：</label>
-                <span>{{ formEditData.website }}</span>
+                <label>学校编码：</label>
+                <span>{{ formEditData.schoolCode || '-' }}</span>
               </div>
             </div>
           </div>
@@ -188,8 +193,11 @@
               </el-form-item>
             </div>
             <div class="form-row">
-              <el-form-item label="学校网址:" prop="website" class="full-width">
-                <el-input v-model="formData.website" placeholder="请输入学校网址" />
+              <el-form-item label="学校编码:" prop="schoolCode" class="half-width">
+                <el-input v-model="formData.schoolCode" placeholder="如 bjsz" />
+              </el-form-item>
+              <el-form-item label="学校官网:" prop="website" class="half-width">
+                <el-input v-model="formData.website" placeholder="请输入学校官网地址" />
               </el-form-item>
             </div>
           </div>
@@ -313,6 +321,7 @@ const formData = ref({
   contactName: '',
   contactPhone: '',
   website: '',
+  schoolCode: '',
   educationLevel: '1',//类型
   educationLevelName: '',//类型名称
   schoolType: '',//学段
@@ -365,7 +374,11 @@ const rules = {
     { required: true, message: '请输入联系电话', trigger: 'blur' }
   ],
   website: [
-    { required: true, message: '请输入学校网址', trigger: 'blur' }
+    { required: false }
+  ],
+  schoolCode: [
+    { required: true, message: '请输入学校编码', trigger: 'blur' },
+    { pattern: /^[a-zA-Z0-9_-]+$/, message: '编码只能包含字母、数字、下划线和横杠', trigger: 'blur' }
   ],
   schoolType: [
     { required: true, message: '请择学段', trigger: 'change' }
@@ -519,6 +532,7 @@ function reset() {
     contactName: null,
     contactPhone: null,
     website: null,
+    schoolCode: null,
     educationLevel: null,
     schoolType: null,
     schoolTypeName: null,
@@ -660,13 +674,26 @@ const getSchoolData = async (id) => {
     formData.value = {...response.data};
     // 确保 isActive 是布尔值
     formData.value.isActive = response.data.isActive === 'true' || response.data.isActive === true;
-    
+
     // 添加空值检查
     formData.value.schoolTypeName = response.data.schoolType ? getSchoolType(response.data.schoolType) : '';
     formData.value.schoolSystemName = response.data.schoolSystem ? getSchoolSystem(response.data.schoolSystem) : '';
     formData.value.educationLevelName = response.data.educationLevel ? getBaseEducationType(response.data.educationLevel) : '';
 
-    // console.log('formData.value:', formData.value);
+    // 根据省份加载城市列表，根据城市加载区县列表
+    if (formData.value.province) {
+      const selectedProvince = areaList.value.find(p => p.id === formData.value.province);
+      if (selectedProvince?.children) {
+        cityList.value = selectedProvince.children;
+        if (formData.value.city) {
+          const selectedCity = selectedProvince.children.find(c => c.id === formData.value.city);
+          if (selectedCity?.children) {
+            districtList.value = selectedCity.children;
+          }
+        }
+      }
+    }
+
     formEditData.value = {...formData.value}
   } catch (error) {
     ElMessage.error('获取学校数据失败');
@@ -677,7 +704,7 @@ const getSchoolData = async (id) => {
 const generate = async (schoolName) => {
   if (schoolName) {
     await generateLetter(schoolName).then(response => {
-      formData.value.website = response.msg;
+      formData.value.schoolCode = response.msg;
     });
   }
 }

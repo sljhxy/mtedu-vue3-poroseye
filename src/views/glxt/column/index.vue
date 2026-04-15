@@ -202,10 +202,11 @@
 import { listColumn, getColumn, delColumn, addColumn, updateColumn, changeRealTimeUpdateStatus } from "@/api/glxt/column";
 
 import { getCourseSystemOptions } from '@/api/glxt/subject'
-
+import { useTeacherInfo } from '@/store/modules/teacherInfo'
 const { proxy } = getCurrentInstance();
 const { mt_real_time_update, mt_school_type,mt_academic_stage, mt_vocal_education_type, mt_school_subject,mt_vocal_school_subject, column_classification } = 
 proxy.useDict('mt_real_time_update', 'mt_school_type','mt_academic_stage', 'mt_vocal_education_type', 'mt_school_subject', 'mt_vocal_school_subject', 'column_classification');
+const { isTeacher, schoolType: userSchoolType } = useTeacherInfo()
 
 
 const columnList = ref([]);
@@ -437,6 +438,7 @@ function handleExport() {
   }, `column_${new Date().getTime()}.xlsx`)
 }
 
+// 栏目页面查询表单没有学校类型选择器，后端SchoolUtils自动过滤
 getList();
 </script>
 

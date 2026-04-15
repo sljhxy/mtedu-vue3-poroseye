@@ -4,7 +4,7 @@
     <div v-show="showSearch" class="search-form" shadow="never">
       <el-form :inline="true" :model="searchForm">
         <el-form-item label="类型" prop="contentType">
-        <el-select v-model="searchForm.contentType" placeholder="请选择" style="width: 100px;" clearable  @change="schoolTypeChange">
+        <el-select v-model="searchForm.contentType" placeholder="请选择" style="width: 100px;" clearable :disabled="isTeacher" @change="schoolTypeChange">
           <el-option
             v-for="dict in mt_school_type"
             :key="dict.value"
@@ -159,11 +159,14 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 //导入实验信息API
 import { listExperimentInfo, delExperimentInfo, toExamine } from '@/api/glxt/experimentInfo'
+import { useTeacherInfo } from '@/store/modules/teacherInfo'
 
 const { proxy } = getCurrentInstance();
 const { mt_academic_stage, mt_school_type, mt_vocal_education_type, mt_experiment_audit_status } = proxy.useDict('mt_academic_stage', 'mt_school_type','mt_vocal_education_type', 'mt_experiment_audit_status');
 
 const router = useRouter()
+const { isTeacher, schoolType: userSchoolType } = useTeacherInfo()
+
 //学段
 const educationStage = ref([])
 
@@ -272,6 +275,13 @@ const handleDelete = (row) => {
 }
 
 getListExperimentInfo();
+
+// 教师用户自动填充学校类型
+if (isTeacher.value) {
+  searchForm.value.contentType = userSchoolType.value
+  schoolTypeChange(userSchoolType.value)
+  getListExperimentInfo()
+}
 
 
 // 控制搜索框显示隐藏

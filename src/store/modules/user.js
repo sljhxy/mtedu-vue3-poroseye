@@ -11,7 +11,9 @@ const useUserStore = defineStore(
       name: '',
       avatar: '',
       roles: [],
-      permissions: []
+      permissions: [],
+      schoolType: '',
+      schoolId: null
     }),
     actions: {
       // 登录
@@ -20,8 +22,10 @@ const useUserStore = defineStore(
         const password = userInfo.password
         const code = userInfo.code
         const uuid = userInfo.uuid
+        const schoolCode = userInfo.schoolCode || ''
+        const expectedSchoolId = userInfo.expectedSchoolId || null
         return new Promise((resolve, reject) => {
-          login(username, password, code, uuid).then(res => {
+          login(username, password, code, uuid, schoolCode, expectedSchoolId).then(res => {
             let data = res.data
             setToken(data.access_token)
             this.token = data.access_token
@@ -47,6 +51,8 @@ const useUserStore = defineStore(
             this.id = user.userId
             this.name = user.userName
             this.avatar = avatar
+            this.schoolType = user.schoolType || ''
+            this.schoolId = (user.dept && user.dept.schoolId) ? user.dept.schoolId : null
             resolve(res)
           }).catch(error => {
             reject(error)
@@ -60,6 +66,8 @@ const useUserStore = defineStore(
             this.token = ''
             this.roles = []
             this.permissions = []
+            this.schoolType = ''
+            this.schoolId = null
             removeToken()
             resolve()
           }).catch(error => {

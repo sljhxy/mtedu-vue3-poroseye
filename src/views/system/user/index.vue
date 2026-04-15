@@ -180,111 +180,246 @@
 
       <!-- 添加或修改用户配置对话框 -->
       <el-dialog :title="title" v-model="open" width="600px" append-to-body>
-         <el-form :model="form" :rules="rules" ref="userRef" label-width="80px">
-            <el-row>
-               <el-col :span="12">
-                  <el-form-item label="用户昵称" prop="nickName">
-                     <el-input v-model="form.nickName" placeholder="请输入用户昵称" maxlength="30" />
-                  </el-form-item>
-               </el-col>
-               <el-col :span="12">
-                  <el-form-item label="归属部门" prop="deptId">
-                     <el-tree-select
-                        v-model="form.deptId"
-                        :data="deptOptions"
-                        :props="{ value: 'id', label: 'label', children: 'children' }"
-                        value-key="id"
-                        placeholder="请选择归属部门"
-                        check-strictly
-                     />
-                  </el-form-item>
-               </el-col>
-            </el-row>
-            <el-row>
-               <el-col :span="12">
-                  <el-form-item label="手机号码" prop="phonenumber">
-                     <el-input v-model="form.phonenumber" placeholder="请输入手机号码" maxlength="11" />
-                  </el-form-item>
-               </el-col>
-               <el-col :span="12">
-                  <el-form-item label="邮箱" prop="email">
-                     <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" />
-                  </el-form-item>
-               </el-col>
-            </el-row>
-            <el-row>
-               <el-col :span="12">
-                  <el-form-item v-if="form.userId == undefined" label="用户名称" prop="userName">
-                     <el-input v-model="form.userName" placeholder="请输入用户名称" maxlength="30" />
-                  </el-form-item>
-               </el-col>
-               <el-col :span="12">
-                  <el-form-item v-if="form.userId == undefined" label="用户密码" prop="password">
-                     <el-input v-model="form.password" placeholder="请输入用户密码" type="password" maxlength="20" show-password />
-                  </el-form-item>
-               </el-col>
-            </el-row>
-            <el-row>
-               <el-col :span="12">
-                  <el-form-item label="用户性别">
-                     <el-select v-model="form.sex" placeholder="请选择">
-                        <el-option
-                           v-for="dict in sys_user_sex"
-                           :key="dict.value"
-                           :label="dict.label"
-                           :value="dict.value"
-                        ></el-option>
-                     </el-select>
-                  </el-form-item>
-               </el-col>
-               <el-col :span="12">
-                  <el-form-item label="状态">
-                     <el-radio-group v-model="form.status">
-                        <el-radio
-                           v-for="dict in sys_normal_disable"
-                           :key="dict.value"
-                           :value="dict.value"
-                        >{{ dict.label }}</el-radio>
-                     </el-radio-group>
-                  </el-form-item>
-               </el-col>
-            </el-row>
-            <el-row>
-               <el-col :span="12">
-                  <el-form-item label="岗位">
-                     <el-select v-model="form.postIds" multiple placeholder="请选择">
-                        <el-option
-                           v-for="item in postOptions"
-                           :key="item.postId"
-                           :label="item.postName"
-                           :value="item.postId"
-                           :disabled="item.status == 1"
-                        ></el-option>
-                     </el-select>
-                  </el-form-item>
-               </el-col>
-               <el-col :span="12">
-                  <el-form-item label="角色">
-                     <el-select v-model="form.roleIds" multiple placeholder="请选择">
-                        <el-option
-                           v-for="item in roleOptions"
-                           :key="item.roleId"
-                           :label="item.roleName"
-                           :value="item.roleId"
-                           :disabled="item.status == 1"
-                        ></el-option>
-                     </el-select>
-                  </el-form-item>
-               </el-col>
-            </el-row>
-            <el-row>
-               <el-col :span="24">
-                  <el-form-item label="备注">
-                     <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
-                  </el-form-item>
-               </el-col>
-            </el-row>
-         </el-form>
+         <el-tabs v-model="activeTab">
+            <el-tab-pane label="普通用户" name="00">
+               <el-form :model="form" :rules="rules" ref="userRef" label-width="80px">
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="用户昵称" prop="nickName">
+                           <el-input v-model="form.nickName" placeholder="请输入用户昵称" maxlength="30" />
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="归属部门" prop="deptId">
+                           <el-tree-select
+                              v-model="form.deptId"
+                              :data="deptOptions"
+                              :props="{ value: 'id', label: 'label', children: 'children' }"
+                              value-key="id"
+                              placeholder="请选择归属部门"
+                              check-strictly
+                           />
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="手机号码" prop="phonenumber">
+                           <el-input v-model="form.phonenumber" placeholder="请输入手机号码" maxlength="11" />
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="邮箱" prop="email">
+                           <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" />
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item v-if="form.userId == undefined" label="用户名称" prop="userName">
+                           <el-input v-model="form.userName" placeholder="请输入用户名称" maxlength="30" />
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item v-if="form.userId == undefined" label="用户密码" prop="password">
+                           <el-input v-model="form.password" placeholder="请输入用户密码" type="password" maxlength="20" show-password />
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="用户性别">
+                           <el-select v-model="form.sex" placeholder="请选择">
+                              <el-option
+                                 v-for="dict in sys_user_sex"
+                                 :key="dict.value"
+                                 :label="dict.label"
+                                 :value="dict.value"
+                              ></el-option>
+                           </el-select>
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="状态">
+                           <el-radio-group v-model="form.status">
+                              <el-radio
+                                 v-for="dict in sys_normal_disable"
+                                 :key="dict.value"
+                                 :value="dict.value"
+                              >{{ dict.label }}</el-radio>
+                           </el-radio-group>
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="岗位">
+                           <el-select v-model="form.postIds" multiple placeholder="请选择">
+                              <el-option
+                                 v-for="item in postOptions"
+                                 :key="item.postId"
+                                 :label="item.postName"
+                                 :value="item.postId"
+                                 :disabled="item.status == 1"
+                              ></el-option>
+                           </el-select>
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="角色">
+                           <el-select v-model="form.roleIds" multiple placeholder="请选择">
+                              <el-option
+                                 v-for="item in roleOptions"
+                                 :key="item.roleId"
+                                 :label="item.roleName"
+                                 :value="item.roleId"
+                                 :disabled="item.status == 1"
+                              ></el-option>
+                           </el-select>
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="24">
+                        <el-form-item label="备注">
+                           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容"></el-input>
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+               </el-form>
+            </el-tab-pane>
+            <el-tab-pane label="教师用户" name="11">
+               <el-form :model="form" :rules="rules" ref="teacherRef" label-width="80px">
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="学校类型" prop="schoolType">
+                           <el-select
+                              v-model="schoolType"
+                              placeholder="请选择学校类型"
+                              @change="handleSchoolTypeChange"
+                           >
+                              <el-option label="普教" value="1" />
+                              <el-option label="职教" value="2" />
+                           </el-select>
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="所属学校" prop="deptId">
+                           <el-tree-select
+                              v-model="form.deptId"
+                              :data="filteredDeptOptions"
+                              :props="{ value: 'id', label: 'label', children: 'children' }"
+                              value-key="id"
+                              placeholder="请选择所属学校"
+                              filterable
+                              check-strictly
+                              @change="handleDeptChange"
+                           />
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="教师" prop="teacherId">
+                           <el-tree-select
+                              v-model="form.teacherId"
+                              :data="teacherList"
+                              :props="{ value: 'id', label: 'userName', children: 'children' }"
+                              value-key="id"
+                              placeholder="请选择教师"
+                              check-strictly
+                              @change="handleTeacherChange"
+                           />
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="手机号码" prop="phonenumber">
+                           <el-input v-model="form.phonenumber" placeholder="请输入手机号码" maxlength="11" />
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="邮箱" prop="email">
+                           <el-input v-model="form.email" placeholder="请输入邮箱" maxlength="50" />
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="昵称" prop="nickName">
+                           <el-input v-model="form.nickName" placeholder="请输入教师昵称" maxlength="30" />
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="教师性别">
+                           <el-select v-model="form.sex" placeholder="请选择">
+                              <el-option
+                                 v-for="dict in sys_user_sex"
+                                 :key="dict.value"
+                                 :label="dict.label"
+                                 :value="dict.value"
+                              ></el-option>
+                           </el-select>
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="状态">
+                           <el-radio-group v-model="form.status">
+                              <el-radio
+                                 v-for="dict in sys_normal_disable"
+                                 :key="dict.value"
+                                 :value="dict.value"
+                              >{{ dict.label }}</el-radio>
+                           </el-radio-group>
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row v-if="form.userId == undefined">
+                     <el-col :span="24">
+                        <el-form-item label="登录密码" prop="password">
+                           <el-input v-model="form.password" placeholder="请输入登录密码" type="password" maxlength="20" show-password />
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="12">
+                        <el-form-item label="职位">
+                           <el-select v-model="form.postIds" multiple placeholder="请选择" disabled>
+                              <el-option
+                                 v-for="item in postOptions"
+                                 :key="item.postId"
+                                 :label="item.postName"
+                                 :value="item.postId"
+                                 :disabled="item.status == 1"
+                              ></el-option>
+                           </el-select>
+                        </el-form-item>
+                     </el-col>
+                     <el-col :span="12">
+                        <el-form-item label="角色">
+                           <el-select v-model="form.roleIds" multiple placeholder="请选择" disabled>
+                              <el-option
+                                 v-for="item in roleOptions"
+                                 :key="item.roleId"
+                                 :label="item.roleName"
+                                 :value="item.roleId"
+                                 :disabled="item.status == 1"
+                              ></el-option>
+                           </el-select>
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+                  <el-row>
+                     <el-col :span="24">
+                        <el-form-item label="备注">
+                           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+                        </el-form-item>
+                     </el-col>
+                  </el-row>
+               </el-form>
+            </el-tab-pane>
+         </el-tabs>
          <template #footer>
             <div class="dialog-footer">
                <el-button type="primary" @click="submitForm">确 定</el-button>
@@ -333,6 +468,11 @@
 import { getToken } from "@/utils/auth";
 import { changeUserStatus, listUser, resetUserPwd, delUser, getUser, updateUser, addUser, deptTreeSelect } from "@/api/system/user";
 
+
+
+import { listBaseUser } from "@/api/glxt/baseUser";
+import { listVocalUser } from "@/api/glxt/vocalUser";
+
 const router = useRouter();
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable, sys_user_sex } = proxy.useDict("sys_normal_disable", "sys_user_sex");
@@ -352,6 +492,8 @@ const deptOptions = ref(undefined);
 const initPassword = ref(undefined);
 const postOptions = ref([]);
 const roleOptions = ref([]);
+const activeTab = ref('00');
+
 /*** 用户导入参数 */
 const upload = reactive({
   // 是否显示弹出层（用户导入）
@@ -389,16 +531,128 @@ const data = reactive({
     deptId: undefined
   },
   rules: {
-    userName: [{ required: true, message: "用户名称不能为空", trigger: "blur" }, { min: 2, max: 20, message: "用户名称长度必须介于 2 和 20 之间", trigger: "blur" }],
-    nickName: [{ required: true, message: "用户昵称不能为空", trigger: "blur" }],
-    password: [{ required: true, message: "用户密码不能为空", trigger: "blur" }, { min: 5, max: 20, message: "用户密码长度必须介于 5 和 20 之间", trigger: "blur" }, { pattern: /^[^<>"'|\\]+$/, message: "不能包含非法字符：< > \" ' \\\ |", trigger: "blur" }],
-    email: [{ type: "email", message: "请输入正确的邮箱地址", trigger: ["blur", "change"] }],
-    phonenumber: [{ pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: "请输入正确的手机号码", trigger: "blur" }]
+    userName: [
+      { required: true, message: "用户名称不能为空", trigger: "blur" },
+      { min: 2, max: 20, message: "用户名称长度必须介于 2 和 20 之间", trigger: "blur" }
+    ],
+    nickName: [
+      { required: true, message: "用户昵称不能为空", trigger: "blur" }
+    ],
+    password: [
+      { required: true, message: "用户密码不能为空", trigger: "blur" },
+      { min: 5, max: 20, message: "用户密码长度必须介于 5 和 20 之间", trigger: "blur" },
+      { pattern: /^[^<>"'|\\]+$/, message: "不能包含非法字符：< > \" ' \\ |", trigger: "blur" }
+    ],
+    email: [
+      { type: "email", message: "请输入正确的邮箱地址", trigger: ["blur", "change"] }
+    ],
+    phonenumber: [
+      { pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: "请输入正确的手机号码", trigger: "blur" }
+    ],
+    deptId: [
+      { required: true, message: "请选择所属部门", trigger: "change" }
+    ],
+    teacherId: [
+      { required: true, message: "请选择教师", trigger: "change" }
+    ]
   }
 });
 
 const { queryParams, form, rules } = toRefs(data);
 
+
+//获取教师
+
+const schoolType = ref('1');
+const selectedSchoolId = ref(null);
+const teacherQueryParams = ref({
+    pageNum: 1,
+    pageSize: 100,
+    userType: '1'
+})
+/** 查询教师用户列表 */
+const teacherList = ref([]);
+const teacherTotal = ref(0);
+function getTeacherList() {
+  loading.value = true;
+  const api = schoolType.value === '2' ? listVocalUser : listBaseUser;
+  const params = { ...teacherQueryParams.value };
+  if (selectedSchoolId.value) {
+    params.schoolId = selectedSchoolId.value;
+  }
+  api(params).then(response => {
+    teacherList.value = response.rows;
+    teacherTotal.value = response.total;
+    loading.value = false;
+  });
+}
+
+/** 切换学校类型时重置学校和教师，自动分配对应角色 */
+function handleSchoolTypeChange() {
+  form.value.deptId = undefined;
+  form.value.teacherId = undefined;
+  selectedSchoolId.value = null;
+  teacherList.value = [];
+  // 自动分配角色：普教=3，职教=2
+  form.value.roleIds = schoolType.value === '1' ? [3] : [2];
+}
+
+/** 根据学校类型过滤部门树 - 只显示对应类型的学校节点 */
+const filteredDeptOptions = computed(() => {
+  if (!deptOptions.value) return [];
+  return filterDeptsBySchoolType(deptOptions.value, schoolType.value);
+});
+
+function filterDeptsBySchoolType(depts, type) {
+  if (!depts) return [];
+  return depts.map(dept => {
+    if (dept.schoolType) {
+      return dept;
+    }
+    const filteredChildren = dept.children ? filterDeptsBySchoolType(dept.children, type) : [];
+    return { ...dept, children: filteredChildren };
+  }).filter(dept => {
+    if (dept.schoolType) return dept.schoolType === type;
+    return dept.children && dept.children.length > 0;
+  });
+}
+
+/** 选择学校后加载该学校教师 */
+function handleDeptChange(deptId) {
+  selectedSchoolId.value = null;
+  form.value.teacherId = undefined;
+  if (!deptId) return;
+  // 从部门树中找到对应节点的schoolId
+  const node = findDeptNode(deptOptions.value, deptId);
+  if (node && node.schoolId) {
+    selectedSchoolId.value = node.schoolId;
+    getTeacherList();
+  }
+}
+
+function findDeptNode(depts, id) {
+  for (const dept of depts) {
+    if (dept.id === id) return dept;
+    if (dept.children) {
+      const found = findDeptNode(dept.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/** 选择教师后自动回填信息 */
+function handleTeacherChange(teacherId) {
+  if (!teacherId) return;
+  const teacher = teacherList.value.find(t => t.id === teacherId);
+  if (teacher) {
+    form.value.phonenumber = teacher.phonenumber || form.value.phonenumber;
+    form.value.email = teacher.email || form.value.email;
+    form.value.sex = teacher.sex || form.value.sex;
+    form.value.userName = teacher.userNo || form.value.userName;
+    form.value.nickName = teacher.userName || form.vaule.nickName
+  }
+}
 /** 通过条件过滤节点  */
 const filterNode = (value, data) => {
   if (!value) return true;
@@ -556,6 +810,19 @@ function submitFileForm() {
   proxy.$refs["uploadRef"].submit();
 };
 
+/** 监听标签页切换 */
+watch(activeTab, (newVal) => {
+  if (newVal === '11') {
+    rules.value.deptId[0].message = "请选择所属学校";
+    form.value.postIds = [4];
+    // 根据当前学校类型自动分配角色
+    form.value.roleIds = schoolType.value === '1' ? [3] : [2];
+    getTeacherList();
+  } else {
+    rules.value.deptId[0].message = "请选择所属部门";
+  }
+});
+
 /** 重置操作表单 */
 function reset() {
   form.value = {
@@ -570,15 +837,26 @@ function reset() {
     status: "0",
     remark: undefined,
     postIds: [],
-    roleIds: []
+    roleIds: [],
+    userType: activeTab.value,
+    schoolType: undefined,
+    teacherId: undefined
   };
+  schoolType.value = '1';
+  selectedSchoolId.value = null;
+  teacherList.value = [];
   proxy.resetForm("userRef");
+  if (activeTab.value === '11') {
+    proxy.resetForm("teacherRef");
+  }
 };
 
 /** 取消按钮 */
 function cancel() {
   open.value = false;
   reset();
+  activeTab.value = '00';
+  schoolType.value = '1';
 };
 
 /** 新增按钮操作 */
@@ -599,6 +877,20 @@ function handleUpdate(row) {
   const userId = row.userId || ids.value;
   getUser(userId).then(response => {
     form.value = response.data;
+    activeTab.value = response.data.userType
+    if (response.data.schoolType) {
+      schoolType.value = response.data.schoolType;
+    }
+    if (activeTab.value === '11' && response.data.deptId) {
+      // 编辑时根据部门找到schoolId并加载教师列表
+      const node = findDeptNode(deptOptions.value, response.data.deptId);
+      if (node && node.schoolId) {
+        selectedSchoolId.value = node.schoolId;
+      }
+      
+      getTeacherList();
+    }
+
     postOptions.value = response.posts;
     roleOptions.value = response.roles;
     form.value.postIds = response.postIds;
@@ -611,8 +903,13 @@ function handleUpdate(row) {
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["userRef"].validate(valid => {
+  const formRef = activeTab.value === '00' ? proxy.$refs["userRef"] : proxy.$refs["teacherRef"];
+  formRef.validate(valid => {
     if (valid) {
+      // 设置用户类型
+      form.value.userType = activeTab.value;
+      form.value.schoolType = schoolType.value;
+      
       if (form.value.userId != undefined) {
         updateUser(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功");
@@ -620,6 +917,9 @@ function submitForm() {
           getList();
         });
       } else {
+         if(activeTab.value === '11'){//教师
+            // form.value.userName = form.value.nickName
+         }
         addUser(form.value).then(response => {
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;

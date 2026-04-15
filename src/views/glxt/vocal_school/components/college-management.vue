@@ -167,6 +167,7 @@ const reset = () => {
   collegeFrom.value = {
     id: null,
     collegeName: null,
+    schoolId: props.schoolInfo.id,
     vocalEduSchoolId: props.schoolInfo.id,
     educationLevel: props.schoolInfo.educationLevel,
     schoolPeriod: props.schoolInfo.schoolPeriod,
@@ -201,7 +202,8 @@ const dialogType = ref('add')
 const collegeFrom = ref({
   id: null,
   collegeName: '',
-  vocalEduSchoolId: props.schoolInfo.id,//学校id  
+  schoolId: props.schoolInfo.id,
+  vocalEduSchoolId: props.schoolInfo.id,//学校id
   educationLevel: props.schoolInfo.educationLevel,//学校类型
   schoolPeriod: props.schoolInfo.schoolPeriod,//学段
   schoolPeriodName: props.schoolInfo.schoolPeriodName,//学段名称

@@ -65,13 +65,13 @@
         </template>
       </el-table-column>
       <el-table-column prop="city" label="所在地市" min-width="150" align="center" >
-        <template #default="{ row }"> 
-          <div v-if="getLocationLabel(row.province) === getLocationLabel(row.city)">
-            {{ getLocationLabel(row.city) }}-{{ getLocationLabel(row.district) }}-{{ row.detailAddress }}
-          </div>
-          <div v-else>
+        <template #default="{ row }">
+          <span v-if="getLocationLabel(row.province) === getLocationLabel(row.city)">
+            {{ getLocationLabel(row.province) }}-{{ getLocationLabel(row.district) }}
+          </span>
+          <span v-else>
             {{ getLocationLabel(row.province) }}-{{ getLocationLabel(row.city) }}-{{ getLocationLabel(row.district) }}
-          </div>
+          </span>
         </template>
       </el-table-column>
       <el-table-column prop="studentCount" label="年级/班级/人数" min-width="100" show-overflow-tooltip  align="center"/>
@@ -145,21 +145,15 @@ const allAreaData = ref({}) // 存储完整的区域数据
 // 获取地址标签的方法
 const getLocationLabel = (id) => {
   if (!id) return '';
-  
-  // 递归查找区域数据
-  const findArea = (areas, targetId) => {
+  const findInTree = (areas, targetId) => {
     for (const area of areas || []) {
-      if (area.id === targetId) {
-        return area;
-      }
-      const found = findArea(area.children, targetId);
+      if (area.id === targetId) return area.label;
+      const found = findInTree(area.children, targetId);
       if (found) return found;
     }
-    return null;
+    return '';
   };
-
-  const area = findArea([allAreaData.value], id);
-  return area ? area.label : '';
+  return findInTree(allAreaData.value?.children, id);
 };
 
 // 初始化取所有区域数据
@@ -248,7 +242,7 @@ const handleSearch = () => {
 }
 
 const baseSchoolList = ref([]);
-/** 查询普教-学校列表 */
+/** 查询职教-学校列表 */
 function getList() {
   console.log(searchForm.value)
   loading.value = true;

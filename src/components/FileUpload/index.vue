@@ -176,7 +176,10 @@ function handleUploadSuccess(res, file) {
     let resFileSize = (res.data.fileSize / 1024 / 1024).toFixed(2);
     res.data.fileSize = resFileSize.concat("MB");
     //将res数据传到父组件中
+    // console.log(res);
+    // console.log(file);
     emit("fileData", res.data);
+    emit("fileDataMsg", file);
 
     uploadedSuccessfully();
   } else {

@@ -33,7 +33,12 @@
             <div class="info-content">
               <div class="info-item">
                 <label>所在地区：</label>
-                <span>{{ getLocationLabelTmp(formData.province) }}-{{ getLocationLabelTmp(formData.city) }}-{{ getLocationLabelTmp(formData.district) }}</span>
+                <span v-if="getLocationLabelTmp(formData.province) === getLocationLabelTmp(formData.city)">
+                  {{ getLocationLabelTmp(formData.province) }}-{{ getLocationLabelTmp(formData.district) }}
+                </span>
+                <span v-else>
+                  {{ getLocationLabelTmp(formData.province) }}-{{ getLocationLabelTmp(formData.city) }}-{{ getLocationLabelTmp(formData.district) }}
+                </span>
               </div>
               <div class="info-item">
                 <label>详细地址：</label>
@@ -58,8 +63,8 @@
                 <span>{{ formData.contactPhone }}</span>
               </div>
               <div class="info-item">
-                <label>学校网址：</label>
-                <span>{{ formData.website }}</span>
+                <label>学校编码：</label>
+                <span>{{ formData.schoolCode || '-' }}</span>
               </div>
             </div>
           </div>
@@ -181,8 +186,11 @@
               </el-form-item>
             </div>
             <div class="form-row">
-              <el-form-item label="学校网址:" prop="website" class="full-width">
-                <el-input v-model="formData.website" placeholder="请输入学校网址" />
+              <el-form-item label="学校编码:" prop="schoolCode" class="half-width">
+                <el-input v-model="formData.schoolCode" placeholder="如 bjyd" />
+              </el-form-item>
+              <el-form-item label="学校官网:" prop="website" class="half-width">
+                <el-input v-model="formData.website" placeholder="请输入学校官网地址" />
               </el-form-item>
             </div>
           </div>
@@ -317,6 +325,7 @@ const formData = ref({
   contactName: '',
   contactPhone: '',
   website: '',
+  schoolCode: '',
   educationLevel: '2',//类型 职教
   educationLevelName: '',//类型名称
   isCollege: '0',//是否有学院
@@ -366,7 +375,11 @@ const rules = {
     { required: true, message: '请输入联系电话', trigger: 'blur' }
   ],
   website: [
-    { required: true, message: '请输入学校网址', trigger: 'blur' }
+    { required: false }
+  ],
+  schoolCode: [
+    { required: true, message: '请输入学校编码', trigger: 'blur' },
+    { pattern: /^[a-zA-Z0-9_-]+$/, message: '编码只能包含字母、数字、下划线和横杠', trigger: 'blur' }
   ],
   isCollege: [
     { required: true, message: '是否有学院', trigger: 'change' }
@@ -588,6 +601,7 @@ function reset() {
     contactName: null,
     contactPhone: null,
     website: null,
+    schoolCode: null,
     educationLevel: null,
     isCollege: null,
     isSystem: null,
@@ -732,9 +746,22 @@ const getSchoolData = async (id) => {
     formData.value = {...response.data};
     // 确保 isActive 是布尔值
     formData.value.isActive = response.data.isActive === 'true' || response.data.isActive === true;
-    
-  
+
     formData.value.educationLevelName = response.data.educationLevel ? getBaseEducationType(response.data.educationLevel) : '';
+
+    // 根据省份加载城市列表，根据城市加载区县列表
+    if (formData.value.province) {
+      const selectedProvince = areaList.value.find(p => p.id === formData.value.province);
+      if (selectedProvince?.children) {
+        cityList.value = selectedProvince.children;
+        if (formData.value.city) {
+          const selectedCity = selectedProvince.children.find(c => c.id === formData.value.city);
+          if (selectedCity?.children) {
+            districtList.value = selectedCity.children;
+          }
+        }
+      }
+    }
 
   } catch (error) {
     ElMessage.error('获取学校数据失败');
@@ -745,7 +772,7 @@ const getSchoolData = async (id) => {
 const generate = async (schoolName) => {
   if (schoolName) {
     await generateLetter(schoolName).then(response => {
-      formData.value.website = response.msg;
+      formData.value.schoolCode = response.msg;
     });
   }
 }

@@ -1,673 +1,653 @@
 <template>
   <div class="dashboard-container">
-    <div class="banner">
-            <el-row :gutter="10">
-                <el-col :md="24" :lg="18">
-                    <div class="welcome suspension">
-                        <img class="welcome-img" :src="headerSvg" alt="" />
-                        <div class="welcome-text">
-                            <div class="welcome-title">{{ state.user.userName }}</div>
-                            <div class="welcome-note">便于维护学校相关信息.....</div>
-                        </div>
-                    </div>
-                </el-col>
-                <el-col :lg="6" class="hidden-md-and-down">
-                    <div class="working">
-                        <img class="working-coffee" :src="coffeeSvg" alt="" />
-                        <div class="working-text">
-                          您今天已工作了<span class="time">1年</span>
-                        </div>
-                        <div @click="onChangeWorkState()" class="working-opt working-rest">
-                            {{ 1 ? '继续工作' : '休息片刻'}}
-                        </div>
-                    </div>
-                </el-col>
-          </el-row>
+    <!-- 管理员/教师仪表盘 -->
+    <div v-if="dashboardType !== 'student'">
+      <!-- 顶部欢迎栏 -->
+      <div class="welcome-section">
+        <div class="welcome-left">
+          <img class="welcome-img" :src="headerSvg" alt="" />
+          <div class="welcome-text">
+            <div class="welcome-title">{{ state.user.userName }}，欢迎回来！</div>
+            <div class="welcome-note">今天是 {{ currentDate }}</div>
+          </div>
+        </div>
+        <div class="welcome-right">
+          <!-- 超级管理员：普教/职教 Tab + 学校选择 -->
+          <template v-if="dashboardType === 'super_admin'">
+            <el-segmented v-model="selectedSchoolType" :options="schoolTypeOptions" size="default" @change="handleSchoolTypeChange" />
+            <el-select v-model="selectedSchoolId" placeholder="全部学校" clearable @change="handleSchoolChange" size="default" style="width: 200px">
+              <el-option v-for="school in filteredSchools" :key="school.id" :label="school.schoolName" :value="school.id" />
+            </el-select>
+          </template>
+          <!-- 教师：班级选择 -->
+          <template v-if="dashboardType === 'teacher'">
+            <el-select v-model="selectedClassId" placeholder="全部班级" clearable @change="handleClassChange" size="default" style="width: 200px">
+              <el-option v-for="cls in teacherClasses" :key="cls.id" :label="cls.className" :value="cls.id" />
+            </el-select>
+          </template>
+          <el-dropdown trigger="click" @command="handleQuickEntry">
+            <el-button type="primary" round>
+              <el-icon><Plus /></el-icon>快捷入口
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="/glxt/experiment/experiment_list">
+                  <el-icon><Notebook /></el-icon>实验管理
+                </el-dropdown-item>
+                <el-dropdown-item command="/statistics/class-statistics">
+                  <el-icon><DataAnalysis /></el-icon>班级统计
+                </el-dropdown-item>
+                <el-dropdown-item command="/statistics/operation-statistics">
+                  <el-icon><TrendCharts /></el-icon>内容统计
+                </el-dropdown-item>
+                <el-dropdown-item v-if="dashboardType === 'super_admin'" command="/glxt/base_school/base_school" divided>
+                  <el-icon><School /></el-icon>普教学校管理
+                </el-dropdown-item>
+                <el-dropdown-item v-if="dashboardType === 'super_admin'" command="/glxt/vocal_school/vocal_school">
+                  <el-icon><OfficeBuilding /></el-icon>职教学校管理
+                </el-dropdown-item>
+                <el-dropdown-item command="/glxt/device/device" divided>
+                  <el-icon><Monitor /></el-icon>设备管理
+                </el-dropdown-item>
+                <el-dropdown-item command="/glxt/question/question">
+                  <el-icon><Document /></el-icon>题库管理
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </div>
-    <el-row :gutter="40" class="panel-group">
-      <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-        <div class="card-panel">
-          <div class="card-panel-icon-wrapper icon-people">
-            <svg-icon icon-class="exam" class-name="card-panel-icon"/>
-          </div>
-          <div class="card-panel-description">
-            <div class="card-panel-text">
-              系统访问量
-            </div>
-            <count-to :start-val="0" :end-val="visitCount" :duration="2600" class="card-panel-num"/>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-        <div class="card-panel" >
-          <div class="card-panel-icon-wrapper icon-message">
-            <!-- <svg-icon icon-class="question" class-name="card-panel-icon"/> -->
-          </div>
-          <div class="card-panel-description">
-            <div class="card-panel-text">
-              欢迎:{{ state.user.userName }} 来到我的世界！！！
-            </div>
-            <div class="card-panel-num">{{ currentTime }}</div>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-        <div class="card-panel">
-          <div class="card-panel-icon-wrapper icon-shopping">
-            <svg-icon icon-class="doexampaper" class-name="card-panel-icon"/>
-          </div>
-          <div class="card-panel-description">
-            <div class="card-panel-text">
-              在线用户数
-            </div>
-            <count-to :start-val="0" :end-val="onlineUsers" :duration="3600" class="card-panel-num"/>
-          </div>
-        </div>
-      </el-col>
-      <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-        <div class="card-panel">
-          <div class="card-panel-icon-wrapper icon-money">
-            <svg-icon icon-class="doquestion" class-name="card-panel-icon"/>
-          </div>
-          <div class="card-panel-description">
-            <div class="card-panel-text">
-              IP:{{ state.user.loginIp }}
-            </div>
-            <count-to :start-val="0" :end-val="totalUsers" :duration="3200" class="card-panel-num"/>
-          </div>
-        </div>
-      </el-col>
-    </el-row>
 
-    <el-row :gutter="20">
-      <el-col :xs="24" :sm="24" :lg="12">
-        <div class="chart-wrapper">
-          <div class="chart-title">用户分布统计</div>
-          <div ref="pieChart" style="height: 300px;"></div>
-        </div>
-      </el-col>
-      <el-col :xs="24" :sm="24" :lg="12">
-        <div class="chart-wrapper">
-          <div class="chart-title">访问量趋势</div>
-          <div ref="lineChart" style="height: 300px;"></div>
-        </div>
-      </el-col>
-    </el-row>
+      <!-- 指标卡区域 -->
+      <div class="stats-grid stats-grid--three">
+        <template v-if="overview.viewType === 'platform'">
+          <!-- 平台维度：3张卡 -->
+          <StatsCard
+            title="学校总数"
+            :value="overview.baseSchoolCount + overview.vocationalSchoolCount"
+            suffix="所"
+            icon="School"
+            type="primary"
+            :extra="`普教 ${overview.baseSchoolCount || 0}所 / 职教 ${overview.vocationalSchoolCount || 0}所`"
+          />
+          <StatsCard
+            title="设备总数"
+            :value="overview.baseDeviceCount + overview.vocationalDeviceCount"
+            suffix="台"
+            icon="Monitor"
+            type="info"
+            :extra="`普教 ${overview.baseDeviceCount || 0}台 / 职教 ${overview.vocationalDeviceCount || 0}台`"
+          />
+          <StatsCard
+            title="今日活跃"
+            :value="overview.todayActiveUsers"
+            suffix="人"
+            icon="UserFilled"
+            type="success"
+          />
+        </template>
+        <template v-else-if="overview.viewType === 'class'">
+          <!-- 班级维度：6张卡 -->
+          <StatsCard :title="(overview.className || '班级') + '学生'" :value="overview.studentCount" suffix="人" icon="User" type="primary" />
+          <StatsCard :title="(overview.className || '班级') + '实验'" :value="overview.experimentCount" suffix="次" icon="Notebook" type="success" />
+          <StatsCard title="学科数" :value="overview.subjectCount" suffix="个" icon="Reading" type="warning" />
+          <StatsCard title="平均掌握度" :value="formatMastery(overview.avgMastery)" suffix="%" icon="TrendCharts" type="info" />
+          <StatsCard title="完成率" :value="formatMastery(overview.completionRate)" suffix="%" icon="CircleCheck" type="success" />
+          <StatsCard title="设备总数" :value="overview.deviceCount" suffix="台" icon="Monitor" type="info" />
+        </template>
+        <template v-else>
+          <!-- 学校维度：5张卡 -->
+          <StatsCard :title="(overview.schoolName || '学校') + '学生'" :value="overview.studentCount" suffix="人" icon="User" type="primary" />
+          <StatsCard :title="(overview.schoolName || '学校') + '实验'" :value="overview.experimentCount" suffix="次" icon="Notebook" type="success" />
+          <StatsCard title="学科数" :value="overview.subjectCount" suffix="个" icon="Reading" type="warning" />
+          <StatsCard title="平均掌握度" :value="formatMastery(overview.avgMastery)" suffix="%" icon="TrendCharts" type="info" />
+          <StatsCard title="设备总数" :value="overview.deviceCount" suffix="台" icon="Monitor" type="info" />
+        </template>
+      </div>
 
-    <el-row style="margin-top: 20px">
-      <el-col :span="24">
-        <div class="chart-wrapper">
-          <div class="chart-title">组织架构图</div>
-          <div ref="treeChart" style="height: 400px;"></div>
-        </div>
-      </el-col>
-    </el-row>
+      <!-- 第一行：登录趋势 + 学校/班级实验对比 -->
+      <el-row :gutter="20" class="chart-row">
+        <el-col :xs="24" :lg="12">
+          <LineChart title="登录趋势（近15天）" :height="320" :option="loginTrendOption" />
+        </el-col>
+        <el-col :xs="24" :lg="12">
+          <BarChart :title="comparisonTitle" :height="320" :option="comparisonOption" />
+        </el-col>
+      </el-row>
+
+      <!-- 第二行：正确率分布 + 实验提交趋势 -->
+      <el-row :gutter="20" class="chart-row">
+        <el-col :xs="24" :lg="12">
+          <PieChart title="正确率分布" :height="300" :option="distributionOption" />
+        </el-col>
+        <el-col :xs="24" :lg="12">
+          <LineChart title="实验提交趋势" :height="300" :option="trendOption">
+            <template #actions>
+              <el-radio-group v-model="trendDays" size="small" @change="loadTrendChart">
+                <el-radio-button :value="7">近7天</el-radio-button>
+                <el-radio-button :value="30">近30天</el-radio-button>
+              </el-radio-group>
+            </template>
+          </LineChart>
+        </el-col>
+      </el-row>
+
+      <!-- 第三行：最近学习动态 + 正确率排行 -->
+      <el-row :gutter="20" class="chart-row">
+        <el-col :xs="24" :lg="12">
+          <ActivityList
+            :list="recentOperations"
+            title="最近学习动态"
+            :dashboardType="dashboardType"
+            :selectedSchoolId="selectedSchoolId"
+          />
+        </el-col>
+        <el-col :xs="24" :lg="12">
+          <StudentRanking :list="topStudents" />
+        </el-col>
+      </el-row>
+    </div>
+
+    <!-- 学生仪表盘 -->
+    <StudentDashboard v-else :user="state.user" />
   </div>
 </template>
 
-<script setup name="Index">
-import { getUserProfile } from "@/api/system/user";
-import * as echarts from 'echarts';
-import { onMounted, ref, reactive } from 'vue';
-import coffeeSvg from '@/assets/dashboard/coffee.svg'
+<script setup>
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { getUserProfile } from '@/api/system/user'
+import {
+  getDashboardSchools,
+  getDashboardTeacherClasses,
+  getDashboardOverview,
+  getDashboardComparisonChart,
+  getDashboardDistributionChart,
+  getDashboardTrendChart,
+  getDashboardTopStudents,
+  getDashboardRecentExperimentActivities,
+  getDashboardLoginTrend
+} from '@/api/dashboard'
+import StatsCard from './components/StatsCard.vue'
+import BarChart from './components/BarChart.vue'
+import PieChart from './components/PieChart.vue'
+import LineChart from './components/LineChart.vue'
+import ActivityList from './components/ActivityList.vue'
+import StudentDashboard from './components/StudentDashboard.vue'
+import StudentRanking from './components/StudentRanking.vue'
 import headerSvg from '@/assets/dashboard/header-1.svg'
+import { Plus, Notebook, DataAnalysis, TrendCharts, School, OfficeBuilding, Monitor, Document } from '@element-plus/icons-vue'
 
-const state = reactive({
-  user: {},
-  roleGroup: {},
-  postGroup: {}
-});
+// ==================== 状态 ====================
 
-// 统计数据
-const visitCount = ref(12345);
-const onlineUsers = ref(256);
-const totalUsers = ref(5678);
-const currentTime = ref('');
+const router = useRouter()
+const state = reactive({ user: {} })
+const dashboardType = ref('admin')
 
-// 图表引用
-const pieChart = ref(null);
-const lineChart = ref(null);
-const treeChart = ref(null);
+// 普教/职教选择（超级管理员）
+const selectedSchoolType = ref('1')
+const schoolTypeOptions = [
+  { label: '普教', value: '1' },
+  { label: '职教', value: '2' }
+]
 
-// 更新时间
-function updateTime() {
-  const now = new Date();
-  currentTime.value = now.toLocaleString('zh-CN', {
-    hour12: false,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
+// 学校/班级选择
+const selectedSchoolId = ref(null)
+const selectedClassId = ref(null)
+const schools = ref([])
+const teacherClasses = ref([])
+const trendDays = ref(7)
+
+// 概览数据
+const overview = reactive({
+  viewType: 'platform',
+  schoolName: null,
+  className: null,
+  baseSchoolCount: 0,
+  baseDeviceCount: 0,
+  vocationalSchoolCount: 0,
+  vocationalDeviceCount: 0,
+  todayActiveUsers: 0,
+  studentCount: 0,
+  experimentCount: 0,
+  subjectCount: 0,
+  deviceCount: 0,
+  avgMastery: 0,
+  completionRate: 0
+})
+
+// 图表数据
+const comparisonOption = ref({})
+const distributionOption = ref({})
+const trendOption = ref({})
+const loginTrendOption = ref({})
+const recentOperations = ref([])
+const topStudents = ref([])
+
+// ==================== 计算属性 ====================
+
+const currentDate = computed(() => {
+  return new Date().toLocaleDateString('zh-CN', {
+    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
+  })
+})
+
+const platformCards = computed(() => {
+  if (overview.viewType === 'platform') return 3
+  if (overview.viewType === 'class') return 6
+  return 5
+})
+
+/** 按当前选择的 schoolType 过滤学校列表 */
+const filteredSchools = computed(() => {
+  if (!selectedSchoolType.value) return schools.value
+  return schools.value.filter(s => s.schoolType === selectedSchoolType.value)
+})
+
+/** 对比柱状图标题 */
+const comparisonTitle = computed(() => {
+  if (dashboardType.value === 'teacher') return '各班级实验次数对比'
+  if (selectedSchoolId.value) return '各班级实验次数对比'
+  return '各学校实验次数对比'
+})
+
+/** 加载登录趋势 */
+async function loadLoginTrend() {
+  try {
+    const res = await getDashboardLoginTrend(15)
+    const data = res.data || {}
+    const colorMap = { '管理员': '#409eff', '教师': '#67c23a', '学生': '#e6a23c' }
+    loginTrendOption.value = {
+      legend: { top: 0 },
+      xAxis: { data: data.categories || [] },
+      series: (data.series || []).map(s => ({
+        name: s.name,
+        type: 'line',
+        smooth: true,
+        data: s.data,
+        itemStyle: { color: colorMap[s.name] || '#909399' }
+      }))
+    }
+  } catch (e) {
+    console.error('加载登录趋势失败', e)
+  }
 }
 
-// 初始化饼图
-function initPieChart() {
-  const chart = echarts.init(pieChart.value);
-  const option = {
-    tooltip: {
-      trigger: 'item'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left'
-    },
-    series: [
-      {
-        name: '用户分布',
-        type: 'pie',
-        radius: '50%',
-        data: [
-          { value: 1048, name: '普通用户' },
-          { value: 735, name: 'VIP用户' },
-          { value: 580, name: '管理员' },
-          { value: 484, name: '游客' }
-        ],
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
+// ==================== 公共参数 ====================
+
+/** 构建所有图表接口的公共参数 */
+function buildParams() {
+  const params = {}
+  if (dashboardType.value === 'super_admin') {
+    params.schoolType = selectedSchoolType.value
+    if (selectedSchoolId.value) params.schoolId = selectedSchoolId.value
+  }
+  if (dashboardType.value === 'teacher') {
+    // 教师的 schoolType 和 schoolId 由后端自动注入，前端不用传
+    if (selectedClassId.value) params.classId = selectedClassId.value
+  }
+  return params
+}
+
+// ==================== 数据加载 ====================
+
+/** 加载总览数据 */
+async function loadOverview() {
+  try {
+    const res = await getDashboardOverview(buildParams())
+    const data = res.data || {}
+    Object.assign(overview, {
+      viewType: 'platform', schoolName: null, className: null,
+      baseSchoolCount: 0, baseDeviceCount: 0,
+      vocationalSchoolCount: 0, vocationalDeviceCount: 0,
+      todayActiveUsers: 0,
+      studentCount: 0, experimentCount: 0, subjectCount: 0,
+      deviceCount: 0,
+      avgMastery: 0, completionRate: 0,
+      ...data
+    })
+  } catch (e) {
+    console.error('加载总览数据失败', e)
+  }
+}
+
+/** 加载对比柱状图 */
+async function loadComparisonChart() {
+  try {
+    const res = await getDashboardComparisonChart(buildParams())
+    const data = res.data || {}
+    const categories = data.categories || []
+    const series = data.series || []
+    comparisonOption.value = {
+      xAxis: { data: categories },
+      series: series.map(s => ({
+        name: s.name,
+        type: 'bar',
+        data: s.data,
+        barWidth: '50%',
+        itemStyle: {
+          borderRadius: [4, 4, 0, 0],
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+              { offset: 0, color: '#667eea' },
+              { offset: 1, color: '#764ba2' }
+            ]
           }
         }
-      }
-    ]
-  };
-  chart.setOption(option);
+      }))
+    }
+  } catch (e) {
+    console.error('加载对比柱状图失败', e)
+  }
 }
 
-// 初始化折线图
-function initLineChart() {
-  const chart = echarts.init(lineChart.value);
-  const option = {
-    tooltip: {
-      trigger: 'axis'
-    },
-    xAxis: {
-      type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-    },
-    yAxis: {
-      type: 'value'
-    },
-    series: [{
-      data: [820, 932, 901, 934, 1290, 1330, 1320],
-      type: 'line',
-      smooth: true
-    }]
-  };
-  chart.setOption(option);
-}
-
-// 初始化树状图
-function initTreeChart() {
-  const chart = echarts.init(treeChart.value);
-  const option = {
-    tooltip: {
-      trigger: 'item',
-      triggerOn: 'mousemove'
-    },
-    series: [
-      {
-        type: 'tree',
-        data: [{
-          name: '公司架构',
-          children: [
-            {
-              name: '技术部',
-              children: [
-                { name: '开发组' },
-                { name: '测试组' },
-                { name: '运维组' }
-              ]
-            },
-            {
-              name: '市场部',
-              children: [
-                { name: '销售组' },
-                { name: '客服组' }
-              ]
-            }
-          ]
-        }],
-        top: '10%',
-        left: '8%',
-        bottom: '22%',
-        right: '20%',
-        symbolSize: 7,
+/** 加载掌握度分布饼图 */
+async function loadDistributionChart() {
+  try {
+    const res = await getDashboardDistributionChart(buildParams())
+    const data = res.data || {}
+    const categories = data.categories || []
+    const series = data.series || []
+    const colorMap = { '优秀(≥90%)': '#67c23a', '良好(70-90%)': '#409eff', '及格(50-70%)': '#e6a23c', '不及格(<50%)': '#f56c6c' }
+    distributionOption.value = {
+      series: [{
+        name: '正确率分布',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['50%', '50%'],
+        data: categories.map((name, i) => ({
+          name,
+          value: series[0]?.data?.[i] || 0,
+          itemStyle: { color: colorMap[name] || '#909399' }
+        })),
         label: {
-          position: 'left',
-          verticalAlign: 'middle',
-          align: 'right'
-        },
-        leaves: {
-          label: {
-            position: 'right',
-            verticalAlign: 'middle',
-            align: 'left'
-          }
-        },
-        emphasis: {
-          focus: 'descendant'
-        },
-        expandAndCollapse: true,
-        animationDuration: 550,
-        animationDurationUpdate: 750
-      }
-    ]
-  };
-  chart.setOption(option);
+          formatter: '{b}: {c}人 ({d}%)'
+        }
+      }]
+    }
+  } catch (e) {
+    console.error('加载分布饼图失败', e)
+  }
 }
 
-// 获取用户信息
-function getUser() {
-  getUserProfile().then(response => {
-    state.user = response.data;
-    console.log(state.user);
-  });
+/** 加载趋势折线图 */
+async function loadTrendChart() {
+  try {
+    const params = { ...buildParams(), days: trendDays.value }
+    const res = await getDashboardTrendChart(params)
+    const data = res.data || {}
+    trendOption.value = {
+      xAxis: { data: data.categories || [] },
+      series: (data.series || []).map(s => ({
+        name: s.name,
+        type: 'line',
+        smooth: true,
+        data: s.data,
+        areaStyle: { color: 'rgba(64, 158, 255, 0.1)' },
+        itemStyle: { color: '#409eff' }
+      }))
+    }
+  } catch (e) {
+    console.error('加载趋势图失败', e)
+  }
 }
 
-// 监听窗口大小变化，重绘图表
-function handleResize() {
-  const charts = [
-    echarts.getInstanceByDom(pieChart.value),
-    echarts.getInstanceByDom(lineChart.value),
-    echarts.getInstanceByDom(treeChart.value)
-  ];
-  charts.forEach(chart => chart && chart.resize());
+/** 加载最近学习动态（学生实验完成情况） */
+async function loadRecentOperations() {
+  try {
+    const params = { limit: 8 }
+    // 管理员选了学校后，可以查看该校的动态；教师自动注入 schoolId
+    if (selectedSchoolId.value) params.schoolId = selectedSchoolId.value
+    // 选中班级后，只查看该班级的动态
+    if (selectedClassId.value) params.classId = selectedClassId.value
+    const res = await getDashboardRecentExperimentActivities(params)
+    recentOperations.value = (res.data || []).map(item => ({
+      ...item,
+      createTime: item.operTime
+    }))
+  } catch (e) {
+    console.error('加载最近学习动态失败', e)
+  }
+}
+
+/** 加载Top学生 */
+async function loadTopStudents() {
+  try {
+    const params = { ...buildParams(), limit: 10 }
+    const res = await getDashboardTopStudents(params)
+    topStudents.value = (res.data || []).map(item => ({
+      ...item,
+      // 后端返回 0~1，前端展示为百分比
+      correctRate: item.correctRate != null ? Math.round(item.correctRate * 100) : 0
+    }))
+  } catch (e) {
+    console.error('加载Top学生失败', e)
+  }
+}
+
+/** 加载全部数据 */
+function loadAll() {
+  loadOverview()
+  loadComparisonChart()
+  loadDistributionChart()
+  loadTrendChart()
+  loadRecentOperations()
+  loadTopStudents()
+  loadLoginTrend()
+}
+
+// ==================== 事件处理 ====================
+
+/** 普教/职教切换 */
+function handleSchoolTypeChange() {
+  selectedSchoolId.value = null
+  loadSchoolList()
+  loadAll()
+}
+
+/** 学校切换 */
+function handleSchoolChange() {
+  loadAll()
+}
+
+/** 班级切换（教师） */
+function handleClassChange() {
+  loadAll()
+}
+
+/** 快捷入口跳转 */
+function handleQuickEntry(path) {
+  router.push(path)
+}
+
+// ==================== 初始化 ====================
+
+/** 加载学校列表（超级管理员） */
+async function loadSchoolList() {
+  try {
+    const res = await getDashboardSchools(selectedSchoolType.value)
+    schools.value = res.data || []
+  } catch (e) {
+    console.error('加载学校列表失败', e)
+  }
+}
+
+/** 加载教师班级列表 */
+async function loadTeacherClassList() {
+  try {
+    const res = await getDashboardTeacherClasses()
+    teacherClasses.value = res.data || []
+  } catch (e) {
+    console.error('加载班级列表失败', e)
+  }
+}
+
+/** 判断用户角色 */
+function determineDashboardType(user) {
+  if (user.userType === '00' || user.roleKey === 'super_admin') return 'super_admin'
+  const roleKeys = user.roles?.map(r => r.roleKey) || []
+  if (roleKeys.includes('base_school') || roleKeys.includes('vocal_school')) return 'teacher'
+  if (user.admin === true || roleKeys.includes('admin')) return 'admin'
+  return 'student'
+}
+
+/** 掌握度格式化：0~1 转百分比 */
+function formatMastery(val) {
+  if (val == null) return 0
+  return Math.round(val * 100)
+}
+
+/** 初始化 */
+async function init() {
+  try {
+    const res = await getUserProfile()
+    state.user = res.data || {}
+    dashboardType.value = determineDashboardType(state.user)
+  } catch (e) {
+    console.error('获取用户信息失败', e)
+    state.user = { userName: '管理员', roleKey: 'super_admin', roles: ['super_admin'] }
+    dashboardType.value = 'super_admin'
+  }
+
+  // 根据角色加载不同的初始数据
+  if (dashboardType.value === 'super_admin') {
+    await loadSchoolList()
+  } else if (dashboardType.value === 'teacher') {
+    await loadTeacherClassList()
+  }
+
+  loadAll()
 }
 
 onMounted(() => {
-  getUser();
-  updateTime();
-  setInterval(updateTime, 1000);
-  
-  nextTick(() => {
-    initPieChart();
-    initLineChart();
-    initTreeChart();
-  });
-  
-  window.addEventListener('resize', handleResize);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize);
-});
+  init()
+})
 </script>
 
 <style lang="scss" scoped>
-  .dashboard-container {
-    padding: 32px;
-    background-color: rgb(240, 242, 245);
-    position: relative;
+.dashboard-container {
+  padding: 20px;
+  background-color: #f5f7fa;
+  min-height: calc(100vh - 84px);
+}
 
-    .chart-wrapper {
-      background: #fff;
-      padding: 16px 16px 0;
-      margin-bottom: 32px;
-    }
-  }
+.welcome-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  color: #fff;
 
-  @media (max-width: 1024px) {
-    .chart-wrapper {
-      padding: 8px;
-    }
-  }
-
-  .dashboard-editor-container {
-    padding: 32px;
-    background-color: rgb(240, 242, 245);
-    position: relative;
-
-    .github-corner {
-      position: absolute;
-      top: 0px;
-      border: 0;
-      right: 0;
-    }
-
-    .chart-wrapper {
-      background: #fff;
-      padding: 16px 16px 0;
-      margin-bottom: 32px;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    .chart-wrapper {
-      padding: 8px;
-    }
-  }
-
-  .panel-group {
-    margin-top: 18px;
-
-    .card-panel-col {
-      margin-bottom: 32px;
-    }
-
-    .card-panel {
-      height: 108px;
-      cursor: pointer;
-      font-size: 12px;
-      position: relative;
-      overflow: hidden;
-      color: #666;
-      background: #fff;
-      box-shadow: 4px 4px 40px rgba(0, 0, 0, .05);
-      border-color: rgba(0, 0, 0, .05);
-
-      &:hover {
-        .card-panel-icon-wrapper {
-          color: #fff;
-        }
-
-        .icon-people {
-          background: #40c9c6;
-        }
-
-        .icon-message {
-          background: #36a3f7;
-        }
-
-        .icon-money {
-          background: #f4516c;
-        }
-
-        .icon-shopping {
-          background: #34bfa3
-        }
-      }
-
-      .icon-people {
-        color: #40c9c6;
-      }
-
-      .icon-message {
-        color: #36a3f7;
-      }
-
-      .icon-money {
-        color: #f4516c;
-      }
-
-      .icon-shopping {
-        color: #34bfa3
-      }
-
-      .card-panel-icon-wrapper {
-        float: left;
-        margin: 14px 0 0 14px;
-        padding: 16px;
-        transition: all 0.38s ease-out;
-        border-radius: 6px;
-      }
-
-      .card-panel-icon {
-        float: left;
-        font-size: 48px;
-      }
-
-      .card-panel-description {
-        float: right;
-        font-weight: bold;
-        margin: 26px;
-        margin-left: 0px;
-
-        .card-panel-text {
-          line-height: 18px;
-          color: rgba(0, 0, 0, 0.45);
-          font-size: 16px;
-          margin-bottom: 12px;
-        }
-
-        .card-panel-num {
-          font-size: 20px;
-        }
-      }
-    }
-  }
-
-  @media (max-width: 550px) {
-    .card-panel-description {
-      display: none;
-    }
-
-    .card-panel-icon-wrapper {
-      float: none !important;
-      width: 100%;
-      height: 100%;
-      margin: 0 !important;
-
-      .svg-icon {
-        display: block;
-        margin: 14px auto !important;
-        float: none !important;
-      }
-    }
-  }
-
-  .echarts-line{
-    background:#fff;
-    padding:16px 16px 0;
-    margin-bottom:32px;
-    height:450px;
-  }
-
-  .chart-wrapper {
-    background: #fff;
-    padding: 16px;
-    margin-bottom: 32px;
-    border-radius: 4px;
-    box-shadow: 4px 4px 40px rgba(0, 0, 0, .05);
-
-    .chart-title {
-      font-size: 16px;
-      font-weight: bold;
-      color: #303133;
-      margin-bottom: 16px;
-      padding-left: 10px;
-      border-left: 4px solid #409EFF;
-    }
-  }
-
-  .welcome {
-    background: #e1eaf9;
-    border-radius: 6px;
+  .welcome-left {
     display: flex;
     align-items: center;
-    padding: 15px 20px !important;
-    box-shadow: 0 0 30px 0 rgba(82, 63, 105, 0.05);
-    .welcome-img {
-        height: 100px;
-        margin-right: 10px;
-        user-select: none;
-    }
-    .welcome-title {
-        font-size: 1.5rem;
-        line-height: 30px;
-        color: var(--ba-color-primary-light);
-    }
-    .welcome-note {
-        padding-top: 6px;
-        font-size: 15px;
-        color: var(--el-text-color-primary);
-    }
-}
-.working {
-    height: 130px;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    height: 100%;
-    position: relative;
-    &:hover {
-        .working-coffee {
-            -webkit-transform: translateY(-4px) scale(1.02);
-            -moz-transform: translateY(-4px) scale(1.02);
-            -ms-transform: translateY(-4px) scale(1.02);
-            -o-transform: translateY(-4px) scale(1.02);
-            transform: translateY(-4px) scale(1.02);
-            z-index: 999;
-        }
-    }
-    .working-coffee {
-        transition: all 0.3s ease;
-        width: 80px;
-    }
-    .working-text {
-        display: block;
-        width: 100%;
-        font-size: 15px;
-        text-align: center;
-        color: var(--el-text-color-primary);
-    }
-    .working-opt {
-        position: absolute;
-        top: -40px;
-        right: 10px;
-        background-color: rgba($color: #000000, $alpha: 0.3);
-        padding: 10px 20px;
-        border-radius: 20px;
-        color: var(--ba-bg-color-overlay);
-        transition: all 0.3s ease;
-        cursor: pointer;
-        opacity: 0;
-        z-index: 999;
-        &:active {
-            background-color: rgba($color: #000000, $alpha: 0.6);
-        }
-    }
-    &:hover {
-        .working-opt {
-            opacity: 1;
-            top: 0;
-        }
-        .working-done {
-            opacity: 1;
-            top: 50px;
-        }
-    }
-}
+  }
 
-.small-panel-box {
-    margin-top: 20px;
-}
-.small-panel {
-    background-color: #e9edf2;
-    border-radius: var(--el-border-radius-base);
-    padding: 25px;
-    margin-bottom: 20px;
-    .small-panel-title {
-        color: #92969a;
-        font-size: 15px;
-    }
-    .small-panel-content {
-        display: flex;
-        align-items: flex-end;
-        margin-top: 20px;
-        color: #2c3f5d;
-        .content-left {
-            display: flex;
-            align-items: center;
-            font-size: 24px;
-            .icon {
-                margin-right: 10px;
-            }
-        }
-        .content-right {
-            font-size: 18px;
-            margin-left: auto;
-        }
-        .color-success {
-            color: var(--el-color-success);
-        }
-        .color-warning {
-            color: var(--el-color-warning);
-        }
-        .color-danger {
-            color: var(--el-color-danger);
-        }
-        .color-info {
-            color: var(--el-text-color-secondary);
-        }
-    }
-}
-.growth-chart {
-    margin-bottom: 20px;
-}
-.user-growth-chart,
-.file-growth-chart {
-    height: 260px;
-}
-.new-user-growth {
-    height: 300px;
-}
+  .welcome-img {
+    height: 60px;
+    margin-right: 16px;
+  }
 
-.user-source-chart,
-.user-surname-chart {
-    height: 400px;
-}
-.new-user-item {
+  .welcome-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+
+  .welcome-note {
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  .welcome-right {
     display: flex;
     align-items: center;
-    padding: 20px;
-    margin: 10px 15px;
-    box-shadow: 0 0 30px 0 rgba(82, 63, 105, 0.05);
-    background-color: var(--ba-bg-color-overlay);
-    .new-user-avatar {
-        height: 48px;
-        width: 48px;
-        border-radius: 50%;
+    gap: 16px;
+  }
+
+  // 普教/职教 Tab 在横幅内的样式
+  :deep(.el-segmented) {
+    --el-segmented-bg-color: rgba(255, 255, 255, 0.2);
+    --el-segmented-item-selected-color: #667eea;
+    --el-segmented-item-selected-bg-color: #fff;
+    --el-segmented-item-color: #fff;
+
+    .el-segmented__item-selected {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
     }
-    .new-user-base {
-        margin-left: 10px;
-        color: #2c3f5d;
-        .new-user-name {
-            font-size: 15px;
-        }
-        .new-user-time {
-            font-size: 13px;
-        }
+  }
+
+  // 横幅内的下拉框样式
+  :deep(.el-select) {
+    .el-input__wrapper {
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+      border: 1px solid rgba(255, 255, 255, 0.3);
     }
-    .new-user-arrow {
-        margin-left: auto;
+    .el-input__inner {
+      color: #fff;
     }
-}
-.new-user-card :deep(.el-card__body) {
-    padding: 0;
+    .el-input__suffix .el-select__caret {
+      color: #fff;
+    }
+  }
+  :deep(.el-select:hover .el-input__wrapper) {
+    background: rgba(255, 255, 255, 0.3);
+  }
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 20px;
 
-@media screen and (max-width: 425px) {
-    .welcome-img {
-        display: none;
+  &--three {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  &--six {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  &--five {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  @media (max-width: 1400px) {
+    &.stats-grid--six {
+      grid-template-columns: repeat(3, 1fr);
     }
+    &.stats-grid--three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+    &.stats-grid--six {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    &.stats-grid--five {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    &.stats-grid--three {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    &.stats-grid--six,
+    &.stats-grid--five,
+    &.stats-grid--three {
+      grid-template-columns: 1fr;
+    }
+  }
 }
-@media screen and (max-width: 1200px) {
-    .lg-mb-20 {
-        margin-bottom: 20px;
-    }
-}
-html.dark {
-    .welcome {
-        background-color: var(--ba-bg-color-overlay);
-    }
-    .small-panel {
-        background-color: var(--ba-bg-color-overlay);
-        .small-panel-content {
-            color: var(--el-text-color-regular);
-        }
-    }
-    .new-user-item {
-        .new-user-base {
-            color: var(--el-text-color-regular);
-        }
-    }
+
+.chart-row {
+  margin-bottom: 20px;
 }
 </style>
-
-

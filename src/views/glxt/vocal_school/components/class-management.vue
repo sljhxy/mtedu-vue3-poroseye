@@ -295,6 +295,7 @@ const classes = ref([])
 
 const classForm = ref({
   id: null,
+  schoolId: props.schoolInfo.id,
   vocalEduGradeId: '',
   vocalEduSpecialityId: '',
   className: ''

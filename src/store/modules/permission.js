@@ -132,8 +132,22 @@ export const loadView = (view) => {
   let res;
   for (const path in modules) {
     const dir = path.split('views/')[1].split('.vue')[0];
+    // 直接匹配
     if (dir === view) {
       res = () => modules[path]();
+      break;
+    }
+    // 处理驼峰命名转短横线命名 (reactionStage -> reaction-stage)
+    const kebabView = view.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+    if (dir === kebabView) {
+      res = () => modules[path]();
+      break;
+    }
+    // 处理短横线命名转驼峰命名 (reaction-stage -> reactionStage)
+    const camelView = view.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+    if (dir === camelView) {
+      res = () => modules[path]();
+      break;
     }
   }
   return res;

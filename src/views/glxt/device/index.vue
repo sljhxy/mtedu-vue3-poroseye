@@ -2,7 +2,7 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="80px">
       <el-form-item label="学校类型" prop="schoolType">
-        <el-select v-model="queryParams.schoolType" style="width: 100px;" clearable @change="handleQuery">
+        <el-select v-model="queryParams.schoolType" style="width: 100px;" clearable :disabled="isTeacher" @change="handleQuery">
           <el-option
             v-for="dict in mt_school_type"
             :key="dict.value"
@@ -218,8 +218,11 @@
 <script name="Device" setup>
 import { listDevice, getDevice, delDevice, addDevice, updateDevice } from "@/api/glxt/device";
 import { ref, reactive, watch, onMounted } from 'vue';
+import { useTeacherInfo } from '@/store/modules/teacherInfo'
 const { proxy } = getCurrentInstance();
 const { mt_is_active_type, mt_is_start_type, mt_is_binding_type, mt_school_type } = proxy.useDict('mt_is_active_type', 'mt_is_start_type', 'mt_is_binding_type', 'mt_school_type');
+
+const { isTeacher, schoolType: userSchoolType } = useTeacherInfo()
 
 
 //引入普教-学校相关接口
@@ -471,6 +474,12 @@ function handleExport() {
 
 
 getList();
+
+// 教师用户自动填充学校类型
+if (isTeacher.value) {
+  queryParams.value.schoolType = userSchoolType.value
+  getList()
+}
 </script>
 
 <style lang="scss" scoped>

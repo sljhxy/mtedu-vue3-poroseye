@@ -1,5 +1,11 @@
 import { createApp } from 'vue'
 
+import { createI18n } from 'vue-i18n'
+
+import zh from './locales/zh-CN' // 引入语言包
+import en from './locales/en-US' // 引入语言包
+
+
 import Cookies from 'js-cookie'
 
 import ElementPlus from 'element-plus'
@@ -54,6 +60,19 @@ import DictTag from '@/components/DictTag'
 
 const app = createApp(App)
 
+// 语言文件，可以根据需要扩展
+const messages = {
+  'zh': zh,
+  'en': en
+}
+
+// 创建 i18n 实例
+const i18n = createI18n({
+  locale: 'zh', // 默认语言
+  messages,
+})
+
+
 // 全局方法挂载
 app.config.globalProperties.useDict = useDict
 app.config.globalProperties.download = download
@@ -78,6 +97,7 @@ app.use(router)
 app.use(store)
 app.use(plugins)
 app.use(elementIcons)
+app.use(i18n)
 app.component('svg-icon', SvgIcon)
 
 directive(app)

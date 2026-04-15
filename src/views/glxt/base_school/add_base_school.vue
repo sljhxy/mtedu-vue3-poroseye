@@ -116,6 +116,7 @@ const initForms = () => {
       schoolFormRef.value.formData.contactName = ''
       schoolFormRef.value.formData.contactPhone = ''
       schoolFormRef.value.formData.website = ''
+      schoolFormRef.value.formData.schoolCode = ''
       schoolFormRef.value.formData.educationLevel = ''
       schoolFormRef.value.formData.schoolType = ''
       schoolFormRef.value.formData.schoolSystem = ''
@@ -152,6 +153,7 @@ const handleSchoolNext = (schoolData) => {
     contactName: schoolData.contactName,
     contactPhone: schoolData.contactPhone,
     website: schoolData.website,
+    schoolCode: schoolData.schoolCode,
     isActive: schoolData.isActive
   }
   currentStep.value++

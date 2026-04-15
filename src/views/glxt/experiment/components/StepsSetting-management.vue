@@ -22,6 +22,9 @@
               <el-button type="success" plain @click="previewSteps" :disabled="steps.length === 0">
                 <el-icon><View /></el-icon>&nbsp;预览步骤
               </el-button>
+               <el-button type="warning" plain icon="Upload" @click="importSteps">
+                导入步骤
+              </el-button>
             </div>
 
             <div class="steps-content">
@@ -1175,6 +1178,7 @@ const previewSteps = () => {
   previewDialogVisible.value = true
 }
 
+//导入
 //当前关联操作-数据
 const relevanceData = ref();
 
@@ -1877,7 +1881,7 @@ const formatDate = (date) => {
 }
 
 /* 操作栏样式 */
-.operation-bar {
+.operation-ba {
   display: flex;
   justify-content: space-between;
   align-items: center;

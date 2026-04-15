@@ -267,6 +267,48 @@
         </el-col>
       </el-row>
     </div>
+
+    <div class="form-section campus-card" v-if="form.userType == '1'">
+      <div class="section-header">
+          <span class="section-title">关联AI提示词</span>
+      </div>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="提示词" prop="promptId">
+            <!-- {{ form.promptId }} -->
+            <el-select v-model="form.promptId" placeholder="请选择科目相对应的提示词" clearable >
+                  <el-option
+                    v-for="prompt in promptList"
+                    :key="prompt.id"
+                    :label="prompt.subjectName + '(' + prompt.textbookVersionName  + prompt.volumeName  + ')'  "
+                    :value="prompt.id"
+                  ></el-option>
+                </el-select>
+          </el-form-item>
+
+
+      
+        </el-col>
+        <!-- <el-col :span="12">
+          <el-form-item label="确认密码" prop="rconfirmPassword">
+            <el-input type="password" v-model="form.rconfirmPassword" placeholder="请确认密码" show-password/>
+          </el-form-item>
+        </el-col> -->
+      </el-row>
+      
+      <!-- <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="联系方式" prop="phonenumber">
+            <el-input v-model="form.phonenumber" placeholder="请输入手机号码" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="邮箱" prop="email">
+            <el-input v-model="form.email" type="email" placeholder="请输入邮箱" />
+          </el-form-item>
+        </el-col>
+      </el-row> -->
+    </div>
     </div>
 
   </el-form>
@@ -532,6 +574,11 @@ import { listCourse } from "@/api/glxt/base_course";
 import { ref } from 'vue';
 
 
+
+//导入提示词API
+import { listPrompt, getPrompt, delPrompt, addPrompt, updatePrompt } from "@/api/glxt/prompt";
+
+
 const baseUserList = ref([]);
 const open = ref(false);
 const loading = ref(true);
@@ -670,6 +717,29 @@ function reset() {
   proxy.resetForm("baseUserRef");
 }
 
+
+/** 查询ai提示词列表 */
+const promptList = ref([]);
+const promptQueryParams = ref({
+  pageNum: 1,
+  pageSize: 10,
+  schoolId: form.value.schoolId,
+});
+const promptTotal = ref(0);
+function getPromptList() {
+  listPrompt(promptQueryParams.value).then(response => {
+    promptList.value = response.rows;
+
+    //通过科目 Id 到字典中获取值 
+    promptList.value.forEach(item => {
+      item.subjectName = mt_school_subject.value.find(itemTmp => itemTmp.value == item.subjectType)?.label || '1111';
+    });
+
+    promptTotal.value = response.total;
+  });
+}
+
+
 /** 搜索按钮操作 */
 function handleQuery() {
   queryParams.value.pageNum = 1;
@@ -700,6 +770,11 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
+
+  promptQueryParams.value.schoolId = row.schoolId;
+  //获取提示词列表
+  getPromptList();
+
   reset();
   const _id = row.id || ids.value
   //调用学校列表
@@ -920,11 +995,16 @@ const userTypeChange = (value) => {
 }
 
 //新增学生时候，选择学校下拉框
-const schoolChange = (value, userType) => {
+const schoolChange = (schoolId, userType) => {
+
+  promptQueryParams.value.schoolId = schoolId;
+  //获取提示词列表
+  getPromptList();
+
   if(userType == '2') {//只有当用户类型是学生的时候，才显示年级和班级
     form.value.gradeId = null;//清空年级
     form.value.classId = null;//清空班级
-    gradeList(value);
+    gradeList(schoolId);
   }
 }
 //新增学生时候，选择年级下拉框

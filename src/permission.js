@@ -13,12 +13,21 @@ NProgress.configure({ showSpinner: false });
 
 const whiteList = ['/login', '/register'];
 
+// 判断路径是否以 /s/ 开头（学校专属登录页）
+function isSchoolPath(path) {
+  return path.startsWith('/s/')
+}
+
 router.beforeEach((to, from, next) => {
   NProgress.start()
   if (getToken()) {
     to.meta.title && useSettingsStore().setTitle(to.meta.title)
     /* has token*/
     if (to.path === '/login') {
+      next({ path: '/' })
+      NProgress.done()
+    } else if (isSchoolPath(to.path)) {
+      // 已登录用户访问学校链接，重定向到首页
       next({ path: '/' })
       NProgress.done()
     } else if (whiteList.indexOf(to.path) !== -1) {
@@ -50,8 +59,8 @@ router.beforeEach((to, from, next) => {
     }
   } else {
     // 没有token
-    if (whiteList.indexOf(to.path) !== -1) {
-      // 在免登录白名单，直接进入
+    if (whiteList.indexOf(to.path) !== -1 || isSchoolPath(to.path)) {
+      // 在免登录白名单或学校登录页，直接进入
       next()
     } else {
       next(`/login?redirect=${to.fullPath}`) // 否则全部重定向到登录页

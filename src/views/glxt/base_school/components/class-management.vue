@@ -204,6 +204,7 @@ const classFormRef = ref(null)
 
 const classForm = ref({
   id: null,
+  schoolId: props.schoolInfo.id,
   gradeId: '',
   baseEduLevelType: '',
   name: ''
