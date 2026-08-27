@@ -62,9 +62,9 @@ export function delChapter(id) {
 }
 
 // 获取章节列表
-export function getChapterList(volumeId) {
+export function getChapterList(volumeId, subjectId) {
   return request({
-    url: '/glxt/subject/chapterList/' + volumeId,
+    url: '/glxt/subject/chapterList/' + volumeId + '/' + subjectId,
     method: 'get'
   })
 }
@@ -92,6 +92,14 @@ export function initSubject(params) {
 export function getCourseSystemOptions(schoolType, academicStage) {
   return request({
     url: '/glxt/subject/getCso/' + schoolType + '/' + academicStage,
+    method: 'get'
+  })
+}
+
+// 获取五级联动树（科目→教材版本→分册→章节→小节），独立接口不影响 getCso
+export function getBookChapterTree(schoolType, academicStage) {
+  return request({
+    url: '/glxt/subject/getBookChapterTree/' + schoolType + '/' + academicStage,
     method: 'get'
   })
 }

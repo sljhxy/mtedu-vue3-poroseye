@@ -72,7 +72,7 @@
                       </div>
                     </div>
                     <div class="target-body">
-                      <div class="target-text" v-html="principle.text"></div>
+                      <div class="target-text" v-html="principle.text" v-katex></div>
                     </div>
                     <div class="target-footer">
                       <el-tag size="small" plain type="info">
@@ -160,7 +160,7 @@
                       </div>
                     </div>
                     <div class="target-body">
-                      <div class="target-text" v-html="target.text"></div>
+                      <div class="target-text" v-html="target.text" v-katex></div>
                     </div>
                     <div class="target-footer">
                       <el-tag size="small" plain type="info">
@@ -442,7 +442,7 @@
                       </div>
                     </div>
                     <div class="target-body">
-                      <div class="target-text" v-html="experimentConclusion.text"></div>
+                      <div class="target-text" v-html="experimentConclusion.text" v-katex></div>
                     </div>
                     <div class="target-footer">
                       <el-tag size="small" plain type="info">
@@ -474,7 +474,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Operation /></el-icon>
-                <span>知识点延伸</span>
+                <span>核心考点</span>
               </div>
             </template>
             
@@ -485,10 +485,10 @@
                   <div class="welcome-content">
                     <el-icon class="welcome-icon"><More /></el-icon>
                     <h2>欢迎来到【扩展信息】管理</h2>
-                    <p>开始添加您的知识点延伸</p>
+                    <p>开始添加您的核心考点</p>
                     <el-button type="primary" class="add-button" @click="openExperimentKowledgeDialog" v-hasPermi="['glxt:experimentKowledgeExtend:add']">
                       <el-icon><Plus /></el-icon>
-                      添加知识点延伸
+                      添加核心考点
                     </el-button>
                   </div>
                 </div>
@@ -505,7 +505,7 @@
                     <div class="target-header">
                       <div class="target-index-wrapper">
                         <div class="target-badge">{{index + 1}}</div>
-                        <h3 class="target-title">知识点延伸</h3>
+                        <h3 class="target-title">核心考点</h3>
                       </div>
                       <div class="target-actions">
                         <el-tooltip content="编辑知识点" placement="top">
@@ -531,7 +531,7 @@
                       </div>
                     </div>
                     <div class="target-body">
-                      <div class="target-text" v-html="experimentKowledgeExtend.text"></div>
+                      <div class="target-text" v-html="experimentKowledgeExtend.text" v-katex></div>
                     </div>
                     <div class="target-footer">
                       <el-tag size="small" plain type="info">

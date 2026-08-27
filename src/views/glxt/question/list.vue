@@ -92,7 +92,7 @@
         v-model:limit="queryParam.pageSize"
         @pagination="search"/>
 
-    <el-dialog v-model="questionShow.dialog" style="width: 50%;height: 50%">
+    <el-dialog v-model="questionShow.dialog" title="题目详情" width="60%" top="8vh" class="question-show-dialog">
       <QuestionShow :qType="questionShow.qType" :question="questionShow.question" :qLoading="questionShow.loading"/>
     </el-dialog>
 
@@ -243,3 +243,11 @@ onMounted(() => {
   search()
 })
 </script>
+
+<style scoped>
+/* 题目显示弹窗：内容区限高滚动，长题不被裁掉 */
+:deep(.question-show-dialog .el-dialog__body) {
+  max-height: 68vh;
+  overflow-y: auto;
+}
+</style>

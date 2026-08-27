@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>化学反应模拟器 - 测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #303133;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #606266;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e4e7ed;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #606266;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #409eff;
+        }
+
+        .reactant-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #e4e7ed;
+        }
+
+        .reactant-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .reactant-number {
+            background: #409eff;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .btn-remove {
+            background: #f56c6c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-remove:hover {
+            background: #e84646;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-row input[type="number"] {
+            width: 80px;
+        }
+
+        .btn-add {
+            width: 100%;
+            padding: 10px;
+            background: #409eff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .btn-add:hover {
+            background: #66b1ff;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .btn-simulate {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 20px;
+        }
+
+        .btn-simulate:hover {
+            opacity: 0.9;
+        }
+
+        .btn-simulate:disabled {
+            background: #c0c4cc;
+            cursor: not-allowed;
+        }
+
+        .btn-reset {
+            width: 100%;
+            padding: 10px;
+            background: #909399;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .result-section {
+            margin-top: 20px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .result-card h3 {
+            color: #303133;
+            margin-bottom: 15px;
+            font-size: 16px;
+            border-left: 4px solid #409eff;
+            padding-left: 10px;
+        }
+
+        .equation-display {
+            font-size: 20px;
+            font-family: 'Times New Roman', serif;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2ff 100%);
+            border-radius: 8px;
+            color: #409eff;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+
+        .tag-primary { background: #ecf5ff; color: #409eff; }
+        .tag-success { background: #f0f9ff; color: #67c23a; }
+        .tag-warning { background: #fdf6ec; color: #e6a23c; }
+        .tag-danger { background: #fef0f0; color: #f56c6c; }
+        .tag-info { background: #f4f4f5; color: #909399; }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ebeef5;
+        }
+
+        .table th {
+            background: #f5f7fa;
+            color: #606266;
+            font-weight: 600;
+        }
+
+        .phenomena-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .phenomenon-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .phenomenon-icon {
+            font-size: 20px;
+        }
+
+        .phenomenon-label {
+            font-size: 12px;
+            color: #909399;
+            margin-bottom: 2px;
+        }
+
+        .phenomenon-value {
+            font-size: 14px;
+            color: #303133;
+            font-weight: 500;
+        }
+
+        .chain-reaction {
+            background: #fff7e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #e6a23c;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #909399;
+        }
+
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #409eff;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #409eff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .config-section {
+            background: #fff7e6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e6a23c;
+        }
+
+        .config-section h4 {
+            color: #e6a23c;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .api-config {
+            display: grid;
+            grid-template-columns: 1fr 150px;
+            gap: 10px;
+        }
+
+        .mode-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            background: white;
+            border: 2px solid #e4e7ed;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .mode-tab.active {
+            border-color: #409eff;
+            background: #ecf5ff;
+            color: #409eff;
+            font-weight: 600;
+        }
+
+        .mode-content {
+            display: none;
+        }
+
+        .mode-content.active {
+            display: block;
+        }
+
+        .error-message {
+            background: #fef0f0;
+            color: #f56c6c;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #f56c6c;
+        }
+
+        .success-message {
+            background: #f0f9ff;
+            color: #409eff;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #409eff;
+        }
+
+        .info-box {
+            background: #e7f7ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #409eff;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .info-box h5 {
+            color: #409eff;
+            margin-bottom: 8px;
+        }
+
+        .info-box code {
+            background: #f4f4f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 1000px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 化学反应模拟器 - 测试页面</h1>
+            <p>选择反应物和条件，模拟化学反应过程</p>
+        </div>
+
+        <div class="config-section">
+            <h4>⚙️ 接口配置</h4>
+            <div class="mode-tabs">
+                <div class="mode-tab active" onclick="switchMode('api')">API接口模式</div>
+                <div class="mode-tab" onclick="switchMode('mock')">模拟数据模式</div>
+            </div>
+
+            <!-- API模式 -->
+            <div id="apiMode" class="mode-content active">
+                <div class="info-box">
+                    <h5>📌 使用说明（解决跨域问题）</h5>
+                    <p>由于浏览器安全限制，直接打开HTML文件无法访问API。请选择以下方式之一：</p>
+                    <ol style="margin-left: 20px; margin-top: 10px;">
+                        <li><strong>方式1：</strong>使用Chrome的"Allow CORS"扩展</li>
+                        <li><strong>方式2：</strong>在命令行中运行：<code>python -m http.server 8000</code>，然后访问 <code>http://localhost:8000/chemistry-simulation-test.html</code></li>
+                        <li><strong>方式3：</strong>使用VS Code的"Live Server"插件右键选择"Open with Live Server"</li>
+                    </ol>
+                </div>
+                <div class="api-config">
+                    <input type="text" id="apiUrl" value="http://182.92.215.114:8080/chemistry/simulation/simulate" placeholder="API地址">
+                    <button class="btn-add" onclick="saveApiConfig()">保存配置</button>
+                </div>
+            </div>
+
+            <!-- Mock模式 -->
+            <div id="mockMode" class="mode-content">
+                <div class="info-box">
+                    <h5>📌 模拟数据模式</h5>
+                    <p>使用内置的模拟数据，不需要连接服务器。适合演示和测试界面功能。</p>
+                </div>
+                <div class="toggle-wrapper">
+                    <label>启用模拟数据</label>
+                    <input type="checkbox" id="useMock" onchange="toggleMockMode()">
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 左侧：输入区 -->
+            <div class="panel">
+                <div class="panel-title">反应设置</div>
+
+                <!-- 反应物列表 -->
+                <div id="reactantsList"></div>
+
+                <button class="btn-add" onclick="addReactant()">+ 添加反应物</button>
+
+                <!-- 反应条件 -->
+                <div class="form-group">
+                    <label>🌡️ 温度 (°C)</label>
+                    <input type="number" id="temperature" placeholder="如：25" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label>🔧 压力 (atm)</label>
+                    <input type="number" id="pressure" placeholder="如：1" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label>🧪 pH值</label>
+                    <input type="number" id="ph" placeholder="如：7" min="0" max="14" step="0.1">
+                </div>
+
+                <div class="form-group">
+                    <label>💧 溶剂</label>
+                    <select id="solvent">
+                        <option value="">无溶剂</option>
+                        <option value="水">水</option>
+                        <option value="乙醇">乙醇</option>
+                        <option value="苯">苯</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>🔥 点燃</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="ignited">
+                        <span>已点燃</span>
+                    </div>
+                </div>
+
+                <button class="btn-simulate" onclick="startSimulation()" id="simulateBtn">开始实验</button>
+                <button class="btn-reset" onclick="resetSimulation()">重置</button>
+            </div>
+
+            <!-- 右侧：结果区 -->
+            <div class="panel">
+                <div class="panel-title">实验结果</div>
+                <div id="resultArea">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🧪</div>
+                        <p>请在左侧添加反应物并设置条件</p>
+                        <p style="font-size: 12px; margin-top: 10px;">然后点击"开始实验"查看结果</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 物质库数据（常见物质示例）
+        const SUBSTANCES = [
+            // 金属单质
+            { id: 1, name: '氢气', formula: 'H₂', state: 'g' },
+            { id: 2, name: '氧气', formula: 'O₂', state: 'g' },
+            { id: 6, name: '铁', formula: 'Fe', state: 's' },
+            { id: 4, name: '铜', formula: 'Cu', state: 's' },
+            { id: 27, name: '镁', formula: 'Mg', state: 's' },
+            { id: 29, name: '钠', formula: 'Na', state: 's' },
+            { id: 31, name: '锌', formula: 'Zn', state: 's' },
+            { id: 35, name: '碳', formula: 'C', state: 's' },
+            { id: 36, name: '硫', formula: 'S', state: 's' },
+            // 化合物
+            { id: 34, name: '水', formula: 'H₂O', state: 'l' },
+            { id: 11, name: '稀硫酸', formula: 'H₂SO₄', state: 'aq' },
+            { id: 12, name: '盐酸', formula: 'HCl', state: 'aq' },
+            { id: 13, name: '二氧化碳', formula: 'CO₂', state: 'g' },
+            { id: 18, name: '碳酸钙', formula: 'CaCO₃', state: 's' },
+            { id: 9, name: '氧化铜', formula: 'CuO', state: 's' },
+            { id: 37, name: '一氧化碳', formula: 'CO', state: 'g' },
+            { id: 14, name: '氢氧化钠', formula: 'NaOH', state: 's' }
+        ];
+
+        // 模拟数据
+        const MOCK_DATA = {
+            '锌-稀硫酸': {
+                code: 200,
+                data: {
+                    reactionOccurred: true,
+                    primaryReaction: {
+                        equationId: 120,
+                        equationText: 'Zn + H₂SO₄ → ZnSO₄ + H₂↑',
+                        equationHtml: 'Zn + H₂SO₄ → ZnSO₄ + H₂↑',
+                        reactionType: 'replacement',
+                        reactionTypeName: '置换反应',
+                        isRedox: true,
+                        enthalpyChange: -146.5
+                    },
+                    products: [
+                        { substanceId: 446, substanceName: '硫酸锌', formula: 'ZnSO₄', coefficient: 1, state: 'aq', theoreticalYield: 16.14, yieldUnit: 'g', molarMass: 161.45, actualYield: 16.14, yieldPercentage: 100.0 },
+                        { substanceId: 1, substanceName: '氢气', formula: 'H₂', coefficient: 1, state: 'g', theoreticalYield: 0.2, yieldUnit: 'g', molarMass: 2.02, actualYield: 0.2, yieldPercentage: 100.0 }
+                    ],
+                    phenomena: {
+                        colorChange: { before: '无色透明', after: '无色透明', description: '溶液颜色无明显变化' },
+                        gasEvolution: { hasGas: true, formula: 'H₂', gasName: '氢气', description: '锌粒表面产生大量气泡' },
+                        temperatureChange: { type: 'increase', delta: '+15°C', description: '反应放热，试管壁发烫' },
+                        soundPhenomenon: '轻微的嘶嘶声',
+                        description: '锌与稀硫酸反应产生氢气，并放出热量。',
+                        observationPoints: ['观察锌粒表面是否产生气泡', '用手触摸试管壁感受温度变化', '注意观察气体放出的速度']
+                    },
+                    parameters: {
+                        reactionTime: 120.0,
+                        reactionRate: 0.0083,
+                        heatChange: 9.52,
+                        solutionColor: '无色'
+                    },
+                    chainReactions: [],
+                    knowledgePoints: ['金属与酸反应', '置换反应', '氧化还原反应']
+                }
+            },
+            '钠-水': {
+                code: 200,
+                data: {
+                    reactionOccurred: true,
+                    primaryReaction: {
+                        equationId: 6,
+                        equationText: '2Na + 2H₂O → 2NaOH + H₂↑',
+                        equationHtml: '2Na + 2H₂O → 2NaOH + H₂↑',
+                        reactionType: 'replacement',
+                        reactionTypeName: '置换反应',
+                        isRedox: true,
+                        enthalpyChange: -184
+                    },
+                    products: [
+                        { substanceId: 14, substanceName: '氢氧化钠', formula: 'NaOH', coefficient: 2, state: 'aq', theoreticalYield: 8.72, yieldUnit: 'g', molarMass: 40, actualYield: 8.72, yieldPercentage: 100.0 },
+                        { substanceId: 1, substanceName: '氢气', formula: 'H₂', coefficient: 1, state: 'g', theoreticalYield: 0.22, yieldUnit: 'g', molarMass: 2.02, actualYield: 0.22, yieldPercentage: 100.0 }
+                    ],
+                    phenomena: {
+                        colorChange: { before: '无色透明', after: '无色', description: '溶液颜色无明显变化' },
+                        gasEvolution: { hasGas: true, formula: 'H₂', gasName: '氢气', description: '钠在水面上剧烈游动，发出嘶嘶声' },
+                        temperatureChange: { type: 'increase', delta: '+20°C', description: '反应放热明显' },
+                        soundPhenomenon: '剧烈的嘶嘶声',
+                        description: '钠浮在水面上，熔成小球，四处游动，发出嘶嘶声。',
+                        observationPoints: ['观察钠是否浮在水面上', '观察钠是否熔成小球', '注意听是否有嘶嘶声']
+                    },
+                    parameters: {
+                        reactionTime: 30.0,
+                        reactionRate: 0.033,
+                        heatChange: 14.8,
+                        solutionColor: '无色'
+                    },
+                    chainReactions: [
+                        {
+                            equationId: 9,
+                            reactionType: 'parallel',
+                            isTriggered: true,
+                            triggerReason: '无条件触发',
+                            equationText: '4Na + O₂ → 2Na₂O',
+                            phenomenonImpact: '钠表面总有一层氧化层',
+                            teachingNote: '钠在空气中容易被氧化'
+                        }
+                    ],
+                    knowledgePoints: ['碱金属与水反应', '氧化还原反应', '元素周期律']
+                }
+            },
+            '氢气-氧气': {
+                code: 200,
+                data: {
+                    reactionOccurred: true,
+                    primaryReaction: {
+                        equationId: 7,
+                        equationText: '2H₂ + O₂ → 2H₂O',
+                        equationHtml: '2H₂ + O₂ → 2H₂O',
+                        reactionType: 'combination',
+                        reactionTypeName: '化合反应',
+                        isRedox: true,
+                        enthalpyChange: -286
+                    },
+                    products: [
+                        { substanceId: 34, substanceName: '水', formula: 'H₂O', coefficient: 2, state: 'l', theoreticalYield: 9.01, yieldUnit: 'g', molarMass: 18.02, actualYield: 9.01, yieldPercentage: 100.0 }
+                    ],
+                    phenomena: {
+                        colorChange: { before: '无色', after: '无色', description: '无明显变化' },
+                        gasEvolution: { hasGas: false },
+                        temperatureChange: { type: 'increase', delta: '+50°C', description: '剧烈放热' },
+                        flamePhenomenon: '淡蓝色火焰',
+                        description: '氢气在氧气中燃烧，产生淡蓝色火焰，放出大量热。',
+                        observationPoints: ['观察火焰颜色', '感受放热现象']
+                    },
+                    parameters: {
+                        reactionTime: 5.0,
+                        reactionRate: 0.2,
+                        heatChange: 28.6,
+                        solutionColor: '无色'
+                    },
+                    chainReactions: [],
+                    knowledgePoints: ['氢气燃烧', '化合反应', '清洁能源']
+                }
+            }
+        };
+
+        // 反应物计数器
+        let reactantCounter = 0;
+        let useMockData = false;
+
+        // 初始化：添加两个默认反应物
+        window.onload = function() {
+            loadApiConfig();
+            addReactant();
+            addReactant();
+        };
+
+        // 切换模式
+        function switchMode(mode) {
+            document.querySelectorAll('.mode-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.mode-content').forEach(content => content.classList.remove('active'));
+
+            if (mode === 'api') {
+                document.querySelectorAll('.mode-tab')[0].classList.add('active');
+                document.getElementById('apiMode').classList.add('active');
+                useMockData = false;
+            } else {
+                document.querySelectorAll('.mode-tab')[1].classList.add('active');
+                document.getElementById('mockMode').classList.add('active');
+                useMockData = true;
+                document.getElementById('useMock').checked = true;
+            }
+        }
+
+        // 切换Mock模式
+        function toggleMockMode() {
+            useMockData = document.getElementById('useMock').checked;
+            if (useMockData) {
+                document.querySelectorAll('.mode-tab')[1].classList.add('active');
+                document.querySelectorAll('.mode-tab')[0].classList.remove('active');
+            } else {
+                document.querySelectorAll('.mode-tab')[0].classList.add('active');
+                document.querySelectorAll('.mode-tab')[1].classList.remove('active');
+            }
+        }
+
+        // 加载API配置
+        function loadApiConfig() {
+            const savedUrl = localStorage.getItem('chemistryApiUrl');
+            if (savedUrl) {
+                document.getElementById('apiUrl').value = savedUrl;
+            }
+        }
+
+        // 保存API配置
+        function saveApiConfig() {
+            const url = document.getElementById('apiUrl').value;
+            localStorage.setItem('chemistryApiUrl', url);
+            showMessage('配置已保存', 'success');
+        }
+
+        // 添加反应物
+        function addReactant() {
+            reactantCounter++;
+            const container = document.getElementById('reactantsList');
+
+            const div = document.createElement('div');
+            div.className = 'reactant-item';
+            div.id = 'reactant-' + reactantCounter;
+
+            div.innerHTML = `
+                <div class="reactant-header">
+                    <span class="reactant-number">${reactantCounter}</span>
+                    <button class="btn-remove" onclick="removeReactant(${reactantCounter})">删除</button>
+                </div>
+                <div class="form-group">
+                    <label>选择物质</label>
+                    <select class="substance-select" onchange="updateUnitHint(${reactantCounter})">
+                        <option value="">请选择物质</option>
+                        ${SUBSTANCES.map(s => `<option value="${s.id}" data-state="${s.state}" data-name="${s.name}">${s.name} (${s.formula})</option>`).join('')}
+                    </select>
+                </div>
+                <div class="input-row">
+                    <input type="number" class="reactant-amount" placeholder="数量" min="0" step="0.1" value="1">
+                    <select class="reactant-unit">
+                        <option value="g">g</option>
+                        <option value="mol">mol</option>
+                        <option value="L">L</option>
+                        <option value="mL">mL</option>
+                    </select>
+                </div>
+            `;
+
+            container.appendChild(div);
+        }
+
+        // 删除反应物
+        function removeReactant(id) {
+            const element = document.getElementById('reactant-' + id);
+            if (element) {
+                element.remove();
+            }
+        }
+
+        // 获取物质状态
+        function getSubstanceState(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            return selectedOption.getAttribute('data-state') || 's';
+        }
+
+        // 获取物质名称
+        function getSubstanceName(selectElement) {
+            const selectedOption = selectElement.options[selectElement.selectedIndex];
+            return selectedOption.getAttribute('data-name') || '';
+        }
+
+        // 开始模拟
+        async function startSimulation() {
+            // 收集反应物数据
+            const reactantItems = document.querySelectorAll('.reactant-item');
+            const reactants = [];
+            const reactantNames = [];
+
+            reactantItems.forEach(item => {
+                const substanceId = item.querySelector('.substance-select').value;
+                const amount = item.querySelector('.reactant-amount').value;
+                const unit = item.querySelector('.reactant-unit').value;
+                const state = getSubstanceState(item.querySelector('.substance-select'));
+                const name = getSubstanceName(item.querySelector('.substance-select'));
+
+                if (substanceId && amount) {
+                    reactants.push({
+                        substanceId: parseInt(substanceId),
+                        amount: parseFloat(amount),
+                        unit: unit,
+                        state: state
+                    });
+                    reactantNames.push(name);
+                }
+            });
+
+            if (reactants.length < 2) {
+                showMessage('请至少选择两种反应物', 'error');
+                return;
+            }
+
+            // 收集条件数据
+            const conditions = {};
+            const temperature = document.getElementById('temperature').value;
+            const pressure = document.getElementById('pressure').value;
+            const ph = document.getElementById('ph').value;
+            const solvent = document.getElementById('solvent').value;
+            const ignited = document.getElementById('ignited').checked;
+
+            if (temperature) conditions.temperature = parseFloat(temperature);
+            if (pressure) conditions.pressure = parseFloat(pressure);
+            if (ph) conditions.ph = parseFloat(ph);
+            if (solvent) conditions.solvent = solvent;
+            if (ignited) conditions.ignited = true;
+
+            // 显示加载状态
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在模拟反应...</p>
+                </div>
+            `;
+
+            // 使用模拟数据
+            if (useMockData) {
+                setTimeout(() => {
+                    const mockKey = reactantNames.sort().join('-');
+                    const mockResult = MOCK_DATA[mockKey] || MOCK_DATA['锌-稀硫酸'];
+
+                    // 模拟副反应触发
+                    if (mockResult.data.chainReactions && mockResult.data.chainReactions.length > 0) {
+                        if (ignited) {
+                            // 点燃时触发更多副反应
+                            mockResult.data.chainReactions.push({
+                                equationId: 10,
+                                reactionType: 'chain',
+                                isTriggered: true,
+                                triggerReason: '满足触发条件（点燃）',
+                                equationText: '2H₂ + O₂ → 2H₂O',
+                                phenomenonImpact: '氢气燃烧产生黄色火焰',
+                                teachingNote: '黄色火焰是钠的杂质导致'
+                            });
+                        }
+                    }
+
+                    displayResult(mockResult.data);
+                }, 800);
+                return;
+            }
+
+            // 使用真实API
+            const apiUrl = document.getElementById('apiUrl').value;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ reactants, conditions })
+                });
+
+                const result = await response.json();
+
+                if (result.code === 200 && result.data && result.data.reactionOccurred) {
+                    displayResult(result.data);
+                } else if (result.code === 404) {
+                    resultArea.innerHTML = `
+                        <div class="error-message">
+                            <strong>未找到反应</strong><br>
+                            ${result.msg || '这些物质在当前条件下不会发生化学反应'}
+                        </div>
+                    `;
+                } else {
+                    resultArea.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">😕</div>
+                            <p>这些物质不会发生化学反应</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultArea.innerHTML = `
+                    <div class="error-message">
+                        <strong>❌ 请求失败</strong><br>
+                        ${error.message}<br><br>
+                        <strong>解决方案：</strong><br>
+                        1. 安装Chrome浏览器扩展 "Allow CORS: Access-Control-Allow-Origin"<br>
+                        2. 或在项目目录运行：<code>python -m http.server 8000</code><br>
+                        3. 或使用VS Code的 "Live Server" 插件<br>
+                        4. 或切换到"模拟数据模式"进行测试
+                    </div>
+                `;
+            }
+        }
+
+        // 显示结果
+        function displayResult(data) {
+            const resultArea = document.getElementById('resultArea');
+
+            let html = '';
+
+            // 反应方程式
+            if (data.primaryReaction) {
+                html += `
+                    <div class="result-card">
+                        <h3>反应方程式</h3>
+                        <div class="equation-display">${data.primaryReaction.equationHtml || data.primaryReaction.equationText}</div>
+                        <div style="text-align: center; margin-top: 10px;">
+                            ${data.primaryReaction.reactionTypeName ? `<span class="tag tag-primary">${data.primaryReaction.reactionTypeName}</span>` : ''}
+                            ${data.primaryReaction.isRedox ? `<span class="tag tag-warning">氧化还原反应</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // 生成物信息
+            if (data.products && data.products.length > 0) {
+                html += `
+                    <div class="result-card">
+                        <h3>生成物信息</h3>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>化学式</th>
+                                    <th>名称</th>
+                                    <th>理论产量</th>
+                                    <th>实际产量</th>
+                                    <th>产率</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.products.map(p => `
+                                    <tr>
+                                        <td>${p.formula}</td>
+                                        <td>${p.substanceName}</td>
+                                        <td>${p.theoreticalYield?.toFixed(2)} ${p.yieldUnit}</td>
+                                        <td>${p.actualYield?.toFixed(2)} ${p.yieldUnit}</td>
+                                        <td><span class="tag tag-success">${p.yieldPercentage}%</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // 反应现象
+            if (data.phenomena) {
+                html += `
+                    <div class="result-card">
+                        <h3>反应现象</h3>
+                        <div class="phenomena-grid">
+                            ${data.phenomena.colorChange ? `
+                                <div class="phenomenon-item">
+                                    <span class="phenomenon-icon">🎨</span>
+                                    <div>
+                                        <div class="phenomenon-label">颜色变化</div>
+                                        <div class="phenomenon-value">${data.phenomena.colorChange.before} → ${data.phenomena.colorChange.after}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            ${data.phenomena.gasEvolution?.hasGas ? `
+                                <div class="phenomenon-item">
+                                    <span class="phenomenon-icon">💨</span>
+                                    <div>
+                                        <div class="phenomenon-label">气体产生</div>
+                                        <div class="phenomenon-value">${data.phenomena.gasEvolution.gasName || data.phenomena.gasEvolution.formula}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            ${data.phenomena.temperatureChange ? `
+                                <div class="phenomenon-item">
+                                    <span class="phenomenon-icon">${data.phenomena.temperatureChange.type === 'increase' ? '🌡️' : '❄️'}</span>
+                                    <div>
+                                        <div class="phenomenon-label">温度变化</div>
+                                        <div class="phenomenon-value">${data.phenomena.temperatureChange.delta}</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                        ${data.phenomena.description ? `
+                            <div style="margin-top: 15px; padding: 12px; background: #e7f7ff; border-radius: 6px; border-left: 4px solid #409eff;">
+                                ${data.phenomena.description}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            // 副反应
+            if (data.chainReactions && data.chainReactions.length > 0) {
+                html += `
+                    <div class="result-card">
+                        <h3>副反应</h3>
+                        ${data.chainReactions.map(r => `
+                            <div class="chain-reaction ${r.isTriggered ? 'triggered' : ''}">
+                                <div style="margin-bottom: 8px;">
+                                    ${r.isTriggered
+                                        ? '<span class="tag tag-danger">已触发</span>'
+                                        : '<span class="tag tag-info">未触发</span>'}
+                                    <span class="tag tag-primary">${r.reactionType || '副反应'}</span>
+                                </div>
+                                <div class="equation-display" style="font-size: 16px; padding: 12px;">${r.equationText}</div>
+                                <p style="margin: 8px 0;"><strong>触发原因：</strong>${r.triggerReason}</p>
+                                ${r.teachingNote ? `<p style="color: #909399; font-size: 13px;"><strong>教学说明：</strong>${r.teachingNote}</p>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            // 知识点
+            if (data.knowledgePoints && data.knowledgePoints.length > 0) {
+                html += `
+                    <div class="result-card">
+                        <h3>相关知识</h3>
+                        <ul style="padding-left: 20px;">
+                            ${data.knowledgePoints.map(k => `<li style="margin-bottom: 8px;">${k}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            resultArea.innerHTML = html || '<div class="empty-state"><p>无详细结果数据</p></div>';
+        }
+
+        // 重置
+        function resetSimulation() {
+            document.getElementById('reactantsList').innerHTML = '';
+            document.getElementById('temperature').value = '';
+            document.getElementById('pressure').value = '';
+            document.getElementById('ph').value = '';
+            document.getElementById('solvent').value = '';
+            document.getElementById('ignited').checked = false;
+            document.getElementById('resultArea').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🧪</div>
+                    <p>请在左侧添加反应物并设置条件</p>
+                    <p style="font-size: 12px; margin-top: 10px;">然后点击"开始实验"查看结果</p>
+                </div>
+            `;
+            reactantCounter = 0;
+            addReactant();
+            addReactant();
+        }
+
+        // 显示消息
+        function showMessage(message, type) {
+            const resultArea = document.getElementById('resultArea');
+            resultArea.innerHTML = `
+                <div class="${type === 'error' ? 'error-message' : 'success-message'}">
+                    ${message}
+                </div>
+            `;
+            setTimeout(() => {
+                if (resultArea.innerHTML.includes(message)) {
+                    resultArea.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🧪</div>
+                            <p>请在左侧添加反应物并设置条件</p>
+                        </div>
+                    `;
+                }
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

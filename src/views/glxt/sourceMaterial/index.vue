@@ -404,9 +404,9 @@ const handleCourseSystemChange = (data) => {
     //清空知识点的数据
      form.value.knowledgePoints = []
 
-    // 如果所有必要参数都有值，则获取知识点
-   if (data[0].length > 0 && data[0][0].length > 0) {
-        let subjectId = data[0][0]
+    // 单选级联：data = [subjectType, libraryId, volumeId]，科目取 data[0]
+   if (data && data.length > 0) {
+        let subjectId = data[0]
         getKnowledgeTreeList(subjectId);
         // getKnoledgeList(subjectId);
   }

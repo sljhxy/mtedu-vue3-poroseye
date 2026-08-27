@@ -210,6 +210,13 @@ export const constantRoutes = [
       component: () => import('@/views/glxt/experiment/experiment_steps.vue'),
       meta: { title: '实验步骤'},
       hidden: true
+    },
+    {
+      path: 'experiment_generate',
+      name: 'experimentGenerate',
+      component: () => import('@/views/glxt/experiment/experiment_generate.vue'),
+      meta: { title: 'AI课堂生成' },
+      hidden: true
     }
     // ... 其他路由
   ]

@@ -6,6 +6,7 @@ import createVitePlugins from './vite/plugins'
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd())
   const { VITE_APP_ENV } = env
+  const apiLocal = env.VITE_API_LOCAL === 'true'   // 切换本地/线上后端：true=本地, false=线上
   return {
     // 部署生产环境和开发环境下的URL。
     // 默认情况下，vite 会假设你的应用是被部署在一个域名的根路径上
@@ -31,12 +32,13 @@ export default defineConfig(({ mode, command }) => {
       proxy: {
         // https://cn.vitejs.dev/config/#server-proxy
         '/dev-api': {
-          target: 'http://localhost:8080',
-          // target: 'http://182.92.215.114:8080',
-          // target: 'http://172.17.105.77:8080',
-          // target: 'http://172.31.32.236:8080',
+          // target 和 rewrite 由 .env.development 的 VITE_API_LOCAL 联动控制：
+          //   true  = 本地网关 (localhost:8080)，rewrite 删空前缀
+          //   false = 线上 nginx (test.www.poroseye.cn)，rewrite 映射到 /prod-api
+          target: apiLocal ? 'http://localhost:8080' : 'https://test.www.poroseye.cn',
           changeOrigin: true,
-          rewrite: (p) => p.replace(/^\/dev-api/, '')
+          secure: false,                               // 线上 https 跳过证书校验；本地 http 无影响
+          rewrite: (p) => p.replace(/^\/dev-api/, apiLocal ? '' : '/prod-api')
         }
       }
     },

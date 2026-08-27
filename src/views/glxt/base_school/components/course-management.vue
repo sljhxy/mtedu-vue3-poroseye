@@ -45,102 +45,91 @@
         </div>
       </div>
 
-      <!-- 科目课程管理表格 -->
+      <!-- 课程管理 + 栏目管理（同级 Tab） -->
       <div class="table-card">
-        <div class="table-header">
-          <div class="header-left">
-            <el-icon class="header-icon"><List /></el-icon>
-            <h3>课程管理</h3>
-            <!-- 学校id：{{ schoolInfo?.id }} 选中的年级：{{currentGrade?.id}} - {{ currentGrade?.name }} -->
-          </div>
-          <div class="header-right">
-            <!-- 添加搜索框 -->
-            <el-input
-              v-model="queryParams.name"
-              placeholder="请输入科目名称搜索"
-              class="search-input"
-              clearable
-              @input="handleSearch"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-            <el-button type="primary" plain @click="clickAddCourse">
-              <el-icon><Plus /></el-icon>新增
-            </el-button>
-          </div>
-        </div>
+        <el-tabs v-model="activeManagementTab" class="management-tabs">
+          <!-- ===== Tab: 课程管理 ===== -->
+          <el-tab-pane label="课程管理" name="course">
+            <div class="table-header">
+              <div class="header-right">
+                <el-input v-model="queryParams.name" placeholder="请输入科目名称搜索" class="search-input" clearable @input="handleSearch">
+                  <template #prefix><el-icon><Search /></el-icon></template>
+                </el-input>
+                <el-button type="primary" plain @click="clickAddCourse"><el-icon><Plus /></el-icon>新增</el-button>
+              </div>
+            </div>
+            <div class="table-container">
+              <el-table :data="groupedCourseList" style="width: 100%" v-loading="loading">
+                <el-table-column label="年级" align="center">{{ currentGrade?.name }}</el-table-column>
+                <el-table-column label="科目" align="center">
+                  <template #default="scope">{{ scope.row.subjectName }}</template>
+                </el-table-column>
+                <el-table-column label="教材版本" align="center">
+                  <template #default="scope">{{ scope.row.textbookVersionName || '-' }}</template>
+                </el-table-column>
+                <el-table-column label="分册" align="center">
+                  <template #default="scope">
+                    <el-tag
+                      v-for="v in scope.row.volumes"
+                      :key="v.id"
+                      closable
+                      style="margin: 2px 4px;"
+                      @close="deleteCourse(v)"
+                    >{{ v.volumeName || '-' }}</el-tag>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-tab-pane>
 
-        <div class="table-container">
-          <el-table :data="courseList" style="width: 100%" v-loading="loading" element-loading-text="Loading..."> 
-            <el-table-column label="缩略图" align="center" prop="thumbnail">
-            <template #default="scope">
-              <image-preview v-if="scope.row.mtEduColumn != null" :src="scope.row.mtEduColumn.thumbnail" :width="70" :height="70"/>
-            </template>
-          </el-table-column>
-            <el-table-column prop="gradeName" label="年级" align="center">
-              {{ currentGrade?.name }}
-            </el-table-column>
-            <!-- <el-table-column prop="enrollmentYear" label="入学时间" align="center"/> -->
-            <el-table-column prop="name" label="科目" align="center"/>
-            <!-- <el-table-column label="课程体系" align="center">
-              <template #default="{ row }">
-                <div class="course-systems">
-                  <el-tag
-                    v-for="(system, index) in row.courseSystems"
-                    :key="index"
-                    size="small"
-                    class="course-system-tag"
-                  >
-                    {{ `${getSubjectName(system[0])}-${system[1]}-${system[2]}` }}
-                  </el-tag>
-                </div>
-              </template>
-            </el-table-column> -->
-            <el-table-column prop="columnId" label="栏目ID" align="center">
-              <template #default="scope">
-                <span v-if="scope.row.mtEduColumn != null">{{scope.row.mtEduColumn.id}}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="columnName" label="栏目名称" align="center">
-              <template #default="scope">
-                <span v-if="scope.row.mtEduColumn != null">{{scope.row.mtEduColumn.columnName}}</span>
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="200" align="center">
-              <template #default="scope">
-                <el-button type="primary" link @click="editCourse(scope.row)">
-                  <el-icon><Edit /></el-icon>编辑
-                </el-button>
-                <el-button type="danger" link @click="deleteCourse(scope.row)">
-                  <el-icon><Delete /></el-icon>删除
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
-
-          <!-- 添加分页组件 -->
-          <div class="pagination-container">
-            <el-pagination
-              v-model:current-page="queryParams.pageNum"
-              v-model:page-size="queryParams.pageSize"
-              :page-sizes="[10, 20, 30, 50]"
-              :total="total"
-              background
-              layout="total, sizes, prev, pager, next, jumper"
-              @size-change="handleSizeChange"
-              @current-change="handleCurrentChange"
-            />
-          </div>
-        </div>
+          <!-- ===== Tab: 栏目管理 ===== -->
+          <el-tab-pane label="栏目管理" name="column">
+            <div class="table-header">
+              <div class="header-right">
+                <el-button type="primary" plain @click="openColumnAddDialog"><el-icon><Plus /></el-icon>添加</el-button>
+                <el-button type="danger" plain :disabled="selectedColumnIds.length === 0" @click="batchDeleteColumns">批量删除</el-button>
+              </div>
+              <span class="drag-tip">提示：拖动 <el-icon><Rank /></el-icon> 可调整栏目顺序</span>
+            </div>
+            <div class="table-container">
+              <el-table ref="columnTableRef" :data="columnList" row-key="id" style="width: 100%" v-loading="columnLoading" @selection-change="handleColumnSelectionChange">
+                <el-table-column type="selection" width="55" align="center" />
+                <el-table-column label="序号" type="index" width="55" align="center" />
+                <el-table-column label="缩略图" width="100" align="center">
+                  <template #default="scope">
+                    <div class="col-thumb">
+                      <image-preview v-if="getColumnThumb(scope.row.columnId)" :src="getColumnThumb(scope.row.columnId)" :width="80" :height="80"/>
+                      <span v-else style="color:#c0c4cc;">-</span>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="columnName" label="栏目名称" align="center">
+                  <template #default="scope">{{ getColumnLabel(scope.row.columnId) }}</template>
+                </el-table-column>
+                <el-table-column label="副名称" align="center">
+                  <template #default="scope">{{ getColumnSubName(scope.row.columnId) || '-' }}</template>
+                </el-table-column>
+                <el-table-column label="排序" width="70" align="center">
+                  <template #default>
+                    <el-icon class="drag-handler"><Rank /></el-icon>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="100" align="center">
+                  <template #default="scope">
+                    <el-button type="danger" link @click="deleteSingleColumn(scope.row)"><el-icon><Delete /></el-icon>删除</el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
       </div>
     </div>
 
     <!-- 课程配置对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogType === 'add' ? '配置课程' : '编辑课程'"
+      title="配置课程（可多选）"
       width="600px"
       destroy-on-close
     >
@@ -158,15 +147,17 @@
         <!-- <el-form-item label="入学时间" prop="enrollmentYear">
           <el-input v-model="courseForm.enrollmentYear" disabled />
         </el-form-item> -->
-        <el-form-item label="科目" prop="subject">
-          <el-select v-model="courseForm.subjectId" placeholder="请选择科目" class="w-full" @change="subjectChange">
-            <el-option
-              v-for="item in subjectOptions"
-              :key="item.id"
-              :label="item.subjectName"
-              :value="item.subjectType"
-            />
-          </el-select>
+        <el-form-item label="课程" prop="courseBook">
+          <el-cascader
+            v-model="courseForm.courseBook"
+            :options="subjectBookTree"
+            :props="{ expandTrigger: 'hover', emitPath: true, multiple: true }"
+            placeholder="请选择 科目 / 教材版本 / 分册（可多选）"
+            clearable
+            collapse-tags
+            collapse-tags-tooltip
+            class="w-full"
+          />
         </el-form-item>
         <!-- <el-form-item label="课程体系" required>
           <el-cascader
@@ -185,21 +176,44 @@
             @change="handleCourseSystemChange"
           />
         </el-form-item> -->
-        <el-form-item label="栏目" prop="columnId">
-          <el-select v-model="courseForm.columnId" placeholder="请选择栏目" class="w-full">
-            <el-option
-              v-for="item in columnOptions"
-              :key="item.id"
-              :label="item.columnName"
-              :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="cancel">取消</el-button>
           <el-button type="primary" @click="saveCourse">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 批量添加栏目对话框 -->
+    <el-dialog
+      v-model="columnAddDialogVisible"
+      title="批量添加栏目"
+      width="640px"
+      destroy-on-close
+    >
+      <el-table
+        :data="availableColumns"
+        max-height="400"
+        @selection-change="handleAddSelectionChange"
+        empty-text="暂无可添加的栏目"
+      >
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column label="缩略图" align="center" width="90">
+          <template #default="scope">
+            <image-preview v-if="scope.row.thumbnail" :src="scope.row.thumbnail" :width="60" :height="60" />
+            <span v-else style="color:#c0c4cc;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="columnName" label="栏目名称" align="center" />
+        <el-table-column label="副名称" align="center">
+          <template #default="scope">{{ scope.row.subName || '-' }}</template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="columnAddDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitColumnAdd">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -224,17 +238,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, reactive, watch, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
-import { listCourse, addCourse, updateCourse, delCourse, getCourse } from '@/api/glxt/base_course'
-import { initSubject, getCourseSystemOptions } from '@/api/glxt/subject'
+import { listCourse, addCourse, delCourse } from '@/api/glxt/base_course'
+import { getCourseSystemOptions } from '@/api/glxt/subject'
 const { proxy } = getCurrentInstance();
 const { mt_school_subject } = proxy.useDict('mt_school_subject');
 //获取教材版本
 import {getLibrary, getVolumeDetail } from '@/api/glxt/library';
 
 //栏目API
-import { listColumn } from "@/api/glxt/column";
+import { listColumn, listColumnsByGrade, batchAddColumnsToGrade, delSchoolColumns, reorderSchoolColumns } from "@/api/glxt/column";
+// 拖拽排序
+import Sortable from 'sortablejs';
 
 
 
@@ -258,6 +274,7 @@ const props = defineProps({
 })
 
 const currentGrade = ref(null)
+const activeManagementTab = ref('course')
 const dialogVisible = ref(false)
 const dialogType = ref('add')
 const courseFormRef = ref(null)
@@ -265,6 +282,7 @@ const courseFormRef = ref(null)
 
 // 表单校验规则
 const rules = {
+  courseBook: [{ required: true, message: '请选择 科目 / 教材版本 / 分册', trigger: 'change' }],
   // subject: [{ required: true, message: '请选择科目', trigger: 'change' }],
   // textbookSubject: [{ required: true, message: '请选择科目', trigger: 'change' }],
   // textbookVersion: [{ required: true, message: '请选择教材版本', trigger: 'change' }],
@@ -278,7 +296,7 @@ const total = ref(0)
 const courseList = ref([]);
 const queryParams = ref({
   pageNum: 1,
-  pageSize: 10,
+  pageSize: 100000, // 课程按年级全量加载（不分页），前端分组
   gradeId: '',
   name: '',
   schoolId: props.schoolInfo.id,//学校id
@@ -286,79 +304,218 @@ const queryParams = ref({
 });
 
 const courseForm = ref({
-  id: null,
   schoolId: props.schoolInfo.id,
   schoolType: props.schoolInfo.educationLevel,//学校类型
   gradeId: '',
-  subjectId: '',
-  name: '',
-  courseSystems: [[]],
-  columnId:'',
-  schoolColumnId:''
+  courseBook: []       // 多选级联值 [[subjectType, libraryId, volumeId], ...]
 })
 //重置
 const reset = () => {
   courseForm.value = {
-    id: null,
+    schoolId: props.schoolInfo.id,
+    schoolType: props.schoolInfo.educationLevel,
     gradeId: currentGrade.value.id,
-    subjectId: null,
-    name: null,
-    courseSystems: [[]],
-    columnId: null,
-    schoolColumnId: null
+    courseBook: []
   }
 }
 
-//科目下拉改变时候获取栏目列表
-const subjectChange = (value) => {
-  getColumnList()
+// 「科目 → 教材版本 → 分册」级联树（复用 getCourseSystemOptions，按学校类型 + 学段）
+const subjectBookTree = ref([])
+
+// 加载级联树
+const loadSubjectBookTree = () => {
+  // 本组件为普教专用，educationLevel 兜底取 '1'，避免空值导致后端不过滤 school_type 而混入职教科目
+  const schoolType = props.schoolInfo.educationLevel || '1'
+  getCourseSystemOptions(schoolType, props.schoolInfo.schoolType).then(res => {
+    if (res.code == 200) subjectBookTree.value = res.data || []
+  })
 }
 
-
-//获取栏目列表
-const columnOptions = ref([])
-const getColumnList = () => {
-  try{
-    let queryParams = {
-      pageNum: 1,
-      pageSize: 100000,
-      contentType: props.schoolInfo.educationLevel 
+// 级联选择：科目 / 教材版本 / 分册
+// 列表按「科目 + 教材版本」分组，每组一行，分册内联成 tag
+const groupedCourseList = computed(() => {
+  const map = new Map()
+  courseList.value.forEach(c => {
+    const key = `${c.subjectId}-${c.libraryId}`
+    if (!map.has(key)) {
+      map.set(key, {
+        subjectId: c.subjectId,
+        subjectName: c.name,
+        libraryId: c.libraryId,
+        textbookVersionName: c.textbookVersionName,
+        volumes: []
+      })
     }
-    listColumn(queryParams).then(response => {
-      if(response.code == 200){
-        columnOptions.value = response.rows
-      
-      }
-    })
-  }catch(err){
+    map.get(key).volumes.push(c)
+  })
+  return Array.from(map.values())
+})
+
+// 按级联路径从树里取名称
+const findBookLabels = (path) => {
+  if (!path || path.length < 3) return null
+  const [sType, lId, vId] = path
+  const subj = subjectBookTree.value.find(s => s.value === sType)
+  if (!subj) return null
+  const lib = (subj.children || []).find(l => l.value === lId)
+  if (!lib) return { subjectName: subj.label }
+  const vol = (lib.children || []).find(v => v.value === vId)
+  return { subjectName: subj.label, versionName: lib.label, volumeName: vol ? vol.label : null }
+}
+
+
+// ===== 栏目管理（按年级） =====
+// 栏目目录：用于名称/缩略图回显 + 批量添加可选项
+const columnOptions = ref([])
+const columnList = ref([])          // 当前年级已关联的栏目（MtSchoolColumn 列表）
+const columnLoading = ref(false)
+const selectedColumns = ref([])     // 表格多选行
+const selectedColumnIds = computed(() => selectedColumns.value.map(c => c.id))
+
+// 加载栏目目录（按学校类型过滤）
+const loadColumnCatalog = () => {
+  return listColumn({
+    pageNum: 1,
+    pageSize: 100000,
+    contentType: props.schoolInfo.educationLevel
+  }).then(response => {
+    if (response.code == 200) columnOptions.value = response.rows || []
+  }).catch(() => {
     ElMessage.error('获取栏目数据失败')
+  })
+}
+
+// 栏目名称/缩略图回显
+const findColumn = (columnId) => columnOptions.value.find(c => c.id === columnId)
+const getColumnLabel = (columnId) => findColumn(columnId)?.columnName
+const getColumnThumb = (columnId) => findColumn(columnId)?.thumbnail
+const getColumnSubName = (columnId) => findColumn(columnId)?.subName
+
+// 加载某年级已关联栏目
+const loadGradeColumns = (gradeId) => {
+  columnLoading.value = true
+  listColumnsByGrade(gradeId).then(res => {
+    if (res.code == 200) columnList.value = res.data || []
+    columnLoading.value = false
+  }).catch(() => {
+    columnLoading.value = false
+  })
+}
+
+// 表格多选
+const handleColumnSelectionChange = (selection) => {
+  selectedColumns.value = selection
+}
+
+// 删除单个栏目关联
+const deleteSingleColumn = (row) => {
+  proxy.$modal.confirm('确定要移除该栏目吗？').then(() => {
+    return delSchoolColumns(row.id)
+  }).then(() => {
+    proxy.$modal.msgSuccess('删除成功')
+    loadGradeColumns(currentGrade.value.id)
+  }).catch(() => {})
+}
+
+// 批量删除栏目关联
+const batchDeleteColumns = () => {
+  const ids = selectedColumnIds.value
+  proxy.$modal.confirm(`确定要移除选中的 ${ids.length} 个栏目吗？`).then(() => {
+    return delSchoolColumns(ids.join(','))
+  }).then(() => {
+    proxy.$modal.msgSuccess('删除成功')
+    loadGradeColumns(currentGrade.value.id)
+  }).catch(() => {})
+}
+
+// ===== 批量添加栏目对话框 =====
+const columnAddDialogVisible = ref(false)
+const columnAddSelectedRows = ref([])
+// 可添加 = 目录中尚未关联到当前年级的栏目
+const availableColumns = computed(() => {
+  const existed = new Set(columnList.value.map(c => c.columnId))
+  return columnOptions.value.filter(c => !existed.has(c.id))
+})
+const openColumnAddDialog = () => {
+  if (!currentGrade.value) {
+    ElMessage.warning('请先选择年级')
+    return
+  }
+  columnAddSelectedRows.value = []
+  const open = () => { columnAddDialogVisible.value = true }
+  if (columnOptions.value.length === 0) {
+    loadColumnCatalog().then(open)
+  } else {
+    open()
   }
 }
-
-
-
-// 处理页码改变
-const handleCurrentChange = (val) => {
-  queryParams.value.pageNum = val
-   // 这里调用获取数据的方法
-  getCoursesByGrade(currentGrade.value)
+const handleAddSelectionChange = (rows) => {
+  columnAddSelectedRows.value = rows
+}
+const submitColumnAdd = () => {
+  if (columnAddSelectedRows.value.length === 0) {
+    ElMessage.warning('请至少选择一个栏目')
+    return
+  }
+  const payload = columnAddSelectedRows.value.map(c => ({
+    columnId: c.id,
+    schoolId: props.schoolInfo.id,
+    gradeId: currentGrade.value.id,
+    contentType: props.schoolInfo.educationLevel
+  }))
+  batchAddColumnsToGrade(payload).then(res => {
+    if (res.code == 200) {
+      proxy.$modal.msgSuccess('添加成功')
+      columnAddDialogVisible.value = false
+      loadGradeColumns(currentGrade.value.id)
+    }
+  })
 }
 
-// 处理每页条数改变
-const handleSizeChange = (val) => {
-  queryParams.value.pageSize = val
-  // 这里调用获取数据的方法
-  getCoursesByGrade(currentGrade.value)
+// ===== 栏目拖拽排序 =====
+const columnTableRef = ref(null)
+const columnSortable = ref(null)
+const initColumnDrag = () => {
+  const tbody = columnTableRef.value?.$el?.querySelector('.el-table__body-wrapper tbody')
+  if (!tbody || columnSortable.value) return
+  columnSortable.value = Sortable.create(tbody, {
+    handle: '.drag-handler',
+    animation: 150,
+    onEnd: ({ oldIndex, newIndex }) => {
+      if (oldIndex === newIndex) return
+      // 先同步本地顺序，再按新顺序落库 sort
+      const moved = columnList.value.splice(oldIndex, 1)[0]
+      columnList.value.splice(newIndex, 0, moved)
+      reorderSchoolColumns(columnList.value.map(c => c.id)).then(res => {
+        if (res.code == 200) {
+          proxy.$modal.msgSuccess('排序成功')
+        } else {
+          loadGradeColumns(currentGrade.value.id)
+        }
+      }).catch(() => loadGradeColumns(currentGrade.value.id))
+    }
+  })
 }
+// 首次切到「栏目管理」Tab 时初始化拖拽（表格 tbody 此时才确定存在）
+watch(activeManagementTab, (val) => {
+  if (val === 'column') nextTick(initColumnDrag)
+})
+
+
+
+// 分页已移除（课程按年级全量加载 + 前端分组）
 
 
 // 修改 handleGradeClick 函数
 const handleGradeClick = (grade) => {
   currentGrade.value = grade
-  
-  getCoursesByGrade(grade);
 
-  ElMessage.success(`已切换到${grade.name}课程列表`)
+  getCoursesByGrade(grade)
+  // 栏目按年级管理：切换年级时同步加载栏目目录与该年级已关联栏目
+  if (columnOptions.value.length === 0) loadColumnCatalog()
+  loadGradeColumns(grade.id)
+
+  ElMessage.success(`已切换到${grade.name}`)
 
 }
 
@@ -395,24 +552,6 @@ watch(() => queryParams.value.name, () => {
   handleSearch()
 })
 
-// 初始化科目下拉列表
-const subjectOptions = ref([])
-const initSubjectList = () => {
-  try{
-    initSubject({schoolType: '1', educationStageType:props.schoolInfo.schoolType}).then(response => {
-      if(response.code == 200){
-        subjectOptions.value = response.rows
-        //获取科目名称
-        // console.log('subjectOptions',subjectOptions.value)
-        subjectOptions.value.forEach(item => {
-          item.subjectName = getSubjectName(item.subjectType)
-        })
-      }
-    })
-  }catch(err){
-    ElMessage.error('数据初始化失败')
-  }
-}
 //获取科目名称
 const getSubjectName = (subjectType) => {
   return mt_school_subject.value ?.find(item => item.value === subjectType).label
@@ -422,8 +561,8 @@ const getSubjectName = (subjectType) => {
 const clickAddCourse = () => {
    //重置表单
   reset();
-  //调用初始化科目下拉列表
-  initSubjectList();
+  //加载「科目→版本→分册」级联树
+  loadSubjectBookTree();
   //获取挂载课程
   getCourseSystemOptionList(props.schoolInfo.educationLevel, props.schoolInfo.schoolType);
 
@@ -437,30 +576,7 @@ const clickAddCourse = () => {
 }
 
 
-// 修改 editCourse 函数
-const editCourse = (row) => {
-  reset();
-   //调用初始化科目下拉列表
-  initSubjectList();
-  //获取挂载课程  学校类型   学段   需求问题暂时去掉挂载课程体系
-  // getCourseSystemOptionList(props.schoolInfo.educationLevel, props.schoolInfo.schoolType);
-
-  //获取栏目
-  getColumnList()
-  dialogType.value = 'edit'
-  //获取课程信息
-  getCourse(row.id, props.schoolInfo.id, props.schoolInfo.educationLevel).then(response => {
-    if(response.code == 200) {
-
-      courseForm.value = response.data
-      courseForm.value.columnId = response.data.mtSchoolColumn.columnId
-      courseForm.value.schoolColumnId = response.data.mtSchoolColumn.id
-      //开启弹框
-      dialogVisible.value = true
-    }
-  })
-
-}
+// 编辑已移除（要改课程删了重加；课程身份=科目+版本+分册，无其它可编辑属性）
 
 // 删除课程
 const deleteCourse = (row) => {
@@ -488,43 +604,46 @@ const cancel = () => {
   dialogVisible.value = false
 }
 
-// 修改 saveCourse 函数
+// 多选批量新增：遍历选中级联路径，去重后逐条 addCourse
 const saveCourse = () => {
   if (!courseFormRef.value) return
-  try{
-    courseFormRef.value.validate((valid) => {
-    if (valid) {
-      if (courseForm.value.id != null) {
-        courseForm.value.schoolId = props.schoolInfo.id;
-        courseForm.value.schoolType = props.schoolInfo.educationLevel;
-        updateCourse(courseForm.value).then(response => {
-          if(response.code == 200){
-            proxy.$modal.msgSuccess("修改成功");
-            queryParams.value.gradeId = courseForm.value.gradeId
-            getList(queryParams.value);
-          } 
-        });
-      } else {
-        //获取课程名称传入参数
-        let name = getSubjectName(courseForm.value.subjectId);
-        courseForm.value.name = name;
-        courseForm.value.schoolId = props.schoolInfo.id;
-        courseForm.value.schoolType = props.schoolInfo.educationLevel;
-        addCourse(courseForm.value).then(response => {
-          if(response.code == 200){
-            proxy.$modal.msgSuccess("新增成功");
-            queryParams.value.gradeId = courseForm.value.gradeId
-            getList(queryParams.value);
-          }
-        });
-      }
+  courseFormRef.value.validate(valid => {
+    if (!valid) return
+    const paths = courseForm.value.courseBook || []
+    if (!paths.length) return
+    // 去重：跳过当前年级已存在的（科目+版本+分册）
+    const existKeys = new Set(courseList.value.map(c => `${c.subjectId}-${c.libraryId}-${c.volumeId}`))
+    const toAdd = []
+    paths.forEach(path => {
+      if (!path || path.length < 3) return
+      const [subjectType, libraryId, volumeId] = path
+      if (existKeys.has(`${subjectType}-${libraryId}-${volumeId}`)) return
+      const labels = findBookLabels(path)
+      toAdd.push({
+        schoolId: props.schoolInfo.id,
+        schoolType: props.schoolInfo.educationLevel,
+        gradeId: currentGrade.value.id,
+        subjectId: subjectType,
+        libraryId: libraryId != null ? Number(libraryId) : null,
+        volumeId: volumeId != null ? Number(volumeId) : null,
+        name: labels?.subjectName || getSubjectName(subjectType)
+      })
+    })
+    if (toAdd.length === 0) {
+      proxy.$modal.msgWarning('所选课程均已存在，无需重复添加')
+      return
     }
+    loading.value = true
+    Promise.all(toAdd.map(c => addCourse(c))).then(() => {
+      proxy.$modal.msgSuccess(`新增成功 ${toAdd.length} 条`)
+      dialogVisible.value = false
+      getCoursesByGrade(currentGrade.value)
+    }).catch(() => {
+      proxy.$modal.msgError('部分课程新增失败，请重试')
+    }).finally(() => {
+      loading.value = false
+    })
   })
-  }catch(err){
-    ElMessage.error('操作失败')
-  } finally {
-    dialogVisible.value = false//关闭弹框
-  }
 }
 
 // 修改初始化默认年级的方法
@@ -1199,5 +1318,40 @@ const handleCourseSystemChange = (values) => {
 /* 确保内容不被底部导航遮挡 */
 .content-wrapper {
   padding-bottom: 100px;
+}
+
+/* 栏目拖拽排序 */
+.drag-handler {
+  cursor: move;
+  font-size: 18px;
+  color: #909399;
+}
+
+/* 缩略图：强制正方形 + cover，避免宽图被压扁 */
+.col-thumb {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.col-thumb :deep(.el-image) {
+  width: 80px;
+  height: 80px;
+}
+.col-thumb :deep(.el-image__inner) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
+.drag-handler:hover {
+  color: #409eff;
+}
+
+.drag-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #909399;
 }
 </style> 

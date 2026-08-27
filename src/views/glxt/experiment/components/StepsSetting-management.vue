@@ -10,7 +10,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Document /></el-icon>
-                <span>步骤设置{{ experimentId }}</span>
+                <span>步骤设置</span>
               </div>
             </template>
             
@@ -25,6 +25,8 @@
                <el-button type="warning" plain icon="Upload" @click="importSteps">
                 导入步骤
               </el-button>
+              <!-- 隐藏的文件选择框：由"导入步骤"按钮触发，仅允许 .xlsx -->
+              <input ref="importInputRef" type="file" accept=".xlsx" style="display:none" @change="handleImportFile" />
             </div>
 
             <div class="steps-content">
@@ -43,24 +45,23 @@
                     <span class="node-content">
                       <span class="step-index">{{ getStepNumber(node) }}</span>
                       <span class="step-line"></span>
-                      <span :class="['step-label', { 'first-level': getLevel(node) === 1 }]">
-                        {{ data.stepName }}
-                      </span>
-                      <el-tag size="small" type="success" class="ml-2">
-                        分数：{{ data.stepScore }}
-                      </el-tag>
+                      <el-tooltip :content="data.stepName || ''" placement="top" :show-after="200" popper-class="step-name-tip">
+                        <span :class="['step-label', { 'first-level': getLevel(node) === 1 }]">{{ data.stepName }}</span>
+                      </el-tooltip>
                     </span>
+                    <!-- 分数列：固定宽、右对齐、弱化为次要元数据；一级步骤(is-parent)加粗，与子步骤区分 -->
+                    <span :class="['step-score', { 'is-parent': getLevel(node) === 1 }]">{{ data.stepScore }} 分</span>
                     <span class="operation-buttons">
-                      <el-button plain type="info" color="#ff6f21" @click.stop="handleOperation(data)" >
+                      <el-button size="small" plain type="info" color="#ff6f21" @click.stop="handleOperation(data)" >
                         关联操作
                       </el-button>
-                      <el-button v-if="getLevel(node) < 3" plain type="primary" @click.stop="addStep(data)" v-hasPermi="['glxt:experimentInfoStep:add']">
+                      <el-button v-if="getLevel(node) < 3" size="small" plain type="primary" @click.stop="addStep(data)" v-hasPermi="['glxt:experimentInfoStep:add']">
                         添加子步骤
                       </el-button>
-                      <el-button plain type="success" @click.stop="editStep(data)" v-hasPermi="['glxt:experimentInfoStep:edit']">
+                      <el-button size="small" plain type="success" @click.stop="editStep(data)" v-hasPermi="['glxt:experimentInfoStep:edit']">
                         编辑
                       </el-button>
-                        <el-button plain type="danger" @click.stop="deleteStep(node, data)" title="先删除子步骤再删除父级" v-hasPermi="['glxt:experimentInfoStep:remove']"
+                        <el-button size="small" plain type="danger" @click.stop="deleteStep(node, data)" title="先删除子步骤再删除父级" v-hasPermi="['glxt:experimentInfoStep:remove']"
                           :disabled="data.children && data.children.length > 0">
                           删除
                         </el-button>
@@ -139,7 +140,7 @@
                 </template>
               </el-table-column>
               <el-table-column prop="stepName" label="触发的实验步骤" align="center"/>
-              <el-table-column label="操作" align="center">
+              <el-table-column label="操作" align="center" width="200">
                 <template #default="scope">
                   <el-button type="success" plain @click="handlerEditBtnDefinition(scope.row)" v-hasPermi="['glxt:experimentBtnDefinition:edit']">编辑</el-button>
                   <el-button type="danger" plain  @click="handlerDelBtnDefinition(scope.row)" v-hasPermi="['glxt:experimentBtnDefinition:remove']">删除</el-button>
@@ -181,7 +182,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Connection /></el-icon>
-                <span>评价维度</span>
+                <span>知识点评价</span>
               </div>
             </template>
             <!-- 评价维度内容 -->
@@ -191,11 +192,11 @@
                 <div class="empty-state">
                   <div class="welcome-content">
                     <el-icon class="welcome-icon"><Connection /></el-icon>
-                    <h2>欢迎来到【评价维度】管理</h2>
-                    <p>开始添加您的评价维度</p>
+                    <h2>欢迎来到【知识点评价】管理</h2>
+                    <p>开始添加您的知识点评价</p>
                     <el-button type="primary" class="add-button" @click="openDimensionDialog">
                       <el-icon><Plus /></el-icon>
-                      添加评价维度
+                      添加知识点评价
                     </el-button>
                   </div>
                 </div>
@@ -206,7 +207,7 @@
              <div v-if="evaluationDimensionList.length" class="dimension-list">
               <div class="operation-bar">
                 <div class="left-buttons">
-                  <el-button type="primary" plain icon="Plus" @click="openDimensionDialog">添加评价维度</el-button>
+                  <el-button type="primary" plain icon="Plus" @click="openDimensionDialog">添加知识点评价</el-button>
                 </div>
               </div>
               
@@ -246,7 +247,7 @@
             <!-- 评价维度对话框 -->
             <el-dialog 
               v-model="dimensionDialogVisible" 
-              :title="currentDimension.id ? '编辑评价维度' : '添加评价维度'"
+              :title="currentDimension.id ? '编辑知识点评价' : '添加知识点评价'"
               width="650px"
               destroy-on-close
             >
@@ -265,10 +266,10 @@
                   <el-tree-select
                     v-model="currentDimension.experimentStepIds"
                     :data="stepOptions"
-                    :props="{ 
-                      value: 'id', 
-                      label: 'stepName', 
-                      children: 'children' 
+                    :props="{
+                      value: 'id',
+                      label: 'stepName',
+                      children: 'children'
                     }"
                     multiple
                     show-checkbox
@@ -276,6 +277,9 @@
                     node-key="id"
                     placeholder="请选择关联步骤"
                     clearable
+                    collapse-tags
+                    collapse-tags-tooltip
+                    style="width: 100%"
                     class="dimension-step-select"
                   />
                 </el-form-item>
@@ -309,7 +313,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Operation /></el-icon>
-                <span>评价要求{{ props.experimentId }}</span>
+                <span>评价要求</span>
               </div>
             </template>
             
@@ -367,7 +371,7 @@
                       </div>
                     </div>
                     <div class="target-body">
-                      <div class="target-text" v-html="requirement.text"></div>
+                      <div class="target-text" v-html="requirement.text" v-katex></div>
                     </div>
                     <div class="target-footer">
                       <el-tag size="small" plain type="info">
@@ -430,6 +434,7 @@
                 placeholder="请选择关联操作步骤"
                 check-strictly
                 clearable
+                style="width: 100%"
               />
       </el-form-item>
     </el-form>
@@ -444,21 +449,43 @@
 
 
 
-    <!-- 预览步骤对话框 -->
+    <!-- 预览步骤对话框（分组卡片式） -->
     <el-dialog
       v-model="previewDialogVisible"
       title="步骤预览"
-      width="600px"
+      width="640px"
+      class="preview-dialog"
     >
+      <!-- 顶部汇总条：大步骤数 / 子步骤数 / 总分 -->
+      <div class="preview-summary">
+        共 <b>{{ previewSummary.big }}</b> 个大步骤 ·
+        <b>{{ previewSummary.small }}</b> 个子步骤 ·
+        总分 <b>{{ previewSummary.total }}</b>
+      </div>
+
+      <!-- 步骤列表（可滚动）；每个大步骤一张分组卡片，子步骤列在卡内 -->
       <div class="preview-content">
-        <div v-for="(step) in flattenSteps" :key="step.id" 
-             :style="{ paddingLeft: `${step.level * 20}px` }"
-            class="preview-step">
-          <span class="preview-index">{{ step.number }}</span>
-          <span class="preview-label">{{ step.stepName }}</span>
-          <span class="preview-score">分数：{{ step.stepScore }}</span>
+        <div v-if="previewGroups.length === 0" class="preview-empty">暂无步骤数据</div>
+        <div v-for="group in previewGroups" :key="group.id" class="preview-group">
+          <!-- 大步骤（分组头）：主色左边框 + 浅底 + 加粗 -->
+          <div class="preview-head">
+            <span class="preview-badge">{{ group.number }}</span>
+            <span class="preview-head-name" :title="group.stepName">{{ group.stepName }}</span>
+            <span class="preview-head-score">{{ group.stepScore }} 分</span>
+          </div>
+          <!-- 子步骤：缩进、常规字重 -->
+          <div v-for="child in group.children" :key="child.id" class="preview-child">
+            <span class="preview-child-num">{{ child.number }}</span>
+            <span class="preview-child-name" :title="child.stepName">{{ child.stepName }}</span>
+            <span class="preview-child-score">{{ child.stepScore }}</span>
+          </div>
         </div>
       </div>
+
+      <!-- 底部关闭按钮 -->
+      <template #footer>
+        <el-button @click="previewDialogVisible = false">关闭</el-button>
+      </template>
     </el-dialog>
 
     <!-- 添加/编辑步骤的对话框 -->
@@ -586,7 +613,7 @@ const { proxy } = getCurrentInstance();
 import Tinymce from "@/components/Tinymce/index.vue"
 
 //导入实验步骤API
-import { getExperimentInfoStep, addExperimentInfoStep, updateExperimentInfoStep, delExperimentInfoStep, listExperimentInfoStep } from '@/api/glxt/experimentInfoStep'
+import { getExperimentInfoStep, addExperimentInfoStep, updateExperimentInfoStep, delExperimentInfoStep, listExperimentInfoStep, importExperimentSteps } from '@/api/glxt/experimentInfoStep'
 
 //导入实验步骤关联操作API
 import { getExperimentStepRelevance, addExperimentStepRelevance, updateExperimentStepRelevance, delExperimentStepRelevance, listExperimentStepRelevance } from '@/api/glxt/experimentStepRelevance'
@@ -940,9 +967,9 @@ const resetStepForm = () => {
 
 /** 查询步骤下拉树结构 */
 function getTreeselect() {
-  let param = { experimentInfoId: props.experimentId }
+  // pageSize 给大值，一次性拿全部步骤（后端 list 有 startPage，默认只给 10 条，会丢步骤）
+  let param = { experimentInfoId: props.experimentId, pageNum: 1, pageSize: 100000 }
   listExperimentInfoStep(param).then(response => {
-    console.log(response.rows)
     stepOptions.value = [];
     const data = { id: 0, stepName: '顶级节点', children: [] };
     data.children = proxy.handleTree(response.rows, "id", "parentId");
@@ -950,6 +977,56 @@ function getTreeselect() {
   });
 }
 	
+
+// ==================== 导入步骤（xlsx 模板，覆盖式）====================
+// 流程：点"导入步骤" -> 触发隐藏的 <input type=file> 选 .xlsx ->
+//       覆盖确认 -> multipart 上传 -> 后端清旧步骤并重新导入 -> 刷新步骤树
+const importInputRef = ref(null)
+
+// 点击"导入步骤"按钮：打开文件选择框
+const importSteps = () => {
+  if (importInputRef.value) {
+    importInputRef.value.click()
+  }
+}
+
+// 选好文件后的处理
+const handleImportFile = async (e) => {
+  const file = e.target.files && e.target.files[0]
+  if (!file) return
+  // 仅允许 .xlsx
+  if (!/\.xlsx$/i.test(file.name)) {
+    ElMessage.warning('请上传 .xlsx 格式的文件')
+    e.target.value = ''   // 清空，便于重复选同一文件
+    return
+  }
+  // 覆盖确认：导入会清空已有步骤，需用户二次确认
+  try {
+    await ElMessageBox.confirm('导入将清空当前实验已有步骤并重新导入，是否继续？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+  } catch (cancel) {
+    e.target.value = ''   // 用户取消，清空 input
+    return
+  }
+  // 组装 multipart 表单：文件 + 实验 id
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('experimentInfoId', props.experimentId)
+  try {
+    const res = await importExperimentSteps(formData)
+    if (res.code == 200) {
+      ElMessage.success('导入成功，共 ' + res.data + ' 个步骤')
+      getStepsList()      // 刷新步骤树
+    }
+  } catch (err) {
+    // 后端业务异常（如某行格式错误）由 request.js 拦截器统一弹错，这里不重复提示
+  } finally {
+    e.target.value = ''   // 清空 input，允许再次选择同一文件触发 change
+  }
+}
 
 // 添加步骤
 const addStep = (parentNode) => {
@@ -1150,27 +1227,38 @@ onMounted(() => {
   getStepsList();//实验-步骤列表
 })
 
-// 扁平化处理步骤数据，用于预览
-const flattenSteps = computed(() => {
-  const result = []
-
-  const flatten = (nodes, level = 1, parentNumber = '') => {
-    nodes.forEach((node, index) => {
-      const currentNumber = parentNumber ? `${parentNumber}.${index + 1}` : `${index + 1}`
-      result.push({
-        ...node,
-        level,
-        number: currentNumber
-      })
-
-      if (node.children && node.children.length) {
-        flatten(node.children, level + 1, currentNumber)
-      }
+// 预览：按"大步骤 -> 子步骤"分组，并补上编号（1、1.1...），供分组卡片式预览使用
+const previewGroups = computed(() => {
+  const groups = []
+  steps.value.forEach((big, i) => {
+    const bigNumber = `${i + 1}`
+    // 子步骤编号 = 大步骤号.序号
+    const children = (big.children || []).map((child, j) => ({
+      id: child.id,
+      number: `${bigNumber}.${j + 1}`,
+      stepName: child.stepName,
+      stepScore: child.stepScore
+    }))
+    groups.push({
+      id: big.id,
+      number: bigNumber,
+      stepName: big.stepName,
+      stepScore: big.stepScore,
+      children
     })
-  }
+  })
+  return groups
+})
 
-  flatten(steps.value)
-  return result
+// 预览：汇总（大步骤数 / 子步骤数 / 总分=Σ大步骤分数）
+const previewSummary = computed(() => {
+  let big = 0, small = 0, total = 0
+  previewGroups.value.forEach(g => {
+    big++
+    small += g.children.length
+    total += Number(g.stepScore) || 0
+  })
+  return { big, small, total }
 })
 
 // 预览步骤
@@ -1770,33 +1858,47 @@ const formatDate = (date) => {
   align-items: center;
   justify-content: space-between;
   width: 100%;
+  min-width: 0;            /* 允许整行在容器内收缩，防止横向溢出 */
+  gap: 16px;               /* 内容区(含分数标签)与操作按钮区之间始终留间距，避免长名时两者挨着 */
 }
 
 .node-content {
   display: flex;
   align-items: center;
   gap: 18px;
+  min-width: 0;            /* 关键：允许 flex 子项收缩，长名才不会把右侧按钮挤走 */
+  flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .step-index {
-  background: #b0b4b8;
-  color: white;
+  /* 浅底深字，对比度达标(≥4.5:1)，不再用灰底白字(~2:1) */
+  background: var(--el-color-primary-light-9, #ecf5ff);
+  color: var(--el-text-color-primary, #303133);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 12px;
   min-width: 40px;
   text-align: center;
+  flex-shrink: 0;          /* 徽章固定宽度，不被压缩 */
 }
 
-/* 步骤线 */
+/* 步骤线（装饰线；原 200px 太占位，缩到 40px） */
 .step-line {
   border-top: 1px dashed #909399;
-  width: 200px;
+  width: 40px;
   margin: 0 8px;
+  flex-shrink: 0;
 }
 
 .step-label {
   font-size: 14px;
+  min-width: 0;            /* 允许空间不足时收缩并触发省略号 */
+  flex: 0 1 auto;          /* 可收缩，不抢占按钮空间 */
+  max-width: 360px;        /* 上限，超长省略；完整内容靠模板 :title 悬停显示 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .first-level {
@@ -1806,42 +1908,133 @@ const formatDate = (date) => {
 
 .el-tag--small {
     margin-left: 20px;
+    flex-shrink: 0;        /* 分数标签不被挤压 */
 }
 
 .operation-buttons {
   display: flex;
-  
-  gap: 30px;
+  flex-shrink: 0;          /* 按钮区永不被压缩/换行，删除按钮始终可见 */
+  flex-wrap: nowrap;
+  gap: 10px;               /* 30 → 10，收紧间距 */
 }
 
+/* 分数列：替代原绿色 success 标签。固定宽 + 右对齐，使各步骢分数纵向对齐成列、可扫读；
+   弱化为次要元数据（中性灰、等宽数字），不再喧宾夺主，对比度也达标。 */
+.step-score {
+  flex-shrink: 0;
+  min-width: 56px;                    /* 固定槽位，纵向对齐 */
+  text-align: right;
+  color: #0f766e;                     /* 深青：中性"数据感"，白底≈5.5:1 达标 */
+  font-size: 13px;
+  font-variant-numeric: tabular-nums; /* 等宽数字，1/10 对齐 */
+}
+/* 一级（大）步骤分数：加粗 + 深色，表示汇总权重，与子步骤区分 */
+.step-score.is-parent {
+  font-weight: 600;
+}
+
+/* ===== 预览步骤弹框（分组卡片式）===== */
+/* 颜色统一用 Element Plus 主题变量（带兜底），便于跟主题/暗色一致；文字均为深色 on 浅底，对比度达标(≥4.5:1) */
+
+/* 顶部汇总条 */
+.preview-summary {
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: var(--el-color-primary-light-9, #ecf5ff);
+  color: var(--el-text-color-regular, #606266);
+  border-radius: 6px;
+  font-size: 13px;
+}
+/* 汇总里的数字用深色+加粗强调（不用浅主色字，避免对比度不足） */
+.preview-summary b {
+  color: var(--el-text-color-primary, #303133);
+  font-weight: 700;
+}
+
+/* 步骤列表（可滚动） */
 .preview-content {
   max-height: 60vh;
   overflow-y: auto;
 }
 
-.preview-step {
+/* 空态 */
+.preview-empty {
+  padding: 32px 0;
+  text-align: center;
+  color: var(--el-text-color-secondary, #909399);
+}
+
+/* 大步骤分组卡片：主色左边框，与大步骤形成视觉分组 */
+.preview-group {
+  border: 1px solid var(--el-border-color-lighter, #ebeef5);
+  border-left: 3px solid var(--el-color-primary, #409eff);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+/* 大步骤（分组头）：浅底 + 加粗 */
+.preview-head {
   display: flex;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
+  padding: 10px 12px;
+  background: var(--el-fill-color-light, #f5f7fa);
 }
-
-.preview-index {
-  background: #a0a3a5;
-  color: white;
+/* 编号徽章：浅主色底 + 深色字（对比度达标；不再用灰底白字 ~2.5:1） */
+.preview-badge {
+  display: inline-block;
+  min-width: 24px;
+  box-sizing: border-box;
   padding: 2px 8px;
-  border-radius: 12px;
-  margin-right: 12px;
+  margin-right: 10px;
+  background: var(--el-color-primary-light-9, #ecf5ff);
+  color: var(--el-text-color-primary, #303133);
+  border-radius: 10px;
   font-size: 12px;
+  font-weight: 600;
+  text-align: center;
 }
-
-.preview-label {
+.preview-head-name {
   flex: 1;
+  font-weight: 600;
+  color: var(--el-text-color-primary, #303133);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;   /* 长名省略，完整内容靠 title 悬停显示 */
+}
+.preview-head-score {
+  margin-left: 12px;
+  color: var(--el-text-color-regular, #606266);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums; /* 分数等宽对齐 */
 }
 
-.preview-score {
-  color: #3ace26;
+/* 子步骤：左侧缩进对齐大步骤名、常规字重 */
+.preview-child {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px 8px 40px;
+  border-top: 1px solid var(--el-border-color-extra-light, #f2f6fc);
+}
+.preview-child-num {
+  width: 36px;
+  margin-right: 10px;
+  color: var(--el-text-color-secondary, #909399);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.preview-child-name {
+  flex: 1;
+  color: var(--el-text-color-regular, #606266);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* 子步骤分：中性灰（不再用绿色 #3ace26 ~2:1 且语义误用） */
+.preview-child-score {
   margin-left: 12px;
+  color: var(--el-text-color-secondary, #909399);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 按钮悬停效果 */
@@ -2229,4 +2422,18 @@ const formatDate = (date) => {
 }
 
 
+</style>
+
+<!-- 步骤名 tooltip 弹层会被 teleport 到 body，scoped 样式命不中，故用非 scoped 块 -->
+<style lang="scss">
+/* 限宽 + 换行，保证超长步骤名在 tooltip 里完整可读 */
+.step-name-tip {
+  max-width: 360px;
+}
+.step-name-tip .el-tooltip__content {
+  display: inline-block;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.6;
+}
 </style>

@@ -106,12 +106,11 @@
             <el-table :data="mtVolumeList" :row-class-name="rowMtVolumeIndex" @selection-change="handleMtVolumeSelectionChange" ref="mtVolume">
               <el-table-column type="selection" width="50" align="center" />
               <!-- <el-table-column label="序号" align="center" prop="index" width="50"/> -->
-              <el-table-column label="封面" align="center" prop="coverImg">
+              <!-- <el-table-column label="封面" align="center" prop="coverImg">
                 <template #default="scope">
-                  <!-- <el-input v-model="scope.row.coverImg" placeholder="请输入封面" /> -->
                   <image-upload v-model="scope.row.coverImg"/>
                 </template>
-              </el-table-column>
+              </el-table-column> -->
               <el-table-column label="分册名称" align="center" prop="volumeName">
                 <template #default="scope">
                   <el-input v-model="scope.row.volumeName" placeholder="请输入分册名称" />

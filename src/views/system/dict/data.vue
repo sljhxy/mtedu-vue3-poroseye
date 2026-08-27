@@ -136,7 +136,17 @@
             <el-form-item label="数据键值" prop="dictValue">
                <el-input v-model="form.dictValue" placeholder="请输入数据键值" />
             </el-form-item>
-            <el-form-item label="样式属性" prop="cssClass">
+            <el-form-item label="科目图标" prop="cssClass" v-if="isSubjectDict">
+               <div class="icon-picker-trigger" @click="showIconPicker = true" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:4px 0;">
+                  <svg v-if="form.cssClass" class="icon-preview" aria-hidden="true" style="width:24px;height:24px;">
+                    <use :xlink:href="'#icon-' + form.cssClass" />
+                  </svg>
+                  <span v-else style="color:#909399;">点击选择图标</span>
+                  <span v-if="form.cssClass" style="color:#606266;font-size:12px;">{{ form.cssClass }}</span>
+               </div>
+               <IconPicker v-model="form.cssClass" v-model:visible="showIconPicker" />
+            </el-form-item>
+            <el-form-item label="样式属性" prop="cssClass" v-else>
                <el-input v-model="form.cssClass" placeholder="请输入样式属性" />
             </el-form-item>
             <el-form-item label="显示排序" prop="dictSort">
@@ -179,6 +189,8 @@
 import useDictStore from '@/store/modules/dict'
 import { optionselect as getDictOptionselect, getType } from "@/api/system/dict/type";
 import { listData, getData, delData, addData, updateData } from "@/api/system/dict/data";
+import '@/assets/iconfont/iconfont.js'
+import IconPicker from '@/components/IconPicker/index.vue'
 
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable } = proxy.useDict("sys_normal_disable");
@@ -222,6 +234,11 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
+
+const showIconPicker = ref(false)
+const isSubjectDict = computed(() =>
+  ['mt_school_subject', 'mt_vocal_school_subject'].includes(form.value.dictType)
+)
 
 /** 查询字典类型详细 */
 function getTypes(dictId) {

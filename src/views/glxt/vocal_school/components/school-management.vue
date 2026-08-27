@@ -90,6 +90,12 @@
                 <label>是&nbsp;&nbsp;否&nbsp;有&nbsp;系：</label>
                 <span>{{ formData.isSystem == '1' ? '是' : '否' }}</span>
               </div>
+              <div class="info-item">
+                <label>语言类型：</label>
+                <span>
+                  <dict-tag :options="sys_language_type" :value="formData.languageType"/>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -247,6 +253,20 @@
               </el-radio-group>
             </el-form-item>
             </div>
+
+             <!-- 语言类型 -->
+             <div class="form-row">
+              <el-form-item label="语言类型:" prop="languageType" class="full-width">
+                <el-select v-model="formData.languageType" placeholder="请选择语言类型" clearable style="width: 200px;">
+                  <el-option
+                    v-for="dict in sys_language_type"
+                    :key="dict.value"
+                    :label="dict.label"
+                    :value="dict.value"
+                  />
+                </el-select>
+              </el-form-item>
+            </div>
           </div>
         </div>
       </el-form>
@@ -284,7 +304,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 const { proxy } = getCurrentInstance();
 //字典引入 学校类型、 学段、 学制
-const { mt_school_type, mt_vocal_education_type, mt_vocal_education_system_type, login_type} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_vocal_education_system_type', 'login_type');
+const { mt_school_type, mt_vocal_education_type, mt_vocal_education_system_type, login_type, sys_language_type} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_vocal_education_system_type', 'login_type', 'sys_language_type');
 const router = useRouter()
 //引入区域接口
 import { getAreaTree } from "@/api/glxt/area";
@@ -332,6 +352,7 @@ const formData = ref({
   isSystem: '1',//是否有系
   isActive: true,
   loginType: '1',//登录类型
+  languageType: 'zh-CN',//语言类型
 })
 
 const rules = {
@@ -605,7 +626,9 @@ function reset() {
     educationLevel: null,
     isCollege: null,
     isSystem: null,
-    isActive: false
+    isActive: false,
+    loginType: null,
+    languageType: 'zh-CN'
   };
   proxy.resetForm("schoolFormRef");
 }
@@ -679,11 +702,13 @@ const showAddDialog = () => {
   formData.value.educationLevel = '2'
   //登录类型默认为1  账号登录
   formData.value.loginType = '1'
-  // formData.value.isCollege = '0' 
-  // formData.value.isSystem = '0' 
-  formData.value.isCollege = true 
-  formData.value.isSystem = true 
-  formData.value.isActive = true 
+  //语言类型默认为简体中文
+  formData.value.languageType = 'zh-CN'
+  // formData.value.isCollege = '0'
+  // formData.value.isSystem = '0'
+  formData.value.isCollege = true
+  formData.value.isSystem = true
+  formData.value.isActive = true
 
   isEdit.value = false // 重置编辑状态
   dialogVisible.value = true

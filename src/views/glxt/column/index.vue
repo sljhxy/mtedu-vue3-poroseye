@@ -71,6 +71,9 @@
         </template>
       </el-table-column>
       <el-table-column label="栏目名称" align="center" prop="columnName" />
+      <el-table-column label="副名称" align="center" prop="subName">
+        <template #default="scope">{{ scope.row.subName || '-' }}</template>
+      </el-table-column>
       <el-table-column label="版本教材" align="center">
               <template #default="{ row }">
                 <div class="column-systems">
@@ -157,6 +160,9 @@
         </el-form-item>
         <el-form-item label="名称" prop="columnName">
           <el-input v-model="form.columnName" placeholder="请输入栏目名称" />
+        </el-form-item>
+        <el-form-item label="副名称" prop="subName">
+          <el-input v-model="form.subName" placeholder="请输入副名称" />
         </el-form-item>
         <el-form-item label="版本教材" required>
           <el-cascader
@@ -329,6 +335,7 @@ function reset() {
   form.value = {
     id: null,
     columnName: null,
+    subName: null,
     realTimeUpdate: null,
     thumbnail: null,
     schoolId: null,

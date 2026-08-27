@@ -9,7 +9,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Document /></el-icon>
-                <span>AB包{{ experimentId }}</span>
+                <span>AB包</span>
               </div>
             </template>
 
@@ -54,21 +54,28 @@
 
               <el-table v-loading="loading" :data="experimentDataUploadPageList" border>
                 <el-table-column type="index" label="序号" width="60" align="center" />
-                <el-table-column prop="fileName" label="文件名称" align="center" />
-                <el-table-column prop="abVersion" label="ab包版本" align="center" />
-                <el-table-column prop="abFrameVersion" label="ab框架版本" align="center" />
-                <el-table-column prop="abSdkVersion" label="ab-sdk版本" align="center" />
-                <el-table-column prop="fileSize" label="文件大小" align="center" />
-                <el-table-column prop="abType" label="清晰度" align="center" >
+                <el-table-column label="文件名称" min-width="200" align="left">
                   <template #default="scope">
-                    <dict-tag :options="mt_video_type" :value="scope.row.abType"/>
+                    <div class="du-file-name">{{ scope.row.fileName }}</div>
+                    <div class="du-file-meta">{{ scope.row.fileSize }} · {{ abTypeLabel(scope.row.abType) }}</div>
                   </template>
                 </el-table-column>
-                <el-table-column prop="createTime" label="上传时间" align="center" />
-                <el-table-column label="操作" align="center" >
+                <el-table-column label="版本号" min-width="150" align="left">
                   <template #default="scope">
-                    <el-button type="primary" plain @click="handleEdit(scope.row)">编辑</el-button>
-                    <el-button type="danger" plain @click="handleDelete(scope.row)">删除</el-button>
+                    <div class="du-version-item"><span class="du-version-label">AB包</span><span class="du-version-value">{{ scope.row.abVersion }}</span></div>
+                    <div class="du-version-item"><span class="du-version-label">框架</span><span class="du-version-value">{{ scope.row.abFrameVersion }}</span></div>
+                    <div class="du-version-item"><span class="du-version-label">SDK</span><span class="du-version-value">{{ scope.row.abSdkVersion }}</span></div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="remark" label="备注" align="left" show-overflow-tooltip min-width="140" />
+                <el-table-column prop="createTime" label="上传时间" align="center" />
+                <el-table-column label="操作" align="center" width="240">
+                  <template #default="scope">
+                    <div style="white-space: nowrap">
+                      <el-button type="warning" plain @click="handleDownload(scope.row)">下载</el-button>
+                      <el-button type="primary" plain @click="handleEdit(scope.row)">编辑</el-button>
+                      <el-button type="danger" plain @click="handleDelete(scope.row)">删除</el-button>
+                    </div>
                   </template>
                 </el-table-column>
               </el-table>
@@ -139,9 +146,10 @@
                 <el-table-column type="index" label="序号" width="60" align="center" />
                 <el-table-column prop="fileName" label="文件名称" align="center" />
                 <el-table-column prop="zipVersion" label="版本号" align="center" />
+                <el-table-column prop="remark" label="备注" align="center" show-overflow-tooltip min-width="120" />
                 <el-table-column prop="fileSize" label="文件大小" align="center" />
                 <el-table-column prop="createTime" label="上传时间" align="center" />
-                <el-table-column label="操作" align="center" >
+                <el-table-column label="操作" align="center" width="200" >
                   <template #default="scope">
                     <el-button type="primary" plain @click="handleEdit(scope.row)">编辑</el-button>
                     <el-button type="danger" plain @click="handleDelete(scope.row)">删除</el-button>
@@ -214,9 +222,10 @@
               <el-table v-loading="loading" :data="experimentDataUploadPageList" border>
                 <el-table-column type="index" label="序号" width="60" align="center" />
                 <el-table-column prop="fileName" label="文件名称" align="center"/>
+                <el-table-column prop="remark" label="备注" align="center" show-overflow-tooltip min-width="120"/>
                 <el-table-column prop="size" label="文件大小" align="center"/>
                 <el-table-column prop="createTime" label="上传时间" align="center"/>
-                <el-table-column label="操作" align="center">
+                <el-table-column label="操作" align="center" width="200">
                   <template #default="scope">
                     <el-button type="primary" plain @click="handleEdit(scope.row)">编辑</el-button>
                     <el-button type="danger" plain @click="handleDelete(scope.row)">删除</el-button>
@@ -246,7 +255,7 @@
     <el-dialog v-model="uploadDialogVisible" :title="uploadDialogTitle" width="600px" class="upload-dialog" style="margin-top: 5vh !important;">
       <el-form ref="submitFormRef" :model="submitForm" :rules="rules" label-width="120px">
         <el-form-item :label="fileBtnName" prop="fileUrl">
-          <file-upload v-model="submitForm.fileUrl" @fileData="fileSuccessData" :fileSuffix="currentUploadType"/>
+          <file-upload v-model="submitForm.fileUrl" @fileData="fileSuccessData" :fileSuffix="currentUploadType" :before-upload="beforeAbUpload"/>
                   
         </el-form-item>
 
@@ -301,14 +310,15 @@
                   <div class="guide-format">
                     <span class="format-part">文件名</span>
                     <span class="format-separator">_v</span>
-                    <span class="format-part">框架版本</span>
+                    <span class="format-part">内容框架版本(*.*)</span>
                     <span class="format-separator">_v</span>
-                    <span class="format-part">SDK版本</span>
+                    <span class="format-part">SDK框架版本(*.*)</span>
                     <span class="format-separator">_v</span>
-                    <span class="format-part">包版本</span>
+                    <span class="format-part">AB包版本(*.*.*)</span>
                     <span class="format-suffix">.assetbundle</span>
                   </div>
-                  <span class="guide-example">例：experiment_v1.0.0_v2.0.0_v3.0.0.assetbundle</span>
+                  <span class="guide-example">例：experiment_v3.0_v2.1_v1.0.12.assetbundle</span>
+                  <span class="guide-example">版本号说明：AB包 *.*.*（大版本.重要功能迭代.bug及小功能迭代）；内容框架 / SDK框架 *.*（大版本.重要功能迭代）。段数不符或非纯数字将被拦截</span>
                 </div>
               </div>
               <el-icon class="close-guide-icon" @click="showFormatGuide = false"><Close /></el-icon>
@@ -327,11 +337,14 @@
         <el-form-item v-if="currentUploadType == 'webgl' && submitForm.zipVersion" label="ZIP版本号" prop="zipVersion">
           <el-input v-model="submitForm.zipVersion" disabled placeholder="ZIP版本号" />
         </el-form-item>
-        <el-form-item v-if="currentUploadType == 'ab'" label="内核框架版本号" prop="abFrameVersion">
+        <el-form-item v-if="currentUploadType == 'ab'" label="内容框架版本号" prop="abFrameVersion">
           <el-input v-model="submitForm.abFrameVersion" disabled placeholder="内核框架版本号" />
         </el-form-item>
         <el-form-item v-if="currentUploadType == 'ab'" label="SDK框架版本号" prop="abSdkVersion">
           <el-input v-model="submitForm.abSdkVersion" disabled placeholder="SDK框架版本号" />
+        </el-form-item>
+        <el-form-item label="备注" prop="remark">
+          <el-input v-model="submitForm.remark" type="textarea" :rows="2" maxlength="200" show-word-limit placeholder="请输入本次上传的备注（如更新内容、修复的问题），最多200字"/>
         </el-form-item>
         <el-form-item v-if="currentUploadType == 'ab'" label="清晰度" prop="abType">
           <el-radio-group v-model="submitForm.abType">
@@ -366,6 +379,12 @@ const { proxy } = getCurrentInstance();
 
 //视频画质类型
 const { mt_video_type} = proxy.useDict('mt_video_type');
+
+// 清晰度字典文本（AB包列表文件名副行用，避免在元信息行里塞标签）
+const abTypeLabel = (value) => {
+  const hit = mt_video_type.value.find(d => d.value == value)
+  return hit ? hit.label : '—'
+}
 
 // 当前激活的标签页
 const activeTab = ref('abPackage')
@@ -471,7 +490,8 @@ const submitForm = ref({
   abFrameVersion: "",//ab框架版本
   abSdkVersion: "",//ab_sdk版本
   zipVersion: "",//zip版本
-  fileUrl: ""//文件路径
+  fileUrl: "",//文件路径
+  remark: ""//备注(上传说明)
 
 })
 
@@ -488,7 +508,8 @@ const resetForm = () => {
     abFrameVersion: null,//ab框架版本
     abSdkVersion: null,//ab_sdk版本
     zipVersion: null,//zip版本
-    fileUrl: null//文件路径
+    fileUrl: null,//文件路径
+    remark: null//备注(上传说明)
   }
 }
 //表单验证
@@ -518,7 +539,6 @@ const cancel = () => {
 
 //提交按钮
 const submitFormHandler = () => {
-  debugger
   // 提交表单逻辑
   proxy.$refs["submitFormRef"].validate(valid => {
     if (valid) {
@@ -544,34 +564,60 @@ const submitFormHandler = () => {
 //存子组件传过来的文件相关数据
 const fileMsg = ref()
 
+// ==================== AB包文件名规则校验 ====================
+// 规则：文件名_v内容框架版本(*.*)_vSDK框架版本(*.*)_vAB包版本(*.*.*).assetbundle
+// 严格校验：段内纯数字、段数精确匹配（缺段/多段均不合规，不自动补0）
+// 返回错误信息，空串表示通过（上传前拦截与上传成功后兜底共用）
+const validateAbFileName = (name) => {
+  if (!name || !name.includes('_v')) {
+    return '上传文件命名不符合规则：文件名_v内容框架版本_vSDK框架版本_vAB包版本.assetbundle，例：experiment_v3.0_v2.1_v1.0.12.assetbundle'
+  }
+  const arr = name.split('_v')
+  const frameRaw = arr[1] || ''//内容框架版本
+  const sdkRaw = arr[2] || ''//SDK框架版本
+  const abRaw = arr.length > 3 ? arr[3].split('.assetbundle')[0] : ''//AB包版本
+  if (!/^\d+\.\d+$/.test(frameRaw)) {
+    return `内容框架版本号「${frameRaw || '缺失'}」格式不正确，应为 *.* 两位版本号（如 3.0）`
+  }
+  if (!/^\d+\.\d+$/.test(sdkRaw)) {
+    return `SDK框架版本号「${sdkRaw || '缺失'}」格式不正确，应为 *.* 两位版本号（如 2.1）`
+  }
+  if (!/^\d+\.\d+\.\d+$/.test(abRaw)) {
+    return `AB包版本号「${abRaw || '缺失'}」格式不正确，应为 *.*.* 三位版本号（如 1.0.12）`
+  }
+  return ''
+}
+
+// 上传前拦截（file-upload 的 beforeUpload 钩子）：文件名不合规直接拒绝，不发起网络上传
+const beforeAbUpload = (file) => {
+  if (currentUploadType.value !== 'ab') return true
+  const err = validateAbFileName(file.name)
+  if (err) {
+    ElMessage.error(err + '，请修改文件名后重新选择')
+    return false
+  }
+  return true
+}
+
 //接收到子组件的数据
 const fileSuccessData = (data) => {
   fileMsg.value = data
   submitForm.value.fileSize = fileMsg.value.fileSize
 
   if(currentUploadType.value == 'ab') {
-    //组装版本
-    if (fileMsg.value.name.includes("_v")) {
-          let arrFileName = fileMsg.value.name.split("_v")
-          if (arrFileName.length >= 1) {
-            submitForm.value.fileName = arrFileName[0]//文件名
-          }
-
-          if (arrFileName.length >= 2) {
-            submitForm.value.abFrameVersion = arrFileName[1]//ab包框架版本
-          }
-
-          if (arrFileName.length >= 2) {
-            submitForm.value.abSdkVersion = arrFileName[2]//sdk版本
-          }
-
-          if (arrFileName.length >= 3) {
-            submitForm.value.abVersion = arrFileName[3].split(".assetbundle")[0]//ab包版本
-          } else {
-            ElMessage.error('上传文件格式不正确!');
-            return
-        }
-      }
+    // 上传成功后兜底校验（正常应已被 beforeAbUpload 在上传前拦截）
+    const versionError = validateAbFileName(fileMsg.value.name)
+    if (versionError) {
+      ElMessage.error(versionError + '，请修改文件名后重新上传')
+      submitForm.value.fileUrl = ''// 触发 watch 重置表单，清掉本次结果
+      return
+    }
+    // 按命名规则解析：文件名_v内容框架版本_vSDK框架版本_vAB包版本.assetbundle
+    let arrFileName = fileMsg.value.name.split('_v')
+    submitForm.value.fileName = arrFileName[0] || ''//文件名
+    submitForm.value.abFrameVersion = arrFileName[1]//内容框架版本
+    submitForm.value.abSdkVersion = arrFileName[2]//SDK框架版本
+    submitForm.value.abVersion = arrFileName[3].split('.assetbundle')[0]//AB包版本
   } else if(currentUploadType.value == 'webgl') {
       //文件名称
       submitForm.value.fileName = fileMsg.value.name.split(".zip")[0]
@@ -638,6 +684,21 @@ const getDataUploadList = () => {
 
 
 // 编辑和删除方法
+// 下载文件：fileUrl 是 MinIO 完整 URL，新窗口打开由浏览器下载（二进制会触发下载）；相对路径则走下载插件兜底
+const handleDownload = (row) => {
+  if (!row.fileUrl) {
+    proxy.$modal.msgWarning('文件地址不存在')
+    return
+  }
+  if (/^https?:\/\//i.test(row.fileUrl)) {
+    // 完整 URL（MinIO）：新窗口打开，二进制文件会触发下载
+    window.open(row.fileUrl, '_blank')
+  } else {
+    // 相对路径：走下载插件（baseURL + 路径，带 token，blob 下载）
+    proxy.$download.zip(row.fileUrl, row.fileName || row.fileUrl.split('/').pop())
+  }
+}
+
 const handleEdit = (row) => {
   //先重置表单
   resetForm();
@@ -736,6 +797,43 @@ defineExpose({
   min-height: calc(100vh - 520px);
   padding: 24px;
   position: relative;
+}
+
+/* ==================== AB包列表：合并列展示 ==================== */
+/* 文件名列：主行文件名 + 副行元信息（大小 · 清晰度） */
+.du-file-name {
+  font-weight: 500;
+  color: #303133;
+}
+
+.du-file-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 版本号列：三行紧凑展示（AB包 / 框架 / SDK，同一次上传的三个版本维度） */
+.du-version-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 22px;
+
+  &:not(:first-child) {
+    margin-top: 2px;
+  }
+}
+
+.du-version-label {
+  flex-shrink: 0;
+  width: 34px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.du-version-value {
+  font-size: 13px;
+  color: #303133;
 }
 
 .main-content-wrapper {

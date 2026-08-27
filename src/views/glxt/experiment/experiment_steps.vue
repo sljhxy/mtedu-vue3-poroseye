@@ -4,7 +4,8 @@
       <div class="left-area"/>
       <div class="center-area">
         <div class="title-wrapper">
-          <span class="title-prefix">实验名称{{ currentExperimentId }}</span>
+          <span class="title-prefix">实验名称</span>
+          <!-- {{ currentExperimentId }} -->
           <h2 class="experiment-title">
             {{ experimentName || '新建实验' }}
           </h2>
@@ -25,7 +26,7 @@
         <el-step title="扩展信息" icon="Edit" />
         <el-step title="题库素材" icon="Collection" />
         <el-step title="步骤设置" icon="SetUp" />
-        <el-step title="数据表上传" icon="Upload" />
+        <el-step title="数据上传" icon="Upload" />
         <el-step title="审核提交" icon="Check" />
     </el-steps>
 
@@ -35,6 +36,7 @@
         ref="currentComponentRef" 
         :is="currentComponent"
         @addExperimentInfoId="handleAddExperimentInfoId"
+        @goToStep="(step) => activeStep = step"
         :toEexperimentInfoId="toEexperimentInfoId"
         :experimentName="experimentName"
         :experimentId="currentExperimentId"
@@ -102,7 +104,7 @@
 <script setup>
 import { ref, computed, defineProps, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import BasicInfoManagement from './components/BasicInfo-management.vue'
 import ExtendInfoManagement from './components/ExtendInfo-management.vue'
 import QuestionMaterialManagement from './components/QuestionMaterial-management.vue'
@@ -180,7 +182,7 @@ const currentComponent = computed(() => {
 const handleBackList = () => {
   router.push({
     path: '/glxt/experiment/experiment_list',
-    query: { 
+    query: {
       _t: new Date().getTime() // 添加时间戳参数强制刷新列表
     }
   })
@@ -210,6 +212,7 @@ const toEexperimentInfoId = ref(null)
 //新增完实验后传过来的学校id
 const handleAddExperimentInfoId = (experimentInfoId) => {
   toEexperimentInfoId.value = experimentInfoId
+  currentExperimentId.value = experimentInfoId
   console.log('接收到最新的实验id为:' + experimentInfoId)
   getExperimentInfoData(experimentInfoId)
 }
@@ -253,42 +256,28 @@ const currentExperimentId = ref()
 
 
 const currentComponentRef = ref(null)
-// Update the next method to include experimentId handling
-const next = async () => {
-  if (activeStep.value < 5) {
-    // debugger
-    // Check if current component has validation method
-    if (currentComponentRef.value && currentComponentRef.value.validateForm) {
-      try {
-        // Attempt to validate the current form
-        await currentComponentRef.value.validateForm()
-        
-        // If validation passes, handle experimentId for first step
-        if (activeStep.value === 0) {
-          if (currentComponentRef.value.experimentId) {
-            currentExperimentId.value = currentComponentRef.value.experimentId
-          }
-        }
-        
-        // Proceed to next step
-        activeStep.value++
-        canSave.value = false
-      } catch (error) {
-        // Show validation error message
-        ElMessage.warning('请完成必填项后再进行下一步')
-        return
-      }
-    } else {
-      // If no validation method exists, proceed as normal
-      if (activeStep.value === 0) {
-        if (currentComponentRef.value?.experimentId) {
-          currentExperimentId.value = currentComponentRef.value.experimentId
-        }
-      }
-      activeStep.value++
-      canSave.value = false
+// 下一步：
+// - P1：基础信息（step 0）必须先保存生成 experimentId，否则后续步骤无父级 id，会存孤儿数据 → 拦截
+// - P2：其余步骤自由导航，不再调用各步骤的 validateForm 做硬拦截；
+//       实验完整性统一由第 6 步（审核提交 Audit-management）的清单校验把关。
+const next = () => {
+  if (activeStep.value >= 5) return
+  if (activeStep.value === 0) {
+    // 基础信息必须已保存（有 experimentId）；编辑模式 route.query.id 也算
+    const hasId = currentExperimentId.value
+      || currentComponentRef.value?.experimentId
+      || toEexperimentInfoId.value
+      || route.query.id
+    if (!hasId) {
+      ElMessage.warning('请先保存基础信息后再进行下一步')
+      return
+    }
+    if (currentComponentRef.value?.experimentId) {
+      currentExperimentId.value = currentComponentRef.value.experimentId
     }
   }
+  activeStep.value++
+  canSave.value = false
 }
 
 // 添加返回方法

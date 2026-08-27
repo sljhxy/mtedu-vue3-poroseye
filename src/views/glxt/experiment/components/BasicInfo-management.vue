@@ -22,144 +22,59 @@
             <!-- 空状态展示 -->
             <div v-if="!hasExperiments" class="empty-state">
               <div class="welcome-content">
-                <el-icon class="welcome-icon"><Sunny /></el-icon>
-                <h2>欢迎来到【实验】配置管理</h2>
-                <p>开始创建您的实验相关信息</p>
+                <el-icon class="welcome-icon"><Cpu /></el-icon>
+                <h2>暂无实验信息</h2>
+                <p>点击下方按钮创建您的第一个实验</p>
                 <el-button type="primary" class="add-button" @click="showDialog('add', 0)">
                   <el-icon><Plus /></el-icon>
-                  添加实验信息
+                  添加实验
                 </el-button>
               </div>
             </div>
 
             <!-- 有数据时的展示 -->
-            <div v-else class="experiment-info">
-              <!-- 头部区域优化 -->
-              <div class="info-header">
-                <div class="header-left">
-                  <div class="experiment-icon-wrapper">
-                    <el-icon class="experiment-icon"><MostlyCloudy /></el-icon>
+            <div v-else>
+              <!-- 头部横幅 -->
+              <div class="info-banner">
+                <div class="banner-left">
+                  <div class="banner-thumb" :class="experimentData?.defaultImage === 2 ? 'thumb-4-3' : 'thumb-16-9'">
+                    <image-preview :src="experimentData?.thumbnail" />
                   </div>
-                  <div class="title-group">
-                    <div class="title-row">
+                  <div class="banner-info">
+                    <div class="banner-title-row">
                       <h3>{{ experimentData?.experimentName || '' }}</h3>
-                      <el-tag size="small" effect="plain" type="success"> 
-                        V{{ experimentData?.version || '1.0' }}
-                      </el-tag>
+                      <el-tag size="small" effect="plain" type="success">V{{ experimentData?.version || '1.0' }}</el-tag>
                     </div>
-                    <div class="experiment-tags">
-                      <el-tag size="small" effect="plain" type="info">
-                        <dict-tag :options="mt_experiment_attr_type" :value="experimentData?.attrType"/>
-                      </el-tag>
-                      <!-- <el-tag size="small" effect="plain"> -->
-                        <dict-tag :options="mt_school_type" :value="experimentData?.schoolType"/>
-                      <!-- </el-tag> -->
-                      <el-tag size="small" effect="plain" type="warning">
-                        <dict-tag :options="mt_academic_stage" :value="experimentData?.academicStageType"/>
-                      </el-tag>
+                    <div class="banner-tags">
+                      <dict-tag :options="mt_experiment_attr_type" :value="experimentData?.attrType"/>
+                      <dict-tag :options="mt_school_type" :value="experimentData?.schoolType"/>
+                      <dict-tag :options="mt_academic_stage" :value="experimentData?.academicStageType"/>
                     </div>
+                    <p class="banner-desc">{{ experimentData?.blurb || '暂无实验概述' }}</p>
                   </div>
                 </div>
-                <div class="header-actions">
-                  <el-button type="primary" class="edit-button" @click="showDialog('edit', experimentId? experimentId : toEexperimentInfoId)">
+                <div class="banner-actions">
+                  <el-button type="primary" @click="showDialog('edit', experimentId? experimentId : toEexperimentInfoId)">
                     <el-icon><Edit /></el-icon>
-                    编辑实验信息
+                    编辑
                   </el-button>
                 </div>
               </div>
-              
-              <!-- 内容区域优化 -->
-              <div class="info-content">
-                <el-row :gutter="24">
-                  <!-- 左侧缩略图区域 -->
-                  <el-col :span="8">
-                    <div class="thumbnail-section">
-                      <div class="section-header">
-                        <el-icon><Picture /></el-icon>
-                        <span>实验示意图</span>
-                      </div>
-                      <div class="thumbnail-wrapper">
-                        <image-preview :src="experimentData?.thumbnail || '暂无实验图像'" />
-                      </div> 
-                    </div>
-                  </el-col>
 
-                  <!-- 右侧信息区域 -->
-                  <el-col :span="16">
-                    <div class="info-sections">
-                      <!-- 实验概述 -->
-                      <div class="info-section">
-                        <div class="section-header">
-                          <el-icon><Document /></el-icon>
-                          <span>实验简介</span>
-                        </div>
-                        <div class="section-content">
-                          <p class="description-text">{{ experimentData?.blurb || '暂无实验概述' }}</p>
-                        </div>
-                      </div>
-
-                      <!-- 实验要素 -->
-                      <div class="info-section">
-                        <div class="section-header">
-                          <el-icon><Collection /></el-icon>
-                          <span>实验要素</span>
-                        </div>
-                        <div class="section-content">
-                          <div class="info-grid">
-                            <div class="info-item">
-                              <div class="item-label">
-                                <el-icon><User /></el-icon>
-                                开发者
-                              </div>
-                              <div class="item-value">
-                                <dict-tag :options="mt_developer_type" :value="experimentData?.developerType"/>
-                              </div>
-                            </div>
-                            <div class="info-item">
-                              <div class="item-label">
-                                <el-icon><Collection /></el-icon>
-                                版本教材体系
-                              </div>
-                              <!-- <div class="item-value">{{ experimentData?.courseSystems || '暂无' }}</div> -->
-                              <div class="item-value">
-                                <el-cascader
-                                  v-model="basicForm.courseSystems"
-                                  :options="courseSystemOptions"
-                                  :show-all-levels="false"
-                                  :props="{ 
-                                      expandTrigger: 'hover',
-                                      multiple: false,
-                                      emitPath: true
-                                  }"
-                                  placeholder="请选择课程体系"
-                                  clearable
-                                  collapse-tags-tooltip
-                                  class="w-full"
-                                  @change="handleCourseSystemChange"
-                                  disabled
-                                />
-                              </div>
-                              
-                            </div>
-                            <div class="info-item">
-                              <div class="item-label">
-                                <el-icon><InfoFilled /></el-icon>
-                                备注
-                              </div>
-                              <div class="item-value">{{ experimentData?.remark || '暂无备注' }}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </el-col>
-                </el-row>
-              </div>
+              <!-- 教材章节体系（独立卡片，保存实验后才能操作） -->
+              <BookChapterManagement
+                ref="bookChapterRef"
+                v-if="hasExperiments && (experimentId || toEexperimentInfoId)"
+                :experimentId="experimentId || toEexperimentInfoId"
+                :schoolType="experimentData?.schoolType"
+                :academicStageType="experimentData?.academicStageType"
+                @saved="loadExperimentData(experimentId || toEexperimentInfoId)"
+              />
             </div>
 
             <!-- 弹框表单 -->
             <el-dialog
-              v-model="dialogVisible"       
+              v-model="dialogVisible"
               :title="isEdit ? '编辑实验信息' : '添加实验信息'"
               width="50%"
               style="margin-top: 5vh !important;"
@@ -168,193 +83,241 @@
               class="experiment-dialog"
             >
               <el-form :model="basicForm" label-width="100px" :rules="rules" ref="basicFormRef" class="compact-form">
-                <!-- 缩略图行 -->
-                <el-row class="thumbnail-row" :gutter="20">
-                  <el-col :span="24">
-                    <el-form-item label="缩略图" prop="thumbnail">
-                      <image-upload v-model="basicForm.thumbnail"/>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
 
-                <!-- 表单主体 -->
-                <el-row :gutter="20">
-                  <el-col :span="12">
-                    <!-- 实验名称 -->
-                    <el-form-item label="实验名称" prop="experimentName">
-                      <el-input v-model="basicForm.experimentName" placeholder="请输入实验名称"/>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="12">
-                    <!-- 属性 -->
-                    <el-form-item label="属性" prop="attrType">
-                      <el-select 
-                          v-model="basicForm.attrType" 
-                          placeholder="请选择属性类型"
-                          class="fixed-width-select"
-                          clearable>
-                              <el-option 
-                                  v-for="item in mt_experiment_attr_type" 
-                                  :key="item.value" 
-                                  :value="item.value" 
-                                  :label="item.label"
-                              ></el-option>
-                          </el-select>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-
-                <el-row :gutter="20">
-                  <el-col :span="12">
-                    <!-- 类型 -->
-                    <el-form-item label="学校类型" prop="schoolType">
-                      <el-select 
-                          v-model="basicForm.schoolType" 
-                          placeholder="请选择学校类型"
-                          class="fixed-width-select"
-                          @change="schoolTypeChange"
-                          clearable
-                          >
-                              <el-option 
-                                  v-for="item in mt_school_type" 
-                                  :key="item.value" 
-                                  :value="item.value" 
-                                  :label="item.label"
-                              ></el-option>
-                        </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="12">
-                    <!-- 学段 -->
-                    <!-- {{ basicForm.academicStageType }} -->
-                    <el-form-item label="学段" prop="academicStageType">
-                        <el-select 
-                              v-model="basicForm.academicStageType" 
-                              placeholder="请选择学段"
-                              class="fixed-width-select"
-                              @change="academicStageChange"
-                              clearable
-                          >
-                          <el-option 
-                              v-for="item in educationStage.value" 
-                              :key="item.value" 
-                              :value="item.value" 
-                              :label="item.label"
-                          ></el-option>
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-
-                <el-row :gutter="20">
-                  <el-col :span="12">
-                    <!-- 开发者 -->
-                    <el-form-item label="开发者" prop="developerType">
-                      <el-select 
-                              v-model="basicForm.developerType" 
-                              placeholder="请选择开发者"
-                              class="fixed-width-select"
-                              clearable
-                          >
-                          <el-option 
-                              v-for="item in mt_developer_type" 
-                              :key="item.value" 
-                              :value="item.value" 
-                              :label="item.label"
-                          ></el-option>
-                      </el-select>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="12">
-                    <!-- 版本教材 -->
-                    <!-- {{ basicForm.courseSystems }} -->
-                    <el-form-item label="版本教材" prop="courseSystems">
-                      <el-cascader
-                          v-model="basicForm.courseSystems"
-                          :options="courseSystemOptions"
-                          :show-all-levels="true"
-                          :props="{ 
-                              expandTrigger: 'hover',
-                              multiple: false,
-                              emitPath: true
-                          }"
-                          placeholder="请选择课程体系"
-                          clearable
-                          collapse-tags
-                          collapse-tags-tooltip
-                          class="w-full"
-                          @change="handleCourseSystemChange"
-                        />
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-
-
-                   <!-- 新增知识体系挂接 -->
-                   <el-row :gutter="20">
-                    <el-col :span="24">
-                      <!-- {{ basicForm.knowledgePoints }} -->
-                      <el-form-item label="知识点体系" prop="knowledgePoints">
-                                <el-tree-select
-                                    v-model="basicForm.knowledgePoints"
-                                    :data="knowledgeTreeList"
-                                    :props="{
-                                      value: 'id',
-                                      label: 'knowledge',
-                                      children: 'children'
-                                    }"
-                                    multiple
-                                    show-checkbox
-                                    check-strictly
-                                    node-key="id"
-                                    placeholder="请选择知识点"
-                                    clearable
-                                    class="knowledge-select"
-                                    collapse-tags-tooltip
-                                  />
-                                </el-form-item>
-                    </el-col>
+                <!-- 实验图片（多比例双图必传，可设默认；保存时后端自动将默认图同步为缩略图） -->
+                <div class="form-group">
+                  <div class="form-group-title">
+                    <el-icon><Picture /></el-icon>
+                    <span>实验图片</span>
+                  </div>
+                  <div class="form-group-body">
+                    <el-row :gutter="20">
+                      <el-col :span="12">
+                        <el-form-item label="图片一" prop="image1Url">
+                          <div class="exp-img-card">
+                            <div class="exp-img-box ratio-16-9">
+                              <template v-if="basicForm.image1Url">
+                                <image-preview :src="basicForm.image1Url" width="100%" height="100%"/>
+                                <span v-if="isDefaultImage(1)" class="exp-img-default-tag">默认</span>
+                                <div class="exp-img-mask">
+                                  <span class="exp-img-mask-item" title="重新上传" @click.stop>
+                                    <el-upload
+                                      :action="uploadImgUrl"
+                                      :headers="uploadHeaders"
+                                      :show-file-list="false"
+                                      accept="image/png,image/jpeg"
+                                      :before-upload="beforeImageUpload(1)"
+                                      :on-success="handleImageSuccess(1)"
+                                      :on-error="handleImageError"
+                                    >
+                                      <el-icon><Refresh /></el-icon>
+                                    </el-upload>
+                                  </span>
+                                  <span class="exp-img-mask-item" title="删除" @click.stop="removeExperimentImage(1)">
+                                    <el-icon><Delete /></el-icon>
+                                  </span>
+                                </div>
+                              </template>
+                              <el-upload
+                                v-else
+                                class="exp-img-uploader"
+                                :action="uploadImgUrl"
+                                :headers="uploadHeaders"
+                                :show-file-list="false"
+                                accept="image/png,image/jpeg"
+                                :before-upload="beforeImageUpload(1)"
+                                :on-success="handleImageSuccess(1)"
+                                :on-error="handleImageError"
+                              >
+                                <div class="exp-img-placeholder">
+                                  <el-icon class="exp-img-placeholder-icon"><Plus /></el-icon>
+                                  <span>上传图片</span>
+                                </div>
+                              </el-upload>
+                            </div>
+                            <div class="exp-img-info">
+                              <span class="exp-img-spec">640×360 · 16:9 · 不超过1M</span>
+                              <el-button v-if="basicForm.image1Url && !isDefaultImage(1)" link type="primary" size="small" @click="setDefaultImage(1)">设为默认</el-button>
+                            </div>
+                          </div>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="12">
+                        <el-form-item label="图片二" prop="image2Url">
+                          <div class="exp-img-card">
+                            <div class="exp-img-box ratio-4-3">
+                              <template v-if="basicForm.image2Url">
+                                <image-preview :src="basicForm.image2Url" width="100%" height="100%"/>
+                                <span v-if="isDefaultImage(2)" class="exp-img-default-tag">默认</span>
+                                <div class="exp-img-mask">
+                                  <span class="exp-img-mask-item" title="重新上传" @click.stop>
+                                    <el-upload
+                                      :action="uploadImgUrl"
+                                      :headers="uploadHeaders"
+                                      :show-file-list="false"
+                                      accept="image/png,image/jpeg"
+                                      :before-upload="beforeImageUpload(2)"
+                                      :on-success="handleImageSuccess(2)"
+                                      :on-error="handleImageError"
+                                    >
+                                      <el-icon><Refresh /></el-icon>
+                                    </el-upload>
+                                  </span>
+                                  <span class="exp-img-mask-item" title="删除" @click.stop="removeExperimentImage(2)">
+                                    <el-icon><Delete /></el-icon>
+                                  </span>
+                                </div>
+                              </template>
+                              <el-upload
+                                v-else
+                                class="exp-img-uploader"
+                                :action="uploadImgUrl"
+                                :headers="uploadHeaders"
+                                :show-file-list="false"
+                                accept="image/png,image/jpeg"
+                                :before-upload="beforeImageUpload(2)"
+                                :on-success="handleImageSuccess(2)"
+                                :on-error="handleImageError"
+                              >
+                                <div class="exp-img-placeholder">
+                                  <el-icon class="exp-img-placeholder-icon"><Plus /></el-icon>
+                                  <span>上传图片</span>
+                                </div>
+                              </el-upload>
+                            </div>
+                            <div class="exp-img-info">
+                              <span class="exp-img-spec">800×600 · 4:3 · 不超过1M</span>
+                              <el-button v-if="basicForm.image2Url && !isDefaultImage(2)" link type="primary" size="small" @click="setDefaultImage(2)">设为默认</el-button>
+                            </div>
+                          </div>
+                        </el-form-item>
+                      </el-col>
                     </el-row>
-                
-                <!-- 实验简介 -->
-                <el-row :gutter="20">
-                  <el-col :span="24">
+                  </div>
+                </div>
+
+                <!-- 分组1：基本信息 -->
+                <div class="form-group">
+                  <div class="form-group-title">
+                    <el-icon><Document /></el-icon>
+                    <span>基本信息</span>
+                  </div>
+                  <div class="form-group-body">
+                    <el-row :gutter="20">
+                      <el-col :span="12">
+                        <el-form-item label="实验名称" prop="experimentName">
+                          <el-input v-model="basicForm.experimentName" placeholder="请输入实验名称"/>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="12">
+                        <el-form-item label="属性" prop="attrType">
+                          <el-select v-model="basicForm.attrType" placeholder="请选择属性类型" clearable>
+                            <el-option v-for="item in mt_experiment_attr_type" :key="item.value" :value="item.value" :label="item.label"/>
+                          </el-select>
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                    <el-row :gutter="20">
+                      <el-col :span="12">
+                        <el-form-item label="学校类型" prop="schoolType">
+                          <el-select v-model="basicForm.schoolType" placeholder="请选择学校类型" @change="schoolTypeChange" clearable>
+                            <el-option v-for="item in mt_school_type" :key="item.value" :value="item.value" :label="item.label"/>
+                          </el-select>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="12">
+                        <el-form-item label="学段" prop="academicStageType">
+                          <el-select v-model="basicForm.academicStageType" placeholder="请选择学段" @change="academicStageChange" clearable>
+                            <el-option v-for="item in educationStage.value" :key="item.value" :value="item.value" :label="item.label"/>
+                          </el-select>
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                    <el-row :gutter="20">
+                      <el-col :span="12">
+                        <el-form-item label="开发者" prop="developerType">
+                          <el-select v-model="basicForm.developerType" placeholder="请选择开发者" clearable>
+                            <el-option v-for="item in mt_developer_type" :key="item.value" :value="item.value" :label="item.label"/>
+                          </el-select>
+                        </el-form-item>
+                      </el-col>
+                     <!-- <el-col :span="12">
+                        <el-form-item label="版本号" prop="version">
+                          <el-input v-model="basicForm.version" placeholder="请输入版本号"/>
+                        </el-form-item>
+                      </el-col> -->
+                    </el-row>
+                  </div>
+                </div>
+
+                <!-- 分组2：课程与知识点 -->
+                <div class="form-group">
+                  <div class="form-group-title">
+                    <el-icon><Collection /></el-icon>
+                    <span>课程与知识点</span>
+                  </div>
+                  <div class="form-group-body">
+                  <!-- 教材章节体系已移至独立的 BookChapterManagement 组件（信息页卡片），弹框中不再需要 -->
+                  <el-row :gutter="20">
+                    <el-col :span="24">
+                      <el-form-item label="知识点体系" prop="knowledgePoints">
+                        <el-tree-select
+                            v-model="basicForm.knowledgePoints"
+                            :data="knowledgeTreeList"
+                            :props="{ value: 'id', label: 'knowledge', children: 'children' }"
+                            multiple
+                            show-checkbox
+                            check-strictly
+                            node-key="id"
+                            placeholder="请选择知识点"
+                            clearable
+                            class="knowledge-select"
+                            collapse-tags-tooltip
+                          />
+                      </el-form-item>
+                    </el-col>
+                  </el-row>
+                  <!-- 知识点权重表格（选择知识点后显示） -->
+                  <div v-if="basicForm.knowledgePoints && basicForm.knowledgePoints.length" class="knowledge-ratio-section">
+                    <el-form-item label="知识点权重">
+                      <div class="ratio-tip">设置各知识点在当前实验中的占比权重，范围为 0 ~ 1，建议合计为 1.0</div>
+                      <el-table :data="knowledgeRatioData" size="small" border class="ratio-table">
+                        <el-table-column prop="name" label="知识点" min-width="200" />
+                        <el-table-column label="权重" width="140" align="center">
+                          <template #default="{ row }">
+                            <el-input-number
+                              :model-value="basicForm.knowledgeRatios[row.id]"
+                              @update:model-value="val => { if(basicForm.knowledgeRatios) basicForm.knowledgeRatios[row.id] = val }"
+                              :min="0" :max="1" :step="0.1"
+                              :precision="2" size="small" controls-position="right" style="width: 110px"
+                            />
+                          </template>
+                        </el-table-column>
+                      </el-table>
+                      <div class="ratio-total" :class="{ 'ratio-warning': ratioSum !== 1 }">
+                        合计：{{ ratioSum.toFixed(2) }}
+                        <span v-if="ratioSum !== 1">（建议合计为 1.0）</span>
+                      </div>
+                    </el-form-item>
+                  </div>
+                  </div>
+                </div>
+
+                <!-- 分组3：其他信息 -->
+                <div class="form-group">
+                  <div class="form-group-title">
+                    <el-icon><Memo /></el-icon>
+                    <span>其他信息</span>
+                  </div>
+                  <div class="form-group-body">
                     <el-form-item label="实验简介" prop="blurb">
-                      <el-input
-                        v-model="basicForm.blurb"
-                        type="textarea"
-                        :rows="3"
-                        placeholder="请输入实验简介"
-                      />
+                      <el-input v-model="basicForm.blurb" type="textarea" :rows="3" placeholder="请输入实验简介"/>
                     </el-form-item>
-                  </el-col>
-                </el-row>
-
-                <!-- 备注 -->
-                <el-row :gutter="20">
-                  <el-col :span="24">
                     <el-form-item label="备注" prop="remark">
-                      <el-input
-                        v-model="basicForm.remark"
-                        type="textarea"
-                        :rows="2"
-                        placeholder="请输入备注"
-                      />
+                      <el-input v-model="basicForm.remark" type="textarea" :rows="2" placeholder="请输入备注"/>
                     </el-form-item>
-                  </el-col>
-                </el-row>
-
-                <!-- 实验版本号 -->
-                <el-row :gutter="20">
-                  <el-col :span="24">
-                    <el-form-item label="版本号" prop="version">
-                      <el-input
-                        v-model="basicForm.version"
-                        placeholder="请输入版本号"
-                      />
-                    </el-form-item>
-                  </el-col>
-                </el-row>
+                  </div>
+                </div>
 
               </el-form>
               <template #footer>
@@ -382,10 +345,10 @@
                 <el-table-column label="页码标题" align="center" prop="title" />
                 <el-table-column label="内容" align="center" prop="text">
                   <template #default="scope">
-                    <div v-html="scope.row.text"></div>
+                    <div v-html="scope.row.text" v-katex></div>
                   </template>
                 </el-table-column>
-                <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+                <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200">
                   <template #default="scope">
                     <el-button plain type="success" icon="Edit" color="#6EDC93" @click="handleDescUpdate(scope.row)" v-hasPermi="['glxt:experimentInfoDescribe:edit']">修改</el-button>
                     <el-button plain type="danger" icon="Delete" @click="handleDesDelete(scope.row)" v-hasPermi="['glxt:experimentInfoDescribe:remove']">删除</el-button>
@@ -483,28 +446,31 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue'
-// import { Plus, ArrowLeft, ArrowRight, Check, Close, Beaker } from '@element-plus/icons-vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter, useRoute } from 'vue-router'
 import Tinymce from "@/components/Tinymce/index.vue"
+import BookChapterManagement from './BookChapterManagement.vue'
+const bookChapterRef = ref(null)
 
 
 const { proxy } = getCurrentInstance();
-//字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
 const { mt_school_type, mt_vocal_education_type, mt_academic_stage,mt_school_subject, mt_experiment_attr_type,mt_developer_type, mt_vocal_school_subject} = proxy.useDict('mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_school_subject','mt_experiment_attr_type','mt_developer_type', 'mt_vocal_school_subject');
 
 //课程体系API
-import {getCourseSystemOptions } from '@/api/glxt/subject'
+import {getCourseSystemOptions, getChapterList } from '@/api/glxt/subject'
 
 //导入实验基本信息api 
-import {getExperimentInfo, addExperimentInfo, updateExperimentInfo} from '@/api/glxt/experimentInfo'
+import {getExperimentInfo, addExperimentInfo, updateExperimentInfo, getExperimentAlias, saveExperimentAlias} from '@/api/glxt/experimentInfo'
 
 //导入实验说明api
 import {getExperimentInfoDescribe, addExperimentInfoDescribe, updateExperimentInfoDescribe, listExperimentInfoDescribe, delExperimentInfoDescribe} from '@/api/glxt/experimentInfoDescribe'
 
 //获取知识点树形结构
 import { getKnowledgeTree } from '@/api/glxt/knowledge';
+
+// 实验图片上传鉴权
+import { getToken } from '@/utils/auth';
 
 
 const route = useRoute()
@@ -524,31 +490,6 @@ const richEditor = ref({
 })
 
 const emit = defineEmits(['addExperimentInfoId'])
-
-// const richEditor = ref({
-//   dialogVisible: false,
-//   object: null,
-//   parameterName: '',
-//   instance: null,
-//   content: ''
-// })
-// // 添加更新编辑器内容的方法
-// const updateEditorContent = (content) => {
-//   richEditor.value.content = content
-// }
-
-
-// const content = richEditor.value.content
-  
-//   if (richEditor.value.object === descForm.value) {
-//     descForm.value[richEditor.value.parameterName] = content
-//   } else {
-//     const index = descForm.value.text.findIndex(item => item === richEditor.value.object)
-//     if (index !== -1) {
-//       descForm.value.items[index][richEditor.value.parameterName] = content
-//     }
-//   }
-
 
 // 接收父组件传递的实验ID
 const props = defineProps({
@@ -581,17 +522,11 @@ const closeEditor = () => {
 
 const editorConfirm = () => {
   const content = richEditor.value.content
-  
+
   if (richEditor.value.object === descForm.value) {
     descForm.value[richEditor.value.parameterName] = content
-  } 
-  // else {
-  //   const index = descForm.value.items.findIndex(item => item === richEditor.value.object)
-  //   if (index !== -1) {
-  //     descForm.value.items[index][richEditor.value.parameterName] = content
-  //   }
-  // }
-  
+  }
+
   closeEditor()
 }
 
@@ -633,7 +568,10 @@ const basicFormRef = ref(null)
 // 基础信息表单数据
 const basicForm = ref({
   id: null,
-  thumbnail: '',//缩略图
+  thumbnail: '',//缩略图（不再由表单维护，保存时后端自动同步为默认实验图）
+  image1Url: '',//图片一(640×360,16:9)
+  image2Url: '',//图片二(800×600,4:3)
+  defaultImage: null,//默认图片:1-图片一 2-图片二
   experimentName: '',//实验名称
   attrType:'',//属性类型
   schoolType:'',//学校类型
@@ -642,8 +580,10 @@ const basicForm = ref({
   blurb:'',//简介
   version:'',//实验版本号
   remark:'',//实验备注
-  courseSystems: [[]],//课程体系
-  knowledgePoints:[]//知识点体系
+  courseSystems: [],//课程体系
+  knowledgePoints:[],//知识点体系
+  knowledgeRatios:{},//知识点权重映射
+  aliasName:null//实验副名称
 })
 
 
@@ -652,7 +592,10 @@ const resetBasicForm = () => {
      // 重置表单数据
     basicForm.value = {
       id: null,
-      thumbnail: null,//缩略图
+      thumbnail: null,//缩略图（不再由表单维护，保存时后端自动同步为默认实验图）
+      image1Url: null,//图片一(640×360,16:9)
+      image2Url: null,//图片二(800×600,4:3)
+      defaultImage: null,//默认图片:1-图片一 2-图片二
       experimentName: null,//实验名称
       attrType:null,//属性类型
       schoolType:null,//学校类型
@@ -660,11 +603,105 @@ const resetBasicForm = () => {
       developerType:null,//开发者类型
       blurb:null,//简介
       version:null,//实验版本号
-      version:null,//实验版本号
-      courseSystems: [[]],//课程体系
-      knowledgePoints:[]//知识点体系
+      courseSystems: [],//课程体系
+      knowledgePoints:[],//知识点体系
+      knowledgeRatios:{},//知识点权重映射
+      aliasName: null,//实验副名称
+      _aliasId: null//副名称记录ID
     }
-  
+    mountSystemList.value = []   // 清空教材章节体系列表
+}
+
+// ==================== 实验图片（多比例双图）====================
+// 图片规格：图片一 640×360(16:9)、图片二 800×600(4:3)，均不超过 1M，上传前严格校验
+const EXP_IMAGE_SPECS = {
+  1: { width: 640, height: 360, ratio: '16:9' },
+  2: { width: 800, height: 600, ratio: '4:3' },
+}
+const EXP_IMAGE_MAX_MB = 1
+const baseApi = import.meta.env.VITE_APP_BASE_API
+const uploadImgUrl = ref(baseApi + '/file/upload')
+const uploadHeaders = ref({ Authorization: 'Bearer ' + getToken() })
+
+// 上传前校验：格式 / 大小 / 精确分辨率（读实际宽高，不符即拦截并提示当前值）
+const beforeImageUpload = (slot) => (file) => {
+  const spec = EXP_IMAGE_SPECS[slot]
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    proxy.$modal.msgError('只能上传 jpg / png 格式图片')
+    return false
+  }
+  if (file.size / 1024 / 1024 > EXP_IMAGE_MAX_MB) {
+    proxy.$modal.msgError(`图片大小不能超过 ${EXP_IMAGE_MAX_MB}M（当前 ${(file.size / 1024 / 1024).toFixed(2)}M）`)
+    return false
+  }
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      if (img.width !== spec.width || img.height !== spec.height) {
+        proxy.$modal.msgError(`分辨率不符：当前 ${img.width}×${img.height}，请上传 ${spec.width}×${spec.height}（${spec.ratio}）`)
+        reject()
+      } else {
+        resolve(true)
+      }
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      proxy.$modal.msgError('图片读取失败，请重新选择')
+      reject()
+    }
+    img.src = url
+  })
+}
+
+// 上传成功：存相对地址（与共享 ImageUpload 口径一致）；当前无默认图时首张自动成为默认
+const handleImageSuccess = (slot) => (res) => {
+  if (res.code !== 200) {
+    proxy.$modal.msgError(res.msg || '上传失败')
+    return
+  }
+  const raw = res.data.url
+  const clean = baseApi && raw && raw.startsWith(baseApi) ? raw.replace(baseApi, '') : raw
+  if (slot === 1) {
+    basicForm.value.image1Url = clean
+  } else {
+    basicForm.value.image2Url = clean
+  }
+  if (basicForm.value.defaultImage !== 1 && basicForm.value.defaultImage !== 2) {
+    basicForm.value.defaultImage = slot
+  }
+  // 自定义上传区不会自动触发 change 校验，手动清除该字段的旧错误提示
+  basicFormRef.value?.clearValidate(slot === 1 ? 'image1Url' : 'image2Url')
+}
+
+const handleImageError = () => {
+  proxy.$modal.msgError('上传图片失败')
+}
+
+// 删除图片；删除的是默认图时，默认自动落到另一张（存在时）
+const removeExperimentImage = (slot) => {
+  if (slot === 1) {
+    basicForm.value.image1Url = ''
+  } else {
+    basicForm.value.image2Url = ''
+  }
+  if (basicForm.value.defaultImage === slot) {
+    const other = slot === 1 ? 2 : 1
+    const otherUrl = other === 1 ? basicForm.value.image1Url : basicForm.value.image2Url
+    basicForm.value.defaultImage = otherUrl ? other : null
+  }
+}
+
+const setDefaultImage = (slot) => {
+  basicForm.value.defaultImage = slot
+}
+
+// 该槽位是否为默认图（未设置时视为图片一）
+const isDefaultImage = (slot) => {
+  const d = basicForm.value.defaultImage
+  if (d === 1 || d === 2) return d === slot
+  return slot === 1
 }
 
 //实验说明列表
@@ -717,51 +754,275 @@ const getCourseSystemOptionList = (schoolType, academicStage) => {
   })
 }
 
+// ===== 教材章节体系（一对多） =====
+const mountSystemList = ref([])    // 已添加的教材章节体系列表
+const bookSelection = ref([])      // 当前选择的 [subjectType, libraryId, volumeId]
+const chapterSelection = ref(null) // 当前选择的章节/小节 id
+const chapterTree = ref([])        // 章节树（选完分册后加载）
+
+// 选完分册后加载章节树
+const handleBookSelectChange = (value) => {
+  chapterSelection.value = null
+  chapterTree.value = []
+  if (value && value.length >= 3) {
+    const subjectId = value[0]
+    const volumeId = value[2]
+    getChapterList(volumeId, subjectId).then(res => {
+      // 后端已构建章节树（含 children），前端只需递归给每个节点加 label（= chapterTxt）
+      // tree-select 和 findInChapterNode 都用 label 取名称
+      const mapLabel = (nodes) => {
+        (nodes || []).forEach(n => {
+          n.label = n.chapterTxt
+          if (n.children && n.children.length) mapLabel(n.children)
+        })
+      }
+      mapLabel(res.data || [])
+      chapterTree.value = res.data || []
+    })
+  }
+}
+
+// 在章节树里递归查找节点
+const findInChapterNode = (tree, id) => {
+  for (const node of tree) {
+    if (node.id === id) return node
+    if (node.children) {
+      const found = findInChapterNode(node.children, id)
+      if (found) return found
+    }
+  }
+  return null
+}
+
+// 添加到列表（副名称初始为空，在列表中编辑）
+const addMountSystem = () => {
+  if (!bookSelection.value || bookSelection.value.length < 3) return
+  const [subjectType, libraryId, volumeId] = bookSelection.value
+  // 从 courseSystemOptions 取名称
+  const subject = courseSystemOptions.value.find(s => s.value == subjectType)
+  const subjectName = subject?.label || ''
+  const lib = subject?.children?.find(l => l.value == libraryId)
+  const textbookLibraryName = lib?.label || ''
+  const vol = lib?.children?.find(v => v.value == volumeId)
+  const volumeName = vol?.label || ''
+  // 从 chapterTree 取章节/小节
+  let chapterId = null, sectionId = null, chapterName = '', sectionName = ''
+  if (chapterSelection.value) {
+    const node = findInChapterNode(chapterTree.value, chapterSelection.value)
+    if (node) {
+      if (node.parentId) {
+        // 是小节：取父为章节
+        sectionId = node.id
+        sectionName = node.label
+        const parent = findInChapterNode(chapterTree.value, node.parentId)
+        if (parent) { chapterId = parent.id; chapterName = parent.label }
+      } else {
+        // 是章节
+        chapterId = node.id
+        chapterName = node.label
+      }
+    }
+  }
+  mountSystemList.value.push({
+    subjectId: subjectType,
+    textbookLibraryId: Number(libraryId),
+    volumeId: Number(volumeId),
+    chapterId, sectionId,
+    aliasName: '',
+    subjectName, textbookLibraryName, volumeName,
+    chapterName, sectionName
+  })
+  // 清空选择，准备下一次添加
+  bookSelection.value = []
+  chapterSelection.value = null
+  chapterTree.value = []
+}
+
+// 从列表删除
+const removeMountSystem = (index) => {
+  mountSystemList.value.splice(index, 1)
+}
+
 
 const handleCourseSystemChange = (values) => {
 
   if(values == '' || values == undefined || values == null){
-    console.log('data为空')
-    //清空知识点的数据
     basicForm.value.knowledgePoints = []
+    basicForm.value.aliasName = null
     return
   }
 
-// 挂载课程系统
   if (!values || values.length === 0) {
     basicForm.value.courseSystems = []
+    basicForm.value.aliasName = null
     return
   }
 
-   //清空知识点的数据
-   basicForm.value.knowledgePoints = []
+  // 科目不变时保留知识点，科目变了才清空
+  const newSubjectId = values[0]
+  if (lastSubjectId.value != newSubjectId) {
+    basicForm.value.knowledgePoints = []
+  }
+  lastSubjectId.value = newSubjectId
 
-   console.log(values)
-   console.log(values[0])
   // 如果所有必要参数都有值，则获取知识点
-  if (values.length > 0 && values[0].length > 0) {
+  if (values.length > 0 && values[0] != null) {
       let subjectId = values[0]
       getKnowledgeTreeList(subjectId);
   }
 
+  // 加载该版本教材下的实验副名称
+  loadAliasName(values)
+
+}
+
+// 加载实验副名称
+const loadAliasName = (courseSystems) => {
+  const eid = basicForm.value.id || experimentId.value || props.toEexperimentInfoId
+  basicForm.value.aliasName = null
+  basicForm.value._aliasId = null
+  if (!eid || !courseSystems || courseSystems.length < 3) return
+
+  const subjectId = courseSystems[0]
+  const textbookLibraryId = courseSystems[1]
+  const volumeId = courseSystems[2]
+
+  getExperimentAlias(eid, subjectId, textbookLibraryId, volumeId).then(res => {
+    if (res.data) {
+      basicForm.value.aliasName = res.data.aliasName
+      basicForm.value._aliasId = res.data.id
+      if (experimentData.value) {
+        experimentData.value.aliasName = res.data.aliasName
+      }
+    }
+  })
+}
+
+// 保存实验副名称
+const saveAliasNameIfNeeded = (experimentId) => {
+  const courseSystems = basicForm.value.courseSystems
+  const aliasName = basicForm.value.aliasName
+
+  if (!experimentId || !courseSystems || courseSystems.length < 3) return
+
+  const data = {
+    subjectId: courseSystems[0],
+    textbookLibraryId: courseSystems[1],
+    volumeId: courseSystems[2],
+    aliasName: aliasName || null
+  }
+
+  return saveExperimentAlias(experimentId, data)
 }
 
 
 //获取科目名称
 const getSubjectName = (subjectType, schoolType) => {
-    return schoolType == '1'? mt_school_subject.value ?.find(item => item.value === subjectType).label : mt_vocal_school_subject.value ?.find(item => item.value === subjectType).label
+    return schoolType == '1'? mt_school_subject.value ?.find(item => item.value === subjectType)?.label : mt_vocal_school_subject.value ?.find(item => item.value === subjectType)?.label
 }
+
+// 获取教材版本名称（从级联选项中取第二级label）
+const getTextbookName = () => {
+  const cs = experimentData.value?.courseSystems
+  if (!cs || cs.length < 2 || !courseSystemOptions.value) return ''
+  const subject = courseSystemOptions.value.find(s => s.value == cs[0])
+  if (!subject || !subject.children) return ''
+  const book = subject.children.find(b => b.value == cs[1])
+  return book?.label || ''
+}
+
+const getVolumeName = () => {
+  const cs = experimentData.value?.courseSystems
+  if (!cs || cs.length < 3 || !courseSystemOptions.value) return ''
+  const subject = courseSystemOptions.value.find(s => s.value == cs[0])
+  if (!subject || !subject.children) return ''
+  const book = subject.children.find(b => b.value == cs[1])
+  if (!book || !book.children) return ''
+  const vol = book.children.find(v => v.value == cs[2])
+  return vol?.label || ''
+}
+
+const getKnowledgeNames = () => {
+  const ids = experimentData.value?.knowledgePoints
+  if (!ids || ids.length === 0) return ''
+  const ratios = experimentData.value?.knowledgeRatios || {}
+  const names = []
+  const findNames = (items) => {
+    if (!items) return
+    for (const item of items) {
+      if (ids.includes(item.id)) {
+        const r = ratios[item.id]
+        names.push(r != null ? `${item.knowledge || item.label}(${r})` : (item.knowledge || item.label))
+      }
+      if (item.children) findNames(item.children)
+    }
+  }
+  findNames(knowledgeTreeList.value)
+  return names.join('、')
+}
+
+// 查找单个知识点名称
+const findKnowledgeName = (id) => {
+  const find = (items) => {
+    if (!items) return null
+    for (const item of items) {
+      if (item.id === id) return item.knowledge || item.label
+      if (item.children) {
+        const found = find(item.children)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  return find(knowledgeTreeList.value) || `知识点${id}`
+}
+
+// 知识点权重表格行数据（仅 id + name）
+const knowledgeRatioData = computed(() => {
+  const points = basicForm.value.knowledgePoints
+  if (!points || points.length === 0) return []
+  return points.map(id => ({ id, name: findKnowledgeName(id) }))
+})
+
+// 权重合计
+const ratioSum = computed(() => {
+  const ratios = basicForm.value.knowledgeRatios || {}
+  const points = basicForm.value.knowledgePoints || []
+  const sum = points.reduce((acc, id) => acc + (ratios[id] || 0), 0)
+  return Math.round(sum * 100) / 100
+})
+
+// 知识点变化时自动初始化权重
+watch(() => basicForm.value.knowledgePoints, (newPoints) => {
+  if (!newPoints || newPoints.length === 0) {
+    basicForm.value.knowledgeRatios = {}
+    return
+  }
+  if (!basicForm.value.knowledgeRatios) basicForm.value.knowledgeRatios = {}
+  // 清除已取消选择的权重
+  Object.keys(basicForm.value.knowledgeRatios).forEach(key => {
+    if (!newPoints.includes(Number(key))) delete basicForm.value.knowledgeRatios[key]
+  })
+  // 新增的知识点设置默认均分权重
+  newPoints.forEach(id => {
+    if (basicForm.value.knowledgeRatios[id] == null) {
+      basicForm.value.knowledgeRatios[id] = +(1 / newPoints.length).toFixed(2)
+    }
+  })
+}, { deep: true })
 
 // 实验基本信息表单验证规则
 const rules = {
+  image1Url: [{ required: true, message: '请上传图片一（640×360，16:9）', trigger: 'change' }],
+  image2Url: [{ required: true, message: '请上传图片二（800×600，4:3）', trigger: 'change' }],
   experimentName: [{ required: true, message: '请输入实验名称', trigger: 'blur' }],
   attrType: [{ required: true, message: '属性不能为空', trigger: 'blur' }],
   schoolType: [{ required: true, message: '学校类型不能为空', trigger: 'blur' }],
   academicStageType: [{ required: true, message: '学段类型不能为空', trigger: 'blur' }],
   developerType: [{ required: true, message: '开发者不能为空', trigger: 'blur' }],
-  version: [{ required: true, message: '版本号不能为空', trigger: 'blur' }],
-  knowledgePoints: [{ required: true, message: "知识点体系不能为空", trigger: "change" }],
-  // 其他验规则...
+  // version: [{ required: true, message: '版本号不能为空', trigger: 'blur' }],
+  courseSystems: [{ required: true, message: '请选择版本教材', trigger: 'change' }],
+  // knowledgePoints: [{ required: true, message: "知识点体系不能为空", trigger: "change" }],
 }    
 //实验说明表单验证规则
 const descFormRules = {
@@ -771,25 +1032,20 @@ const descFormRules = {
 
 //知识点树形结构
 const knowledgeTreeList = ref([])
+const lastSubjectId = ref(null)
 const getKnowledgeTreeList = async (subjectId) => {
   try {
-     // 确保所有必要参数都有值
-     if (!basicForm.value.schoolType || !basicForm.value.academicStageType ) {
-      console.log('缺少获取知识点所需的参数');
+    if (!basicForm.value.schoolType || !basicForm.value.academicStageType) {
       return;
     }
-    
-     // 构建请求参数
-     let params = {
+
+    let params = {
       schoolTypeId: basicForm.value.schoolType,
       academicStageId: basicForm.value.academicStageType,
       subjectId: subjectId
     }
 
- 
-    // 发起请求       
     const response = await getKnowledgeTree(params)
-    console.log(params)
     const processTreeData = (items) => {
       if (!items) return []
       return items.map(item => ({
@@ -813,49 +1069,22 @@ const getKnowledgeTreeList = async (subjectId) => {
 // 实验ID
 const experimentId = ref()
 
-// 添加 emit 定义
-// const emit = defineEmits(['update:experimentName', 'canSave'])
-
-// // 监听实验名称变化
-// watch(() => basicForm.name, (newName) => {
-//   emit('update:experimentName', newName)
-// })
-
-
-// 监听表单变化
-// watch(basicForm, async () => {
-//   await validateForm()
-// }, { deep: true })
-
 // 添加响应式变量
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 
-// 在组件挂载时获取路由参数
-//获取操作类型
 const operateType = ref('')
-// 修改 onMounted 钩子
 onMounted(async () => {
-  
-  // 获取实验说明列表
   getExperimentInfoDescribeList();
 
-  // 从路由参数判断操作类型和学校ID
   const { type, id } = route.query
-  
   operateType.value = type
   if (type === 'edit' && id) {
-    // 编辑模式
     experimentId.value = id
     await loadExperimentData(id)
     hasExperiments.value = true
   } else {
-    // 新增模式
-    //新增后接收的实验id不为空，则调用loadExperimentData方法获取学校数据
-    //解决新增实验到下一步后，返回实验组件时不显示刚刚新增的实验数据BUG、
-    // debugger
     if (props.toEexperimentInfoId) {
-      console.log('新增后接收到的实验id为: ', props.toEexperimentInfoId)
       loadExperimentData(props.toEexperimentInfoId)
       hasExperiments.value = true
     }
@@ -866,35 +1095,43 @@ onMounted(async () => {
 // 加载实验数据的方法
 const loadExperimentData = async (id) => {
   try {
-    // TODO: 调用获取实验详情的 API
     const response = await getExperimentInfo(id)
     experimentData.value = {...response.data};
-    
-    //属性转字符串
     experimentData.value.attrType = experimentData.value.attrType + ''
 
-    // console.log('获取的实验数据为: ', experimentData.value)
-    // 更新表单数据
-    //获取学段
-    schoolTypeChange(experimentData.value.academicStageType)
-
-    //加载挂载科目体系
+    schoolTypeChange(experimentData.value.schoolType)
     getCourseSystemOptionList(experimentData.value.schoolType, experimentData.value.academicStageType)
-    
-    // console.log('加载的课程体系为: ', experimentData.value.courseSystems[0])
-    //供调用知识点使用
-    basicForm.value.schoolType = experimentData.value.schoolType//学校类型
-    basicForm.value.academicStageType = experimentData.value.academicStageType//学段
-    //加载知识点
-    getKnowledgeTreeList(experimentData.value.courseSystems[0])
-    // 更新表单数据
+
+    basicForm.value.schoolType = experimentData.value.schoolType
+    basicForm.value.academicStageType = experimentData.value.academicStageType
+    if (experimentData.value.courseSystems && experimentData.value.courseSystems.length > 0) {
+      getKnowledgeTreeList(experimentData.value.courseSystems[0])
+    }
+
     basicForm.value = {
       ...experimentData.value
     }
-    
-    // 更新实验状态
+
+    // 回显教材章节体系列表（从后端返回的 mtExperimentInfoMountSystems）
+    if (experimentData.value.mtExperimentInfoMountSystems && experimentData.value.mtExperimentInfoMountSystems.length > 0) {
+      mountSystemList.value = experimentData.value.mtExperimentInfoMountSystems.map(ms => ({
+        ...ms,
+        subjectName: ms.subjectId ? getSubjectName(ms.subjectId, experimentData.value.schoolType) : '',
+        textbookLibraryName: ms.textbookLibraryName || '',
+        volumeName: ms.volumeName || '',
+        chapterName: ms.chapterName || '',
+        sectionName: ms.sectionName || ''
+      }))
+    } else {
+      mountSystemList.value = []
+    }
+
     hasExperiments.value = true
+    if (experimentData.value.courseSystems && experimentData.value.courseSystems.length > 0) {
+      lastSubjectId.value = experimentData.value.courseSystems[0]
+    }
   } catch (error) {
+    console.error('获取实验数据失败:', error)
     ElMessage.error('获取实验数据失败')
     hasExperiments.value = false
   }
@@ -908,41 +1145,34 @@ const hasExperiments = ref(false) // 默认为 false
 
 
 
-// 修改 showDialog 方法
 const showDialog = (value, id) => {
-  resetBasicForm()//重置表单
+  resetBasicForm()
   dialogVisible.value = true
   if (value == 'edit') {
     isEdit.value = true
-    // 使用已加载的数据填充表单
     loadExperimentData(id)
-  } 
+  }
 }
 
-// 修改提交表单方法
 const submitForm = async () => {
   try {
     proxy.$refs["basicFormRef"].validate(valid => {
       if (valid) {
-        // debugger
         if (basicForm.value.id != null) {
           updateExperimentInfo(basicForm.value).then(response => {
             proxy.$modal.msgSuccess("修改成功");
-             //获取实验数据
             experimentId.value = response.data
             emit('addExperimentInfoId', response.data)
-             //获取实验数据
             loadExperimentData(response.data)
+            // saveAliasNameIfNeeded(response.data) // 副名称已改到教材章节体系列表(mountSystemList)，随主保存一起提交，不再单独保存
           });
         } else {
           addExperimentInfo(basicForm.value).then(response => {
             proxy.$modal.msgSuccess("新增成功");
-            //获取实验数据
             experimentId.value = response.data
             emit('addExperimentInfoId', response.data)
-            console.log('新增实验id传过去的id为： ' + response.data)
             loadExperimentData(response.data)
-            // hasExperiments.value = true // 添加成功后显示实验信息
+            // saveAliasNameIfNeeded(response.data) // 副名称已改到教材章节体系列表(mountSystemList)，随主保存一起提交，不再单独保存
           });
         }
       }
@@ -952,25 +1182,22 @@ const submitForm = async () => {
     return
   } finally {
     dialogVisible.value = false
-    hasExperiments.value = true // 修改成功后显示实验信息
+    hasExperiments.value = true
   }
 }
 
-// 添加关闭弹框的方法
 const handleClose = () => {
   resetBasicForm()
   dialogVisible.value = false
   
   //编辑的时候，加载挂载科目体系
-  if(operateType.value == 'edit') {    
+  if(operateType.value == 'edit') {
     if(experimentData.value.schoolType && experimentData.value.academicStageType) {
       getCourseSystemOptionList(experimentData.value.schoolType, experimentData.value.academicStageType)
     }
   }
 }
-//===================================================================实验说明===================================================================
 
-// 添加实验说明对话框的控制变量
 const descDialogVisible = ref(false)
 
 //实验说明编辑弹框
@@ -1052,12 +1279,9 @@ const experimentDescQueryParams = ref({
     pageSize: 10,
   }
 )
-/** 查询实验说明列表 */
 function getExperimentInfoDescribeList() {
   loading.value = true;
-  //获取实验id
   experimentDescQueryParams.value.experimentInfoId = experimentId.value?(experimentId.value?experimentId.value:route.query.id):props.toEexperimentInfoId;
-  // debugger
   if(experimentDescQueryParams.value.experimentInfoId) {
     listExperimentInfoDescribe(experimentDescQueryParams.value).then(response => {
       experimentDescribeList.value = response.rows;
@@ -1065,35 +1289,9 @@ function getExperimentInfoDescribeList() {
       loading.value = false;
     });
   }
-
-
 }
 
-//===================================================================实验说明====END===============================================================
-// 修改表单验证方法   TODO： 优化为动态获取
 const validateForm = () => {
-  // if (activeTab.value == 'basicInfo') {
-  //   // Validate principle tab
-  //   if (!basicForm.value.experimentName && !basicForm.value.schoolType && experimentDescribeList.value.length === 0) {
-  //     throw new Error('请完成实验基本信息的必填项')
-  //     // return false
-  //   }
-  // } else if (activeTab.value == 'experimentDesc') {
-  //   // Validate target tab
-  //   if (experimentDescribeList.value.length === 0) {
-  //     throw new Error('请完成实验说明的必填项')
-  //     // return false
-  //   }
-  // }
-  // debugger
-  // console.log('total.value', total.value)
-  // console.log('total.value', !basicForm.value)
-  // console.log('total.value', experimentDescribeList.value.length == 0)
-  //去掉校验实验说明
-  // if (basicForm.value && total.value == 0) {
-  //     throw new Error('请完成实验信息和实验说明的添加')
-      // return false
-  // }
   return true
 }
 
@@ -1103,836 +1301,30 @@ const validateForm = () => {
 defineExpose({
   activeTab,
   experimentId,
-  validateForm 
+  validateForm
 })
 </script>
 
 <style lang="scss" scoped>
+/* ==================== Variables ==================== */
+$primary: #409eff;
+$primary-light: #EFF6FF;
+$bg: #F8FAFC;
+$card: #FFFFFF;
+$border: #E2E8F0;
+$text: #1E293B;
+$text-secondary: #64748B;
+$text-muted: #94A3B8;
+$radius: 8px;
+$radius-lg: 12px;
+
+/* ==================== Container ==================== */
 .basic-info-container {
   min-height: calc(100vh - 520px);
-  /* padding: 24px; */
-  position: relative;
-  /* background-color: #f8fafa; */
-}
-
-.full-height-tabs {
-  background: white;
-  border-radius: 12px !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 24px;
-}
-
-.compact-form {
-  padding: 24px;
-  height: auto;
-  min-height: 500px;
-  overflow-y: visible;
-}
-
-/* 美化上传区域 */
-.upload-area {
-  width: 180px;
-  height: 140px;
-  border: 2px dashed #dcdfe6;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.3s;
-  background: #fafafa;
-  cursor: pointer;
-}
-
-.upload-area:hover {
-  border-color: #409EFF;
-  background: #f5f7fa;
-  box-shadow: 0 0 8px rgba(64, 158, 255, 0.2);
-}
-
-.upload-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #909399;
-}
-
-.upload-icon {
-  font-size: 28px;
-  margin-bottom: 8px;
-  color: #909399;
-}
-
-.thumbnail {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-/* 表单操作按钮组 */
-.form-actions {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid #ebeef5;
-}
-
-.right-buttons {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-
-/* 美化表单控件 */
-:deep(.el-form-item) {
-  margin-bottom: 22px;
-}
-
-:deep(.el-input__wrapper),
-:deep(.el-textarea__inner) {
-  box-shadow: 0 0 0 1px #dcdfe6 inset;
-}
-
-:deep(.el-input__wrapper:hover),
-:deep(.el-textarea__inner:hover) {
-  box-shadow: 0 0 0 1px #409EFF inset;
-}
-
-:deep(.el-tabs__header) {
-  margin: 0;
-  background: #e8edf3; /* 加深背景色 */
-  border-bottom: 1px solid #e4e7ed;
-  border-radius: 8px 8px 0 0;
-  padding: 6px 8px 0;
-}
-
-:deep(.el-tabs__nav) {
-  border: none !important;
-}
-
-:deep(.el-tabs__item) {
-  height: 40px;
-  line-height: 40px;
-  transition: all 0.3s;
-}
-
-:deep(.el-tabs__item.is-active) {
-  color: var(--el-color-primary);
-  font-weight: 500;
-  background-color: white;
-}
-
-.full-width {
-  width: 100%;
-}
-
-/* 自定义滚动条 */
-.compact-form::-webkit-scrollbar {
-  width: 6px;
-}
-
-.compact-form::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
-  border-radius: 3px;
-}
-
-.compact-form::-webkit-scrollbar-track {
-  background: #f5f7fa;
-}
-
-/* 美化按钮样式 */
-.custom-button {
-  min-width: 100px;
-  height: 36px;
-  font-weight: 500;
-  transition: all 0.3s;
-}
-
-.cancel-button {
-  border-color: #dcdfe6;
-  color: #606266;
-}
-
-.cancel-button:hover {
-  border-color: #c0c4cc;
-  color: #909399;
-}
-
-.submit-button {
-  background: #409EFF;
-  border-color: #409EFF;
-}
-
-.submit-button:hover {
-  background: #66b1ff;
-  border-color: #66b1ff;
-}
-
-/* 空状态提示样式 */
-.empty-tip {
-  padding: 40px;
-  text-align: center;
-
-  .sub-tip {
-    color: #909399;
-    font-size: 14px;
-    margin-top: 8px;
-  }
-}
-
-/* 确保知识点和版本教材对齐 */
-:deep(.el-cascader) {
-  width: 100%;
-  line-height: 32px;
-}
-
-:deep(.el-cascader .el-input__wrapper) {
-  height: 32px;
-}
-
-:deep(.el-select) {
-  width: 100%;
-}
-
-:deep(.el-select .el-input__wrapper) {
-  height: 32px;
-}
-
-/* 更新步骤条样式 */
-.custom-steps {
-  margin: 0 0 40px;
-  padding: 24px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-}
-
-:deep(.el-step__title) {
-  font-size: 15px;
-  font-weight: 500;
-  color: #606266;
-}
-
-:deep(.el-step__title.is-success) {
-  color: #67c23a;
-}
-
-:deep(.el-step__title.is-process) {
-  color: #409EFF;
-  font-weight: 600;
-}
-
-:deep(.el-step__icon) {
-  background: #edf2fc;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
-  transition: all 0.3s;
-}
-
-:deep(.el-step.is-process .el-step__icon) {
-  background: #409EFF;
-  transform: scale(1.1);
-}
-
-/* 更新底部导航按钮样式 */
-.steps-action {
-  /* margin-top: 40px; */
-  text-align: center;
-  padding: 10px;
-  background: white;
-  border-radius: 12px;
-  /* box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05); */
-}
-
-.nav-button {
-  padding: 12px 24px;
-  font-size: 15px;
-  border-radius: 8px;
-  margin: 0 12px;
-  transition: all 0.3s;
-}
-
-.nav-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.nav-button .el-icon {
-  margin: 0 6px;
-  font-size: 16px;
-}
-
-/* 确保备注显示正常 */
-.compact-form {
-  padding: 24px;
-  height: auto;
-  min-height: 500px;
-  overflow-y: visible;
-}
-
-/* 更新表单控件样式 */
-:deep(.el-input__wrapper),
-:deep(.el-textarea__inner) {
-  border-radius: 8px;
-  transition: all 0.3s;
-}
-
-:deep(.el-form-item__label) {
-  font-weight: 500;
-  color: #606266;
-}
-
-/* 添加教育主题相关的装饰元素 */
-.basic-info-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  /* background: linear-gradient(90deg, #409EFF, #67c23a); */
-  opacity: 0.6;
-}
-
-/* 顶部操作栏样式重新设计 */
-.top-actions {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.left-area,
-.right-area {
-  flex: 0 0 200px; /* 固定宽度，确保居中标题有足够空间 */
-  display: flex;
-  align-items: center;
-}
-
-.left-area {
-  justify-content: flex-start;
-}
-
-.right-area {
-  justify-content: flex-end;
-}
-
-.center-area {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0 20px;
   position: relative;
 }
 
-/* 标题包装器样式 */
-.title-wrapper {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 40px;
-  background: linear-gradient(to right, rgba(64, 158, 255, 0.1), rgba(103, 194, 58, 0.1));
-  border-radius: 8px;
-}
-
-/* 标题前缀样式 */
-.title-prefix {
-  font-size: 13px;
-  color: #909399;
-  margin-bottom: 4px;
-  font-weight: normal;
-  letter-spacing: 2px;
-}
-
-/* 实验标题样式优化 */
-.experiment-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 600;
-  color: #2c3e50;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 600px;
-  position: relative;
-  padding: 0 10px;
-  letter-spacing: 1px;
-}
-
-/* 标题装饰元素 */
-.title-decoration {
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80%;
-  height: 3px;
-  background: linear-gradient(90deg, 
-    rgba(64, 158, 255, 0.2), 
-    rgba(103, 194, 58, 0.2)
-  );
-  border-radius: 2px;
-}
-
-/* 标题包装器悬浮效果 */
-.title-wrapper:hover .title-decoration {
-  background: linear-gradient(90deg, 
-    rgba(64, 158, 255, 0.4), 
-    rgba(103, 194, 58, 0.4)
-  );
-  transition: background 0.3s ease;
-}
-
-/* 标题两侧装饰 */
-.title-wrapper::before,
-.title-wrapper::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #409EFF;
-  opacity: 0.6;
-}
-
-.title-wrapper::before {
-  left: 20px;
-}
-
-.title-wrapper::after {
-  right: 20px;
-}
-
-/* 响应式调整 */
-@media (max-width: 768px) {
-  .left-area,
-  .right-area {
-    flex: 0 0 120px; /* 在小屏幕上减少按钮区域的宽度 */
-  }
-
-  .title-wrapper {
-    padding: 6px 30px;
-  }
-
-  .experiment-title {
-    font-size: 20px;
-    max-width: 300px;
-  }
-
-  .title-prefix {
-    font-size: 12px;
-  }
-}
-
-/* 顶部操作栏背景优化 */
-.top-actions {
-  background: linear-gradient(to bottom, #f5f7fa, #ffffff);
-  border-bottom: 1px solid #e4e7ed;
-  padding: 16px 24px;
-}
-
-/* 按钮样式微调 */
-.action-button {
-  transition: all 0.3s ease;
-}
-
-.action-button:hover {
-  transform: translateY(-1px);
-}
-
-.submit-button {
-  background: linear-gradient(to right, #409EFF, #67c23a);
-  border: none;
-}
-
-.submit-button:hover {
-  opacity: 0.9;
-  background: linear-gradient(to right, #66b1ff, #85ce61);
-}
-
-/* 移除原有的表单操作按钮样式 */
-.form-actions {
-  display: none;
-}
-
-/* 标签页容器样式 */
-.tabs-wrapper {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #e4e7ed;
-}
-
-/* 自定义标签页样式 */
-.custom-tabs {
-  background: white;
-}
-
-:deep(.el-tabs__header) {
-  margin: 0;
-  background: #e8edf3; /* 加深背景色 */
-  border-bottom: 1px solid #e4e7ed;
-  border-radius: 8px 8px 0 0;
-  padding: 6px 8px 0;
-}
-
-:deep(.el-tabs__nav-wrap) {
-  padding: 0;
-}
-
-:deep(.el-tabs__nav) {
-  border: none !important;
-}
-
-/* 自定义标签标题样式 */
-.custom-tab-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  height: 36px;
-}
-
-:deep(.el-tabs__item) {
-  height: 36px;
-  line-height: 36px;
-  padding: 0 !important;
-  font-size: 14px;
-  color: #909399;
-  position: relative;
-  transition: all 0.3s;
-  border-radius: 6px 6px 0 0;
-  margin: 0 4px;
-}
-
-:deep(.el-tabs__item:hover) {
-  color: var(--el-color-primary);
-}
-
-:deep(.el-tabs__item.is-active) {
-  color: var(--el-color-primary);
-  font-weight: 500;
-  background-color: white;
-}
-
-:deep(.el-tabs__item.is-active .custom-tab-label) {
-  color: var(--el-color-primary);
-}
-
-.custom-tab-label .el-icon {
-  font-size: 16px;
-  margin-right: 4px;
-}
-
-/* 移除默认的底部条 */
-:deep(.el-tabs__active-bar) {
-  display: none;
-}
-
-/* Tab内容区域样式 */
-:deep(.el-tab-pane) {
-  padding: 24px;
-}
-
-/* 确保内容区域样式正确 */
-.compact-form {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* 移除多余的边框和阴影 */
-:deep(.el-tabs--border-card) {
-  border: none;
-  box-shadow: none;
-}
-
-/* 添加动画效果 */
-:deep(.el-tabs__item) {
-  position: relative;
-  overflow: hidden;
-}
-
-:deep(.el-tabs__item)::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 0;
-  height: 2px;
-  background-color: var(--el-color-primary);
-  transition: all 0.3s;
-  transform: translateX(-50%);
-}
-
-:deep(.el-tabs__item.is-active)::before {
-  width: 100%;
-}
-
-/* 实验说明编辑器样式 */
-.experiment-desc {
-  padding: 20px;
-}
-
-.toolbar {
-  margin-bottom: 20px;
-}
-
-.desc-item {
-  margin-bottom: 30px;
-}
-
-.desc-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.title-input {
-  flex: 1;
-}
-
-.editor-wrapper {
-  margin-bottom: 24px;
-}
-
-/* 提交按钮样式 */
-.submit-button {
-  min-width: 140px; /* 保按钮文字能够完整显示 */
-}
-
-/* 主内容区域包装器 */
-.main-content-wrapper {
-  background: white;
-  border-radius: 8px;
-  border: 1px solid #e4e7ed;
-  margin-top: 20px;
-}
-
-/* 步骤条样式 */
-.custom-steps {
-  padding: 24px;
-  border-bottom: 1px solid #e4e7ed;
-}
-
-/* 标签页容器样式 */
-.tabs-wrapper {
-  border-radius: 0;
-  border: none;
-}
-
-/* 底部导航按钮样式 */
-.steps-action {
-  padding: 16px 24px;
-  border-top: 1px solid #e4e7ed;
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  background: #f8fafc;
-}
-
-/* 导航按钮样式 */
-.nav-button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  font-size: 14px;
-}
-
-/* 错误消息样式 */
-:deep(.el-message-box__message) {
-  color: #f56c6c;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-/* 移除tabs-wrapper的重复边框 */
-:deep(.el-tabs__header) {
-  border-radius: 0;
-}
-
-/* 确保内容区域没有重复的边框和圆角 */
-:deep(.el-tab-pane) {
-  border-radius: 0;
-}
-
-/* 添加按钮样式 */
-.add-experiment-btn {
-  margin: 20px 0;
-  padding: 12px 24px;
-  font-size: 15px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #409EFF, #3a8ee6);
-  border: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.25);
-    background: linear-gradient(135deg, #66b1ff, #409EFF);
-  }
-
-  .el-icon {
-    font-size: 16px;
-  }
-}
-
-/* 弹框样式优化 */
-.experiment-dialog {
-  :deep(.el-dialog) {
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
-  :deep(.el-dialog__header) {
-    margin: 0;
-    padding: 20px;
-    background: linear-gradient(135deg, #f0f7ff 0%, #e6f3ff 100%);
-    border-bottom: 1px solid #e4e7ed;
-
-    .el-dialog__title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #303133;
-    }
-  }
-
-  :deep(.el-dialog__body) {
-    padding: 24px;
-    max-height: calc(80vh - 150px);
-    overflow-y: auto;
-  }
-
-  :deep(.el-dialog__footer) {
-    padding: 16px 24px;
-    border-top: 1px solid #e4e7ed;
-    background: #f8fafc;
-  }
-
-  /* 表单区域样式 */
-  .form-section {
-    margin-bottom: 24px;
-    border: 1px solid #e4e7ed;
-    border-radius: 8px;
-    overflow: hidden;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  .section-header {
-    padding: 12px 16px;
-    background: #e6f3ff;
-    color: #409EFF;
-    font-size: 15px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .form-content {
-    padding: 16px;
-    background: #f8f9fa;
-  }
-
-  /* 上传区域样式优化 */
-  .upload-area {
-    width: 180px;
-    height: 140px;
-    border: 2px dashed #dcdfe6;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.3s;
-    background: #fafafa;
-    cursor: pointer;
-
-    &:hover {
-      border-color: #409EFF;
-      background: #f5f7fa;
-      box-shadow: 0 0 8px rgba(64, 158, 255, 0.2);
-    }
-  }
-
-  /* 表单控件样式 */
-  :deep(.el-form-item) {
-    margin-bottom: 20px;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    .el-form-item__label {
-      font-weight: 500;
-      color: #606266;
-    }
-  }
-
-  :deep(.el-input__wrapper),
-  :deep(.el-textarea__inner) {
-    box-shadow: 0 0 0 1px #dcdfe6 inset;
-    border-radius: 6px;
-    transition: all 0.3s;
-
-    &:hover {
-      box-shadow: 0 0 0 1px #409EFF inset;
-    }
-
-    &:focus {
-      box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2) inset;
-    }
-  }
-}
-
-/* 实验说明编辑器样式优化 */
-.experiment-desc {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  // box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-
-  .toolbar {
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .desc-item {
-    margin-bottom: 24px;
-    border-radius: 8px;
-    padding: 16px;
-  }
-}
-
-/* 响应式调整 */
-@media screen and (max-width: 768px) {
-  .experiment-dialog {
-    :deep(.el-dialog) {
-      width: 95% !important;
-      margin: 10px auto;
-    }
-  }
-}
-
-/* 空状态样式 */
+/* ==================== Empty State ==================== */
 .empty-state {
   display: flex;
   justify-content: center;
@@ -1943,46 +1335,46 @@ defineExpose({
 .welcome-content {
   text-align: center;
   padding: 48px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  background: $card;
+  border-radius: $radius-lg;
+  border: 1px solid $border;
 }
 
 .welcome-icon {
   font-size: 48px;
-  color: #409EFF;
+  color: $primary;
   margin-bottom: 24px;
 }
 
 h2 {
   font-size: 20px;
-  color: #303133;
+  color: $text;
   margin-bottom: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 p {
   font-size: 14px;
-  color: #909399;
+  color: $text-muted;
   margin-bottom: 24px;
 }
 
 .add-button {
   margin-top: 24px;
-  padding: 12px 32px;
-  font-size: 16px;
+  padding: 10px 28px;
+  font-size: 15px;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #409EFF, #3a8ee6);
+  background: $primary;
+  color: #fff;
   border: none;
-  border-radius: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: $radius;
+  cursor: pointer;
+  transition: background 0.2s;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.25);
-    background: linear-gradient(135deg, #66b1ff, #409EFF);
+    background: #1D4ED8;
   }
 
   .el-icon {
@@ -1990,282 +1382,720 @@ p {
   }
 }
 
-/* 响应式调整 */
-@media screen and (max-width: 768px) {
-  .welcome-content {
-    padding: 32px;
-    margin: 0 16px;
-  }
-
-  h2 {
-    font-size: 18px;
-  }
-
-  .add-button {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-.experiment-info {
-  padding: 24px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
-}
-
-.info-header {
+/* ==================== Detail Page Banner ==================== */
+.info-banner {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #ebeef5;
+  padding: 20px 24px;
+  margin-bottom: 8px;
 
-  .header-left {
+  .banner-left {
     display: flex;
     align-items: flex-start;
     gap: 20px;
+    flex: 1;
+    min-width: 0;
   }
 
-  .experiment-icon-wrapper {
-    padding: 16px;
-    background: linear-gradient(135deg, #ecf5ff 0%, #e6f3ff 100%);
-    border-radius: 12px;
-    
-    .experiment-icon {
-      font-size: 12px;
-      color: #409EFF;
+  .banner-thumb {
+    // 宽度跟随默认图真实比例：16:9 → 142px（默认），4:3 → 107px；高度固定 80px
+    width: 142px;
+    height: 80px;
+    border-radius: $radius;
+    flex-shrink: 0;
+    background: $bg;
+    overflow: hidden;
+
+    &.thumb-4-3 { width: 107px; }
+
+    :deep(img) {
+      width: 100%;
+      height: 100%;
+      // 兜底：老数据/比例不符时优雅裁切，不变形
+      object-fit: cover;
     }
   }
 
-  .title-row {
+  .banner-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .banner-title-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 10px;
 
     h3 {
       margin: 0;
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 600;
-      color: #303133;
-    }
-
-    .version-tag {
-      padding: 2px 8px;
-      background: #f0f7ff;
-      color: #409EFF;
-      border-radius: 4px;
-      font-size: 13px;
-      font-weight: 500;
+      color: $text;
     }
   }
 
-  .experiment-tags {
+  .banner-tags {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
-    
-    .el-tag {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 10px;
-      
-      .el-icon {
-        font-size: 14px;
-      }
+    margin-bottom: 10px;
+
+    :deep(.el-tag) {
+      margin-right: 0;
     }
   }
-}
 
-.info-content {
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #ebeef5;
-    color: #303133;
-    font-weight: 500;
-    font-size: 16px;
-
-    .el-icon {
-      color: #409EFF;
-    }
-  }
-}
-
-.thumbnail-section {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 20px;
-  height: 100%;
-
-  .thumbnail-wrapper {
-    position: relative;
-    margin-top: 16px;
-    border-radius: 8px;
+  .banner-desc {
+    font-size: 14px;
+    color: $text-secondary;
+    line-height: 1.6;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    // box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    
-    &:hover {
-      .thumbnail-overlay {
-        opacity: 1;
-      }
-      
-      img {
-        transform: scale(1.05);
-      }
+  }
+
+  .banner-actions {
+    flex-shrink: 0;
+    margin-left: 20px;
+    align-self: flex-start;
+  }
+}
+
+/* ==================== Detail Section (Flat) ==================== */
+.info-section {
+  padding: 24px;
+}
+
+.info-group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: $text;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid $primary;
+  display: inline-block;
+}
+
+.detail-row {
+  display: flex;
+  align-items: baseline;
+  padding: 8px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #F1F5F9;
+  }
+
+  .detail-label {
+    width: 80px;
+    flex-shrink: 0;
+    font-size: 13px;
+    color: $text-muted;
+  }
+
+  .detail-value {
+    flex: 1;
+    font-size: 14px;
+    color: $text;
+    line-height: 1.5;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .info-section :deep(.el-col) {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    margin-bottom: 16px;
+  }
+}
+
+/* ==================== Top Actions ==================== */
+.top-actions {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: $card;
+  border-bottom: 1px solid $border;
+  padding: 12px 24px;
+}
+
+.left-area,
+.right-area {
+  flex: 0 0 200px;
+  display: flex;
+  align-items: center;
+}
+
+.left-area { justify-content: flex-start; }
+.right-area { justify-content: flex-end; }
+
+.center-area {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.title-wrapper {
+  padding: 6px 32px;
+  background: $primary-light;
+  border-radius: $radius;
+}
+
+.title-prefix {
+  font-size: 12px;
+  color: $text-muted;
+  margin-bottom: 2px;
+  letter-spacing: 1px;
+}
+
+.experiment-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: $text;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 500px;
+}
+
+.title-decoration { display: none; }
+
+/* ==================== Tabs ==================== */
+.tabs-wrapper {
+  background: $card;
+  overflow: hidden;
+  border: 1px solid $border;
+  border-radius: $radius;
+}
+
+.full-height-tabs {
+  background: $card;
+  border-radius: $radius-lg;
+  border: 1px solid $border;
+  margin-bottom: 24px;
+}
+
+:deep(.el-tabs__header) {
+  margin: 0;
+  background: $bg;
+  border-bottom: 1px solid $border;
+  border-radius: $radius $radius 0 0;
+  padding: 6px 8px 0;
+}
+
+:deep(.el-tabs__nav) { border: none !important; }
+:deep(.el-tabs__active-bar) { display: none; }
+
+:deep(.el-tabs__item) {
+  height: 36px;
+  line-height: 36px;
+  padding: 0 !important;
+  font-size: 14px;
+  color: $text-muted;
+  position: relative;
+  border-radius: 6px 6px 0 0;
+  margin: 0 4px;
+  transition: color 0.2s;
+
+  &:hover { color: $primary; }
+
+  &.is-active {
+    color: $primary;
+    font-weight: 500;
+    background-color: $card;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: $primary;
+    transition: all 0.2s;
+    transform: translateX(-50%);
+  }
+
+  &.is-active::before { width: 100%; }
+}
+
+.custom-tab-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 36px;
+}
+
+:deep(.el-tab-pane) { padding: 24px; }
+:deep(.el-tabs--border-card) { border: none; box-shadow: none; }
+
+/* ==================== Form ==================== */
+.compact-form {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+:deep(.el-form-item) { margin-bottom: 20px; }
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: $text-secondary;
+}
+
+:deep(.el-input__wrapper),
+:deep(.el-textarea__inner) {
+  border-radius: $radius;
+  transition: box-shadow 0.2s;
+}
+
+:deep(.el-cascader) { width: 100%; }
+:deep(.el-select) { width: 100%; }
+:deep(.knowledge-select) { width: 100%; }
+:deep(.w-full) { width: 100%; }
+
+.full-width { width: 100%; }
+
+.form-actions { display: none; }
+
+/* ==================== Upload ==================== */
+.upload-area {
+  width: 180px;
+  height: 140px;
+  border: 2px dashed $border;
+  border-radius: $radius;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: border-color 0.2s;
+  background: $bg;
+  cursor: pointer;
+
+  &:hover {
+    border-color: $primary;
+    background: $primary-light;
+  }
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: $text-muted;
+}
+
+.upload-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: $text-muted;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* ==================== 实验图片（多比例双图） ==================== */
+.exp-img-card {
+  width: 100%;
+}
+
+.exp-img-box {
+  position: relative;
+  height: 152px;
+  max-width: 100%;
+  // 盒子自身作为弹性容器：无论 el-upload 内部结构如何，子内容都被强制水平垂直居中
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed $border;
+  border-radius: $radius;
+  overflow: hidden;
+  background: $bg;
+
+  // 显式宽度按 152px 高 × 对应比例换算(块级布局下 aspect-ratio 会被宽度拉伸覆盖,写死最稳)
+  &.ratio-16-9 { width: 270px; }  // 16:9
+  &.ratio-4-3 { width: 203px; }   // 4:3
+
+  &:hover { border-color: $primary; }
+
+  :deep(.el-image) {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.exp-img-uploader {
+  // class 落在 el-upload 外层包装 div 上：此层自身也要双向居中，三层嵌套（盒子→包装div→.el-upload）才全部居中
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.exp-img-placeholder {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: $text-muted;
+  font-size: 12px;
+  cursor: pointer;
+
+  .exp-img-placeholder-icon {
+    font-size: 24px;
+  }
+}
+
+.exp-img-default-tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  padding: 2px 10px;
+  border-radius: 0 0 $radius 0;
+  background: #e6a23c;
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.exp-img-mask {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  z-index: 3;
+  display: none;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55);
+
+  .exp-img-mask-item {
+    display: flex;
+    padding: 4px;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+
+    &:hover { opacity: 0.8; }
+
+    :deep(.el-upload) { display: flex; color: #fff; }
+  }
+}
+
+.exp-img-box:hover .exp-img-mask { display: flex; }
+
+.exp-img-info {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .exp-img-spec {
+    font-size: 12px;
+    color: $text-muted;
+  }
+}
+
+/* ==================== Edit Dialog ==================== */
+.experiment-dialog {
+  :deep(.el-dialog) {
+    border-radius: $radius-lg;
+    overflow: hidden;
+  }
+
+  :deep(.el-dialog__header) {
+    margin: 0;
+    padding: 16px 20px;
+    border-bottom: 1px solid $border;
+
+    .el-dialog__title {
+      font-size: 17px;
+      font-weight: 600;
+      color: $text;
     }
   }
 
-  .thumbnail-image {
-    width: 100%;
-    height: 300px;
-    object-fit: cover;
-    transition: transform 0.3s ease;
+  :deep(.el-dialog__body) {
+    padding: 20px 24px;
+    max-height: calc(80vh - 140px);
+    overflow-y: auto;
   }
 
-  .thumbnail-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
+  :deep(.el-dialog__footer) {
+    padding: 14px 20px;
+    border-top: 1px solid $border;
+  }
+
+  .form-thumb-top {
+    margin-bottom: 10px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #F1F5F9;
+
+    :deep(.el-form-item__label) {
+      padding-bottom: 8px;
+    }
+
+    :deep(.el-form-item__content) {
+      display: flex;
+      justify-content: center;
+    }
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+
+    &:last-child { margin-bottom: 0; }
+  }
+
+  .form-group-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text;
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid $primary;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    gap: 6px;
 
     .el-icon {
-      font-size: 24px;
-      color: #fff;
+      color: $primary;
+      font-size: 16px;
     }
+  }
+
+  .form-group-body {
+    padding: 0;
+  }
+
+  :deep(.el-form-item) {
+    margin-bottom: 18px;
+
+    &:last-child { margin-bottom: 0; }
   }
 }
 
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+/* ==================== Buttons ==================== */
+.action-button { transition: opacity 0.2s; &:hover { opacity: 0.85; } }
 
-  .info-item {
-    .item-label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #909399;
-      margin-bottom: 8px;
-      font-size: 14px;
+.submit-button {
+  background: $primary;
+  border-color: $primary;
 
-      .el-icon {
-        font-size: 16px;
-      }
-    }
+  &:hover { background: #1D4ED8; border-color: #1D4ED8; }
+}
 
-    .item-value {
-      color: #303133;
-      font-size: 15px;
-      line-height: 1.6;
-    }
+.cancel-button {
+  border-color: $border;
+  color: $text-secondary;
+}
+
+.add-experiment-btn {
+  margin: 20px 0;
+  padding: 10px 20px;
+  font-size: 14px;
+  border-radius: $radius;
+  background: $primary;
+  border: none;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover { background: #1D4ED8; }
+}
+
+/* ==================== Steps ==================== */
+.custom-steps {
+  padding: 20px 24px;
+  border-bottom: 1px solid $border;
+}
+
+.steps-action {
+  padding: 14px 24px;
+  border-top: 1px solid $border;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  background: $bg;
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+/* ==================== Experiment Description ==================== */
+.experiment-desc {
+  background: $card;
+  border-radius: $radius;
+  padding: 20px;
+
+  .toolbar {
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .desc-item {
+    margin-bottom: 20px;
+    border-radius: $radius;
+    padding: 16px;
+    background: $bg;
   }
 }
 
-/* 响应式调整 */
-@media screen and (max-width: 1200px) {
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
+.desc-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
 }
 
-@media screen and (max-width: 768px) {
-  .info-header {
-    flex-direction: column;
-    gap: 16px;
+.title-input { flex: 1; }
+.editor-wrapper { margin-bottom: 20px; }
 
-    .header-actions {
-      width: 100%;
-      
-      .edit-button {
-        width: 100%;
-      }
-    }
-  }
-}
-
-/* 添加或优化实验说明对话框样式 */
+/* ==================== Desc Dialog ==================== */
 .desc-dialog {
   .desc-item {
-    background: #f8f9fa;
-    border-radius: 8px;
+    background: $bg;
+    border-radius: $radius;
     padding: 20px;
-    margin-bottom: 20px;
-    position: relative;
-  }
-
-  .desc-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
     margin-bottom: 16px;
-
-    .title-input {
-      flex: 1;
-    }
-
-    .delete-btn {
-      flex-shrink: 0;
-    }
   }
 
-  .editor-wrapper {
-    margin-bottom: 24px;
-    
-    :deep(.tox-tinymce) {
-      border-radius: 8px;
-    }
-  }
-
-  /* 添加新说明按钮样式 */
   .add-desc-btn {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     width: 100%;
     height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    border: 2px dashed #dcdfe6;
-    border-radius: 8px;
-    color: #909399;
-    transition: all 0.3s;
+    border: 2px dashed $border;
+    border-radius: $radius;
+    color: $text-muted;
+    transition: all 0.2s;
     cursor: pointer;
 
     &:hover {
-      border-color: #409EFF;
-      color: #409EFF;
-      background: #f0f7ff;
-    }
-
-    .el-icon {
-      font-size: 16px;
+      border-color: $primary;
+      color: $primary;
+      background: $primary-light;
     }
   }
 }
 
-/* 优化空状态提示样式 */
+/* ==================== Misc ==================== */
 .empty-tip {
   padding: 40px;
   text-align: center;
 
   .sub-tip {
-    color: #909399;
+    color: $text-muted;
     font-size: 14px;
     margin-top: 8px;
+  }
+}
+
+.alias-tip {
+  font-size: 12px;
+  color: $text-muted;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.main-content-wrapper {
+  background: $card;
+  border-radius: $radius;
+  border: 1px solid $border;
+  margin-top: 20px;
+}
+
+/* ==================== Responsive ==================== */
+@media screen and (max-width: 768px) {
+  .top-actions { flex-wrap: wrap; gap: 8px; }
+  .left-area, .right-area { flex: 0 0 auto; }
+  .experiment-dialog :deep(.el-dialog) { width: 95% !important; margin: 10px auto; }
+  .welcome-content { padding: 32px; margin: 0 16px; }
+
+  .info-banner {
+    flex-direction: column;
+    align-items: flex-start;
+
+    .banner-left { flex-direction: column; }
+    .banner-thumb { width: 100%; height: 160px; }
+    .banner-actions { margin-left: 0; margin-top: 12px; align-self: stretch; }
+  }
+}
+
+/* ==================== Knowledge Ratio Table ==================== */
+.knowledge-ratio-section {
+  margin-top: 4px;
+
+  .ratio-tip {
+    font-size: 12px;
+    color: $text-muted;
+    margin-bottom: 8px;
+    line-height: 1.6;
+    padding: 6px 10px;
+    background: $bg;
+    border-radius: 4px;
+    border-left: 3px solid $primary;
+  }
+
+  .ratio-table {
+    width: 100%;
+  }
+
+  .ratio-total {
+    margin-top: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: $text-secondary;
+    background: $bg;
+    border-radius: 4px;
+    text-align: right;
+
+    span {
+      color: $text-muted;
+      font-size: 12px;
+    }
+
+    &.ratio-warning {
+      color: #e6a23c;
+      background: #fdf6ec;
+
+      span { color: #e6a23c; }
+    }
   }
 }
 </style>

@@ -115,6 +115,16 @@
             </el-table-column>
             <!-- <el-table-column prop="enrollmentYear" label="入学时间" align="center"/> -->
             <el-table-column prop="name" label="科目" align="center"/>
+            <el-table-column prop="textbookVersionName" label="教材版本" align="center">
+              <template #default="scope">
+                <span>{{ scope.row.textbookVersionName || '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="volumeName" label="分册" align="center">
+              <template #default="scope">
+                <span>{{ scope.row.volumeName || '-' }}</span>
+              </template>
+            </el-table-column>
             <!-- <el-table-column label="课程体系" align="center">
               <template #default="{ row }">
                 <div class="course-systems">
@@ -200,15 +210,16 @@
         <!-- <el-form-item label="入学时间" prop="enrollmentYear">
           <el-input v-model="courseForm.enrollmentYear" disabled />
         </el-form-item> -->
-        <el-form-item label="科目" prop="subjectId">
-          <el-select v-model="courseForm.subjectId" placeholder="请选择科目" class="w-full" @change="subjectChange">
-            <el-option
-              v-for="item in subjectOptions"
-              :key="item.id"
-              :label="item.subjectName"
-              :value="item.subjectType"
-            />
-          </el-select>
+        <el-form-item label="课程" prop="courseBook">
+          <el-cascader
+            v-model="courseForm.courseBook"
+            :options="subjectBookTree"
+            :props="{ expandTrigger: 'hover', emitPath: true }"
+            placeholder="请选择 科目 / 教材版本 / 分册"
+            clearable
+            class="w-full"
+            @change="courseBookChange"
+          />
         </el-form-item>
         <!-- <el-form-item label="课程体系" prop="courseSystems" required>
           <el-cascader
@@ -270,7 +281,7 @@
 import { ref, reactive, watch, computed } from 'vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { listVocalCourse, addVocalCourse, updateVocalCourse, delVocalCourse, getVocalCourse } from '@/api/glxt/vocal_course'
-import { initSubject, getCourseSystemOptions } from '@/api/glxt/subject'
+import { getCourseSystemOptions } from '@/api/glxt/subject'
 const { proxy } = getCurrentInstance();
 const { mt_vocal_school_subject } = proxy.useDict('mt_vocal_school_subject');
 //获取教材版本
@@ -317,7 +328,7 @@ const courseFormRef = ref(null)
 
 // 表单校验规则
 const rules = {
-  subjectId: [{ required: true, message: '请选择科目', trigger: 'blur' }],
+  courseBook: [{ required: true, message: '请选择 科目 / 教材版本 / 分册', trigger: 'change' }],
   columnId: [{ required: true, message: '请选择栏目', trigger: 'blur' }],
   // courseSystems: [{ required: true, message: '请选择课程体系', trigger: 'blur' }],
   // textbookVersion: [{ required: true, message: '请选择教材版本', trigger: 'change' }],
@@ -344,7 +355,10 @@ const courseForm = ref({
   schoolType: props.schoolInfo.educationLevel,//学校类型
   vocalEduGradeId: '',
   vocalEduSpecialityId:'',
-  subjectId: '',
+  subjectId: '',       // 学科code
+  libraryId: null,     // 教材版本ID
+  volumeId: null,      // 分册ID
+  courseBook: [],      // 级联值 [subjectType, libraryId, volumeId]
   name: '',
   courseSystems: [[]],
   columnId:'',
@@ -355,6 +369,9 @@ const reset = () => {
   courseForm.value = {
     id: null,
     subjectId: null,
+    libraryId: null,
+    volumeId: null,
+    courseBook: [],
     vocalEduGradeId: null,
     vocalEduSpecialityId: null,
     name: null,
@@ -366,9 +383,50 @@ const reset = () => {
 
 
 
-//科目下拉改变时候获取栏目列表
-const subjectChange = (value) => {
+// 「科目 → 教材版本 → 分册」级联树（复用 getCourseSystemOptions，按学校类型 + 专业学段）
+const subjectBookTree = ref([])
+
+// 加载级联树
+const loadSubjectBookTree = () => {
+  // 本组件为职教专用，educationLevel 兜底取 '2'，避免空值导致后端不过滤 school_type 而混入普教科目
+  const schoolType = props.schoolInfo.educationLevel || '2'
+  const stage = currentSpeciality.value?.schoolPeriod
+  getCourseSystemOptions(schoolType, stage).then(res => {
+    if (res.code == 200) subjectBookTree.value = res.data || []
+  })
+}
+
+// 级联选择：科目 / 教材版本 / 分册
+const courseBookChange = (value) => {
+  if (!value || value.length < 3) {
+    courseForm.value.subjectId = null
+    courseForm.value.libraryId = null
+    courseForm.value.volumeId = null
+    courseForm.value.name = null
+    return
+  }
+  const [subjectType, libraryId, volumeId] = value
+  courseForm.value.subjectId = subjectType
+  // 级联 value 是字符串，库存 Long，转一下
+  courseForm.value.libraryId = libraryId != null ? Number(libraryId) : null
+  courseForm.value.volumeId = volumeId != null ? Number(volumeId) : null
+  // 从树里取科目名存入 name
+  const labels = findBookLabels(value)
+  courseForm.value.name = labels?.subjectName || getSubjectName(subjectType)
+  // 保留原行为：选完科目后加载栏目
   getColumnList()
+}
+
+// 按级联路径从树里取名称
+const findBookLabels = (path) => {
+  if (!path || path.length < 3) return null
+  const [sType, lId, vId] = path
+  const subj = subjectBookTree.value.find(s => s.value === sType)
+  if (!subj) return null
+  const lib = (subj.children || []).find(l => l.value === lId)
+  if (!lib) return { subjectName: subj.label }
+  const vol = (lib.children || []).find(v => v.value === vId)
+  return { subjectName: subj.label, versionName: lib.label, volumeName: vol ? vol.label : null }
 }
 
 
@@ -507,24 +565,6 @@ watch(() => queryParams.value.name, (val) => {
 
 
 
-// 初始化科目下拉列表
-const subjectOptions = ref([])
-const initSubjectList = () => {
-  try{
-    initSubject({schoolType: '2'}).then(response => {
-      if(response.code == 200){
-        subjectOptions.value = response.rows
-        //获取科目名称
-        console.log('subjectOptions',subjectOptions.value)
-        subjectOptions.value.forEach(item => {
-          item.subjectName = getSubjectName(item.subjectType)
-        })
-      }
-    })
-  }catch(err){
-    ElMessage.error('数据初始化失败')
-  }
-}
 //获取科目名称
 const getSubjectName = (subjectType) => {
   return mt_vocal_school_subject.value ?.find(item => item.value === subjectType).label
@@ -548,7 +588,7 @@ const clickAddCourse = () => {
   courseForm.value.vocalEduSpecialityId = currentSpeciality.value.id;
   courseForm.value.vocalEduGradeId = currentGrade.value.id;
   //调用初始化科目下拉列表
-  initSubjectList();
+  loadSubjectBookTree();
   //获取挂载课程 schoolPeriod
   getCourseSystemOptionList(props.schoolInfo.educationLevel, currentSpeciality.value.schoolPeriod);
 
@@ -561,7 +601,7 @@ const clickAddCourse = () => {
 const editCourse = (row) => {
   reset();
    //调用初始化科目下拉列表
-  initSubjectList();
+  loadSubjectBookTree();
   //获取挂载课程  学校类型   学段   需求问题暂时去掉挂载课程体系
   // getCourseSystemOptionList(props.schoolInfo.educationLevel, currentSpeciality.value.schoolPeriod);
 
@@ -574,6 +614,10 @@ const editCourse = (row) => {
       courseForm.value = response.data
       courseForm.value.columnId = response.data.mtSchoolColumn.columnId
       courseForm.value.schoolColumnId = response.data.mtSchoolColumn.id
+      //回显「科目/版本/分册」级联（老数据没有版本/分册时留空；值转字符串匹配树节点）
+      courseForm.value.courseBook = (response.data.libraryId && response.data.volumeId)
+        ? [String(response.data.subjectId), String(response.data.libraryId), String(response.data.volumeId)]
+        : []
       //开启弹框
     }
     dialogVisible.value = true
@@ -610,36 +654,28 @@ const cancel = () => {
 
 // 修改 saveCourse 函数
 const saveCourse = () => {
-  // if (!courseFormRef.value) return
+  if (!courseFormRef.value) return
   try{
     courseFormRef.value.validate((valid) => {
-    if (valid) {
-       //获取课程名称传入参数
-      let name = getSubjectName(courseForm.value.subjectId);
-      courseForm.value.name = name;
-      if (courseForm.value.id != null) {
-        
-        courseForm.value.schoolId = props.schoolInfo.id;
-        courseForm.value.schoolType = props.schoolInfo.educationLevel;
-        updateVocalCourse(courseForm.value).then(response => {
-          if(response.code == 200){
-            proxy.$modal.msgSuccess("修改成功");
-            queryParams.value.gradeId = courseForm.value.gradeId
-            getList(queryParams.value);
-          } 
-        });
-      } else {
-        courseForm.value.schoolId = props.schoolInfo.id;
-        courseForm.value.schoolType = props.schoolInfo.educationLevel;
-        addVocalCourse(courseForm.value).then(response => {
-          if(response.code == 200){
-            proxy.$modal.msgSuccess("新增成功");
-            queryParams.value.gradeId = courseForm.value.gradeId
-            getList(queryParams.value);
-          }
-        });
-      }
+    if (!valid) return
+    // name 兜底（级联change已填，防止异常情况为空）
+    if (!courseForm.value.name) {
+      courseForm.value.name = getSubjectName(courseForm.value.subjectId)
     }
+    courseForm.value.schoolId = props.schoolInfo.id
+    courseForm.value.schoolType = props.schoolInfo.educationLevel
+    // 去掉级联用的中间字段，避免发给后端
+    const payload = { ...courseForm.value }
+    delete payload.courseBook
+    const isEdit = courseForm.value.id != null
+    const req = isEdit ? updateVocalCourse(payload) : addVocalCourse(payload)
+    req.then(response => {
+      if(response.code == 200){
+        proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
+        queryParams.value.gradeId = courseForm.value.gradeId
+        getList(queryParams.value);
+      }
+    });
   })
   }catch(err){
     ElMessage.error('操作失败')

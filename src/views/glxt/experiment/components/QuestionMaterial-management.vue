@@ -11,7 +11,7 @@
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Document /></el-icon>
-                <span>题库{{ experimentId }}</span>
+                <span>题库</span>
               </div>
             </template>
             <div class="search-wrapper">
@@ -82,8 +82,9 @@
                 </template>
 
               </el-table-column>
-              <el-table-column label="操作"  align="center">
+              <el-table-column label="操作"  align="center" width="180">
                 <template #default="scope">
+                  <el-button plain type="primary" @click="showQuestion(scope.row)">显示</el-button>
                   <el-button plain type="danger" class="delete-btn" @click="deleteQuestion(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
@@ -205,8 +206,9 @@
                 <dict-tag :options="mt_source_material_type" :value="scope.row.sourceMaterial.sourceType"/>
               </template>
             </el-table-column>
-              <el-table-column label="操作" width="150" align="center">
+              <el-table-column label="操作" width="220" align="center">
                 <template #default="scope">
+                  <el-button plain type="info" icon="Download" @click="downloadMaterial(scope.row)">下载</el-button>
                   <el-button plain type="danger" class="delete-btn" @click="deleteMaterial(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
@@ -382,6 +384,11 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 题目显示弹窗（完整题目：按题型渲染题干+选项，复用题库的 QuestionShow 组件） -->
+    <el-dialog v-model="questionShow.dialog" title="题目详情" width="60%" top="8vh" class="question-show-dialog">
+      <QuestionShow :qType="questionShow.qType" :question="questionShow.question" :qLoading="questionShow.loading"/>
+    </el-dialog>
   </div>
 </template>
 
@@ -392,11 +399,52 @@ import { Document, Folder } from '@element-plus/icons-vue'
 //获取题库
 import { listQuestion } from '@/api/glxt/question'
 const { proxy } = getCurrentInstance();
+
+// ==================== 题目显示 / 素材下载 ====================
+// 题目显示弹窗（与题库列表"预览题库"同款模式）
+const questionShow = ref({
+  dialog: false,
+  loading: false,
+  qType: 0,
+  question: {}
+})
+// 显示整题：按题目 id 拉取完整数据（列表行的 VM 可能缺选项/解析，以详情接口为准）
+const showQuestion = async (row) => {
+  questionShow.value.dialog = true
+  questionShow.value.loading = true
+  try {
+    const re = await getQuestion(row.questionEditRequestVM.id)
+    questionShow.value.qType = re.data.questionType
+    questionShow.value.question = re.data
+  } finally {
+    questionShow.value.loading = false
+  }
+}
+
+// 下载素材文件（与素材管理页同款：隐藏 a 标签直连 fileUrl）
+const downloadMaterial = (row) => {
+  const material = row.sourceMaterial
+  if (!material.fileUrl) {
+    proxy.$modal.msgError('文件URL不存在')
+    return
+  }
+  const link = document.createElement('a')
+  link.href = material.fileUrl
+  link.download = material.fileName || `文件_${new Date().getTime()}`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 //字典引入 学校类型、  mt_vocal_education_type->职教学段、mt_academic_stage->普教学段、 学制
 const { mt_question_type, mt_school_type, mt_vocal_education_type, mt_academic_stage, mt_source_material_type} = proxy.useDict('mt_question_type', 'mt_school_type', 'mt_vocal_education_type', 'mt_academic_stage', 'mt_source_material_type');
 
 //导入实验-题库API
 import { insertBatchMtExperimentQuestion, listExperimentQuestion, delExperimentQuestion } from '@/api/glxt/experimentQuestion'
+
+//题目详情（显示整题用）
+import { getQuestion } from '@/api/glxt/question'
+//题目展示组件（按题型渲染题干+选项）
+import QuestionShow from '@/views/glxt/question/components/Show'
 
 
 //获取素材
@@ -916,6 +964,12 @@ const handleTabChange = (tab) => {
   min-height: calc(100vh - 520px);
   padding: 24px;
   position: relative;
+}
+
+/* 题目显示弹窗：内容区限高滚动，长题不被裁掉 */
+:deep(.question-show-dialog .el-dialog__body) {
+  max-height: 68vh;
+  overflow-y: auto;
 }
 
 /* 主内容包装器样式 */

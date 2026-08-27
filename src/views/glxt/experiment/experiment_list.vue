@@ -14,14 +14,34 @@
         </el-select>
       </el-form-item>
       <el-form-item label="学段" prop="periodType">
-        <el-select v-model="searchForm.periodType" placeholder="请选择" style="width: 150px;" clearable>
+        <el-select
+          ref="stageSelectRef"
+          v-model="searchForm.periodType"
+          :placeholder="searchForm.contentType ? '请选择' : '请先选择类型'"
+          style="width: 150px;"
+          clearable
+          :disabled="!searchForm.contentType"
+          @change="handleStageChange"
+        >
           <el-option
-            v-for="dict in educationStage.value"
+            v-for="dict in educationStage"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
           />
         </el-select>
+      </el-form-item>
+      <el-form-item label="教材" prop="bookFilter">
+        <el-cascader
+          v-model="bookFilter"
+          :options="bookTree"
+          :props="{ checkStrictly: true, expandTrigger: 'hover' }"
+          placeholder="科目 / 教材版本 / 分册"
+          clearable
+          style="width: 300px"
+          :disabled="!searchForm.contentType || !searchForm.periodType"
+          @change="handleBookFilterChange"
+        />
       </el-form-item>
         <el-form-item label="实验名称">
           <el-input v-model="searchForm.name" placeholder="请输入实验名称" clearable/>
@@ -77,7 +97,15 @@
         :header-cell-style="{ background: '#f5f7fa' }"
       >
         <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="experimentName" label="实验名称" align="center"/>
+        <el-table-column type="index" label="ID" width="60" prop="id" align="center" />
+        <el-table-column label="缩略图" align="center" width="110">
+          <template #default="scope">
+            <!-- 尺寸跟随默认图真实比例：16:9 → 80×45（默认），4:3 → 60×45 -->
+            <image-preview v-if="scope.row.thumbnail" :src="scope.row.thumbnail" :width="scope.row.defaultImage === 2 ? 60 : 80" :height="45" />
+            <span v-else style="color: #c0c4cc;">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="experimentName" label="实验名称" align="center" show-overflow-tooltip min-width="160" />
         <el-table-column prop="schoolType" label="类型"  align="center" >
           <template #default="scope">
           <dict-tag :options="mt_school_type" :value="scope.row.schoolType"/>
@@ -85,27 +113,45 @@
         </el-table-column>
         <el-table-column prop="academicStageType" label="学段"  align="center">
           <template #default="scope">
-          <dict-tag :options="mt_school_type == '1' ? mt_academic_stage : mt_vocal_education_type" :value="scope.row.schoolType"/>
+          <dict-tag :options="scope.row.schoolType == '1' ? mt_academic_stage : mt_vocal_education_type" :value="scope.row.academicStageType"/>
         </template>
+        </el-table-column>
+        <el-table-column label="教材关联" align="center" width="110">
+          <template #default="scope">
+            <el-tooltip v-if="scope.row.mountCount > 0" :content="scope.row.bookSummary" placement="top" :disabled="!scope.row.bookSummary">
+              <el-tag size="small" type="info">{{ scope.row.mountCount }} 个关联</el-tag>
+            </el-tooltip>
+            <span v-else style="color: #c0c4cc;">-</span>
+          </template>
         </el-table-column>
         <el-table-column prop="auditStatus" label="审核状态" align="center">
           <template #default="scope">
           <dict-tag :options="mt_experiment_audit_status" :value="scope.row.auditStatus"/>
         </template>
         </el-table-column>
-        <el-table-column label="操作" width="500" align="center">
+        <el-table-column label="操作" width="620" align="center">
           <template #default="scope">
             <div class="operation-buttons">
-              <!-- <el-button 
-                type="success" 
+              <!-- <el-button
+                type="success"
                 plain
                 @click="handlePreview(scope.row)"
               >
                 <el-icon><View /></el-icon>
                 <span>预览</span>
               </el-button> -->
-              <el-button 
-                type="primary" 
+              <!-- 暂时注释掉，不上线 -->
+              <el-button
+                type="primary"
+                plain
+                @click="handleClassroom(scope.row)"
+                v-hasPermi="['glxt:experimentClassroom:generate']"
+              >
+                <el-icon><MagicStick /></el-icon>
+                <span>AI课堂</span>
+              </el-button>
+              <el-button
+                type="primary"
                 color="#6EDC93"
                 plain
                 @click="handleEdit(scope.row)"
@@ -114,10 +160,11 @@
                 <el-icon><Edit /></el-icon>
                 <span>修改</span>
               </el-button>
-              <el-button 
-                type="warning" 
+              <el-button
+                type="warning"
                 plain
                 @click="handleAudit(scope.row)"
+                :disabled="scope.row.auditStatus == 2"
                 v-hasPermi="['glxt:experimentInfo:edit']"
               >
                 <el-icon><Check /></el-icon>
@@ -150,34 +197,66 @@
         />
       </div>
     </div>
+
+    <!-- 审核对话框 -->
+    <el-dialog v-model="auditDialogVisible" title="实验审核" width="480px" destroy-on-close>
+      <div class="audit-dialog-content">
+        <p class="audit-dialog-experiment">{{ auditRow?.experimentName }}</p>
+        <el-form label-position="top">
+          <el-form-item label="审核结果">
+            <el-radio-group v-model="auditForm.status">
+              <el-radio :value="2">通过</el-radio>
+              <el-radio :value="3">未通过</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="审核意见">
+            <el-input v-model="auditForm.comment" type="textarea" :rows="3" placeholder="请输入审核意见（选填）" />
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <el-button @click="auditDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="doAudit" :loading="auditSubmitting">确认审核</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 //导入实验信息API
 import { listExperimentInfo, delExperimentInfo, toExamine } from '@/api/glxt/experimentInfo'
+// 复用课程页的「科目/教材版本/分册」级联树接口
+import { getCourseSystemOptions } from '@/api/glxt/subject'
 import { useTeacherInfo } from '@/store/modules/teacherInfo'
 
 const { proxy } = getCurrentInstance();
-const { mt_academic_stage, mt_school_type, mt_vocal_education_type, mt_experiment_audit_status } = proxy.useDict('mt_academic_stage', 'mt_school_type','mt_vocal_education_type', 'mt_experiment_audit_status');
+const { mt_academic_stage, mt_school_type, mt_vocal_education_type, mt_experiment_audit_status, mt_school_subject, mt_vocal_school_subject } = proxy.useDict('mt_academic_stage', 'mt_school_type','mt_vocal_education_type', 'mt_experiment_audit_status', 'mt_school_subject', 'mt_vocal_school_subject');
 
 const router = useRouter()
 const { isTeacher, schoolType: userSchoolType } = useTeacherInfo()
 
 //学段
 const educationStage = ref([])
+const stageSelectRef = ref(null)   // 学段下拉引用，用于选完类型后自动聚焦
 
 //学校类型改变时，学段改变
-const schoolTypeChange = (value) => {
+const schoolTypeChange = (value, focusStage = true) => {
   //清空学段的数据
-  searchForm.value.periodType = '' 
+  searchForm.value.periodType = ''
+  resetBookFilter()   // 类型变了，教材级联树失效，清掉选中
     if(value == '1'){
-        educationStage.value = mt_academic_stage
+        educationStage.value = mt_academic_stage.value
     }else{
-        educationStage.value = mt_vocal_education_type
+        educationStage.value = mt_vocal_education_type.value
+    }
+    // 选完类型后自动聚焦学段下拉，顺势选下一步（初始化调用时 focusStage=false 不弹）
+    if (focusStage) {
+      nextTick(() => {
+        stageSelectRef.value && stageSelectRef.value.focus && stageSelectRef.value.focus()
+      })
     }
 }
 
@@ -189,6 +268,9 @@ const searchForm = ref({
   status: '',
   contentType:'',
   periodType:'',
+  subjectId: null,           // 科目（教材三连筛）
+  textbookLibraryId: null,   // 教材版本
+  volumeId: null,            // 分册
   pageNum: 1,
   pageSize: 10,
 })
@@ -202,9 +284,57 @@ const resetFormSearch = () => {
     status: '',
     contentType:'',
     periodType:'',
+    subjectId: null,
+    textbookLibraryId: null,
+    volumeId: null,
     pageNum: 1,
     pageSize: 10,
   }
+}
+
+// 科目/教材版本/分册 级联筛选（复用课程页 getCourseSystemOptions 的树，依赖 类型+学段）
+const bookTree = ref([])     // 级联选项树
+const bookFilter = ref([])   // 级联选中路径 [subjectType, libraryId?, volumeId?]
+
+// 加载级联树：类型(contentType)+学段(periodType) 都选了才加载
+const loadBookTree = () => {
+  if (searchForm.value.contentType && searchForm.value.periodType) {
+    getCourseSystemOptions(searchForm.value.contentType, searchForm.value.periodType).then(res => {
+      bookTree.value = res.data || []
+    })
+  } else {
+    bookTree.value = []
+  }
+}
+
+// 清空教材筛选
+const resetBookFilter = () => {
+  bookFilter.value = []
+  searchForm.value.subjectId = null
+  searchForm.value.textbookLibraryId = null
+  searchForm.value.volumeId = null
+}
+
+// 级联选中：解析路径到 subjectId/libraryId/volumeId（checkStrictly 可选任意一级）
+const handleBookFilterChange = (value) => {
+  searchForm.value.subjectId = value && value[0] != null ? value[0] : null
+  searchForm.value.textbookLibraryId = value && value[1] != null ? value[1] : null
+  searchForm.value.volumeId = value && value[2] != null ? value[2] : null
+}
+
+// 学段改变：教材树失效，清筛 + 重载
+const handleStageChange = () => {
+  resetBookFilter()
+  loadBookTree()
+}
+
+// 表格里把 subjectId 解析成科目名（按学校类型选字典）
+const getSubjectName = (row) => {
+  if (!row.subjectId) return ''
+  // useDict 返回的是 ref，脚本里要取 .value 才是数组
+  const dict = row.schoolType == '1' ? mt_school_subject.value : mt_vocal_school_subject.value
+  const hit = dict && dict.find(d => d.value === row.subjectId)
+  return hit ? hit.label : row.subjectId
 }
 
 // 模拟表格数据
@@ -217,35 +347,56 @@ const total = ref(tableData.value.length)
 
 //获取列表数据
 const getListExperimentInfo = () => {
-  listExperimentInfo(searchForm.value).then(response => {
+  const f = searchForm.value
+  // 前端字段名与后端过滤字段不一致，这里对齐：
+  // contentType→schoolType、periodType→academicStageType、name→experimentName、status→auditStatus
+  const params = {
+    pageNum: f.pageNum,
+    pageSize: f.pageSize,
+    experimentName: f.name || undefined,
+    schoolType: f.contentType || undefined,
+    academicStageType: f.periodType || undefined,
+    auditStatus: f.status || undefined,
+    subjectId: f.subjectId || undefined,
+    textbookLibraryId: f.textbookLibraryId || undefined,
+    volumeId: f.volumeId || undefined,
+  }
+  listExperimentInfo(params).then(response => {
     tableData.value = response.rows
     total.value = response.total
   })
 }
 
 //审核实验
+const auditDialogVisible = ref(false)
+const auditRow = ref(null)
+const auditSubmitting = ref(false)
+const auditForm = ref({ status: 2, comment: '' })
+
 const handleAudit = (row) => {
-  // 实现审核逻辑
-  ElMessageBox.confirm(
-    `确定要审核实验 【${row.experimentName}】 吗？`,
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
+  auditRow.value = row
+  auditForm.value = { status: 2, comment: '' }
+  auditDialogVisible.value = true
+}
+
+const doAudit = () => {
+  auditSubmitting.value = true
+  toExamine({
+    id: auditRow.value.id,
+    auditStatus: auditForm.value.status,
+    auditComment: auditForm.value.comment
+  }).then(response => {
+    if (response.code == 200) {
+      ElMessage.success(auditForm.value.status === 2 ? '审核通过' : '已拒绝')
+      auditDialogVisible.value = false
+      getListExperimentInfo()
+    } else {
+      ElMessage.error('审核失败')
     }
-  ).then(() => {
-    // 实现删除逻辑
-    toExamine(row.id).then(response => {
-      if(response.code == 200){
-        ElMessage.success('审核成功')
-        getListExperimentInfo();
-      } else {
-        ElMessage.error('审核失败')
-      }
-    });
   }).catch(() => {
-    ElMessage.info('取消审核')
+    ElMessage.error('审核失败')
+  }).finally(() => {
+    auditSubmitting.value = false
   })
 }
 
@@ -279,7 +430,7 @@ getListExperimentInfo();
 // 教师用户自动填充学校类型
 if (isTeacher.value) {
   searchForm.value.contentType = userSchoolType.value
-  schoolTypeChange(userSchoolType.value)
+  schoolTypeChange(userSchoolType.value, false)   // 初始化：不自动聚焦学段，避免页面加载就弹下拉
   getListExperimentInfo()
 }
 
@@ -337,6 +488,17 @@ const handleEdit = (row) => {
     query: {
       id: row.id,
       type: 'edit'
+    }
+  })
+}
+
+// 进入"AI课堂"生成/预览流程页(流程页内按是否已生成决定显示生成还是预览)
+const handleClassroom = (row) => {
+  router.push({
+    path: '/glxt/experiment/experiment_generate',
+    query: {
+      id: row.id,
+      name: row.experimentName
     }
   })
 }
@@ -537,6 +699,38 @@ const handleCurrentChange = (val) => {
   .op-button .el-icon {
     font-size: 12px;
   }
+}
+
+.audit-dialog-experiment {
+  font-size: 15px;
+  font-weight: 500;
+  color: #1E293B;
+  margin: 0 0 16px;
+}
+
+/* ===== 教材列：科目 pill + 版本/分册弱化文本 ===== */
+.book-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* 科目：浅主色底的小标签。注：纯主色字在浅底对比度不足(≈2.6:1)，故用深色字保证可读(≥4.5:1)，靠浅主色底体现"主色" */
+.book-subject {
+  padding: 1px 8px;
+  background: var(--el-color-primary-light-9, #ecf5ff);
+  color: var(--el-text-color-primary, #303133);
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+/* 版本 · 分册：次要文本 */
+.book-detail {
+  color: var(--el-text-color-regular, #606266);
+  font-size: 13px;
+}
+/* 无教材时的占位 */
+.book-empty {
+  color: var(--el-text-color-placeholder, #c0c4cc);
 }
 </style>
 

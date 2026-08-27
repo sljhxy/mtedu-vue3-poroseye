@@ -424,6 +424,8 @@ function handleUpdate(row) {
   const _id = row.id || ids.value
   getDevice(_id).then(response => {
     form.value = response.data;
+    // schoolType 后端是 Long，字典 value 是字符串，转成字符串以匹配下拉项，避免编辑时显示 ID
+    form.value.schoolType = form.value.schoolType != null ? String(form.value.schoolType) : null;
     // 初始化日期
     dateDefault.value[0] = form.value.startTime;
     dateDefault.value[1] = form.value.endTime;

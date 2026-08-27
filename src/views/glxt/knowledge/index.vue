@@ -246,8 +246,8 @@ const data = reactive({
   },
   rules: {
     knowledge: [
-      { required: true, message: "知识点名称不能为空", trigger: "blur" },
-      { min: 2, max: 50, message: "知识点名称长度在 2 到 50 个字符", trigger: "blur" }
+      { required: true, message: "知识点名称不能为空", trigger: "blur" }
+      //{ min: 2, max: 50, message: "知识点名称长度在 2 到 50 个字符", trigger: "blur" }
     ],
     // schoolTypeId: [
     //   { required: true, message: "请选择类型", trigger: "change" }

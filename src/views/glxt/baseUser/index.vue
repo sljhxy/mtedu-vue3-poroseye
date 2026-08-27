@@ -637,12 +637,12 @@ const data = reactive({
       { required: true, message: "学校不能为空", trigger: "blur" }
     ],
     
-    // gradeId: [
-    //   { required: true, message: "年级不能为空", trigger: "blur" }
-    // ],
-    // classId: [
-    //   { required: true, message: "班级不能为空", trigger: "blur" }
-    // ],
+    gradeId: [
+      { required: true, message: "年级不能为空", trigger: "blur" }
+    ],
+    classId: [
+      { required: true, message: "班级不能为空", trigger: "blur" }
+    ],
     userName: [
       { required: true, message: "用户名称不能为空", trigger: "blur" }
     ],
@@ -661,15 +661,15 @@ const data = reactive({
       { required: true, trigger: "blur", message: "请再次输入您的密码" },
       { required: true, validator: equalToPassword, trigger: "blur" }
     ],
-    phonenumber: [
-      { required: true, message: "手机号码不能为空", trigger: "blur" },
-      { pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: "请输入正确的手机号码", trigger: "blur" }
-    ],
+    // phonenumber: [
+    //   { required: true, message: "手机号码不能为空", trigger: "blur" },
+    //   { pattern: /^1[3|4|5|6|7|8|9][0-9]\d{8}$/, message: "请输入正确的手机号码", trigger: "blur" }
+    // ],
     userType: [
       { required: true, message: "用户类别不能为空", trigger: "change" }
     ],
     email: [
-      { required: true, message: "邮箱不能为空", trigger: "blur" },
+      // { required: true, message: "邮箱不能为空", trigger: "blur" },
       { type: "email", message: "请输入正确的邮箱地址", trigger: ["blur", "change"] }
     ]
   }

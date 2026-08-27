@@ -42,3 +42,13 @@ export function delExperimentInfoStep(id) {
     method: 'delete'
   })
 }
+
+// 导入实验步骤（xlsx，覆盖式：清空该实验已有步骤后重新导入）
+export function importExperimentSteps(data) {
+  return request({
+    url: '/glxt/experimentInfoStep/import',
+    method: 'post',
+    data: data,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

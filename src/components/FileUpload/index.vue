@@ -70,6 +70,11 @@ const props = defineProps({
   isShowTip: {
     type: Boolean,
     default: true
+  },
+  // 外部上传前校验钩子：(file) => false 时直接拦截上传、不发网络请求（错误提示由外部自行处理）
+  beforeUpload: {
+    type: Function,
+    default: null
   }
 });
 
@@ -102,6 +107,9 @@ watch(() => props.fileSuffix, (newSuffix) => {
     videoArr.forEach(item => {
       props.fileType.push(item);
     });
+  } else if (newSuffix == 'apk') {
+    props.fileType.splice(0, props.fileType.length);
+    props.fileType.push('apk');
   } else {
     props.fileType.splice(0, props.fileType.length);//先清空之前的
     let fileTempArr = ["doc", "docx", "xls", "xlsx","ppt", "pptx", "txt", "pdf"]
@@ -133,6 +141,10 @@ watch(() => props.modelValue, val => {
 
 // 上传前校检格式和大小
 function handleBeforeUpload(file) {
+  // 外部上传前校验钩子：返回 false 直接拦截（提示由外部负责）
+  if (props.beforeUpload && props.beforeUpload(file) === false) {
+    return false;
+  }
   // 校检文件类型
   if (props.fileType.length) {
     const fileName = file.name.split('.');
@@ -164,7 +176,7 @@ function handleExceed() {
 // 上传失败
 function handleUploadError(err) {
   proxy.$modal.msgError("上传文件失败");
-  // proxy.$modal.closeLoading(); // 添加此行以停止加载状态
+  proxy.$modal.closeLoading();
 }
 
 // 上传成功回调
