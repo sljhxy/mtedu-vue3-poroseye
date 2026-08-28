@@ -329,92 +329,32 @@
             </el-dialog>
           </el-tab-pane>
 
-          <!-- 实验说明标签页 -->
+          <!-- 内容简介标签页(AI 生成纯 PPT,2026-08-27 替代原"实验说明"手输条目) -->
           <el-tab-pane name="experimentDesc">
             <template #label>
               <div class="custom-tab-label">
                 <el-icon><Edit /></el-icon>
-                <span>实验说明</span>
+                <span>内容简介</span>
               </div>
             </template>
 
-            <div v-show="experimentDescribeList.length && (experimentId || toEexperimentInfoId) ">
-              <el-button plain type="primary" icon="Plus" @click="showDescDialog" style="margin-bottom: 10px;" v-hasPermi="['glxt:experimentInfoDescribe:add']">添加</el-button>
-              <el-table v-loading="loading" :data="experimentDescribeList">
-                <el-table-column label="序号" width="55" type="index" align="center" />
-                <el-table-column label="页码标题" align="center" prop="title" />
-                <el-table-column label="内容" align="center" prop="text">
-                  <template #default="scope">
-                    <div v-html="scope.row.text" v-katex></div>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200">
-                  <template #default="scope">
-                    <el-button plain type="success" icon="Edit" color="#6EDC93" @click="handleDescUpdate(scope.row)" v-hasPermi="['glxt:experimentInfoDescribe:edit']">修改</el-button>
-                    <el-button plain type="danger" icon="Delete" @click="handleDesDelete(scope.row)" v-hasPermi="['glxt:experimentInfoDescribe:remove']">删除</el-button>
-                  </template>
-              </el-table-column>
-            </el-table>
-              <!-- 分页器 -->
-            <pagination
-              v-show="total > 0"
-              :total="total"
-              v-model:page="experimentDescQueryParams.pageNum"
-              v-model:limit="experimentDescQueryParams.pageSize"
-              @pagination="getExperimentInfoDescribeList"
-            />
-            </div>
-            <!-- 实验说明内容 -->
-            <div v-show="!experimentId && !experimentDescribeList.length" class="empty-tip">
-              <el-empty description="请先添加并保存实验基础信息">
+            <!-- 未保存实验基础信息时的门槛提示 -->
+            <div v-if="!(experimentId || toEexperimentInfoId)" class="empty-tip">
+              <el-empty>
                 <template #description>
                   <p>请先添加并保存实验基础信息</p>
-                  <p class="sub-tip">完成实验信息保存后即可进行实验说明编辑</p>
+                  <p class="sub-tip">完成后即可生成内容简介</p>
                 </template>
               </el-empty>
             </div>
-            <div v-show="!experimentDescribeList.length && experimentId" class="experiment-desc">
-              <div class="editor-container">
-                <!-- 空状态展示 -->
-                <div class="empty-state">
-                  <div class="welcome-content">
-                    <el-icon class="welcome-icon"><Orange /></el-icon>
-                    <h2>欢迎来到【实验】配置管理</h2>
-                    <p>开始创建您的实验相关信息</p>
-                    <el-button type="primary" class="add-button" @click="showDescDialog" v-hasPermi="['glxt:experimentInfoDescribe:add']">
-                      <el-icon><Plus /></el-icon>
-                      添加实验说明
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <el-dialog
-                  v-model="descDialogVisible"
-                  :title="descForm.id ? '修改实验说明' : '添加实验说明'"
-                  width="50%"
-                  :before-close="handleDescClose">
-                  <el-form :model="descForm" ref="descFormRef" :rules="descFormRules" >
-                      <el-form-item label="页码标题" class="title-input" prop="title">
-                        <el-input v-model="descForm.title" placeholder="请输入标题"/>
-                      </el-form-item>
-                      <el-form-item class="editor-wrapper" prop="text">
-                        <el-input 
-                          v-model="descForm.text"   
-                          @focus="inputClick(descForm,'text')"
-                          type="textarea"
-                          :rows="30"
-                        />
-                        <!-- <Tinymce v-model="descForm.text" :height="260"/> -->
-                      </el-form-item>
-                  </el-form>
-                  <template #footer>
-                    <div class="dialog-footer">
-                      <el-button @click="descDialogVisible = false">取消</el-button>
-                      <el-button type="primary" @click="submitDescForm">确定</el-button>
-                    </div>
-                  </template>
-            </el-dialog>
+
+            <!-- 内容简介管理(空态/生成中/失败/翻页查看/单页编辑,组件内部自治) -->
+            <IntroManagement
+              v-else
+              :experiment-id="experimentId || toEexperimentInfoId"
+              :experiment-name="experimentData?.experimentName || ''"
+            />
+          </el-tab-pane>
 
 
             <!-- 富文本编辑器 -->
@@ -438,7 +378,6 @@
                 </div>
               </template>
             </el-dialog>
-          </el-tab-pane>
         </el-tabs>
       </div>
     </div>
@@ -463,11 +402,11 @@ import {getCourseSystemOptions, getChapterList } from '@/api/glxt/subject'
 //导入实验基本信息api 
 import {getExperimentInfo, addExperimentInfo, updateExperimentInfo, getExperimentAlias, saveExperimentAlias} from '@/api/glxt/experimentInfo'
 
-//导入实验说明api
-import {getExperimentInfoDescribe, addExperimentInfoDescribe, updateExperimentInfoDescribe, listExperimentInfoDescribe, delExperimentInfoDescribe} from '@/api/glxt/experimentInfoDescribe'
-
 //获取知识点树形结构
 import { getKnowledgeTree } from '@/api/glxt/knowledge';
+
+//内容简介管理组件(AI 生成纯 PPT,替代原"实验说明"手输条目)
+import IntroManagement from './IntroManagement.vue'
 
 // 实验图片上传鉴权
 import { getToken } from '@/utils/auth';
@@ -503,13 +442,7 @@ const props = defineProps({
 const inputClick = (object, parameterName) => {
   richEditor.value.object = object
   richEditor.value.parameterName = parameterName
-  
-  // 设置初始内容
-  if (object === descForm.value) {
-    richEditor.value.content = descForm.value[parameterName] || ''
-  } else {
-    richEditor.value.content = object[parameterName] || ''
-  }
+  richEditor.value.content = object[parameterName] || ''
   richEditor.value.dialogVisible = true
 }
 
@@ -522,11 +455,9 @@ const closeEditor = () => {
 
 const editorConfirm = () => {
   const content = richEditor.value.content
-
-  if (richEditor.value.object === descForm.value) {
-    descForm.value[richEditor.value.parameterName] = content
+  if (richEditor.value.object) {
+    richEditor.value.object[richEditor.value.parameterName] = content
   }
-
   closeEditor()
 }
 
@@ -539,16 +470,12 @@ const updateEditorContent = (content) => {
 // 处理标签页点击
 const handleTabClick = (tab) => {
   activeTab.value = tab.props.name
-  if (activeTab.value === 'experimentDesc' && experimentDescribeList.length == 0) {
-    ElMessage.warning('请先添加并保存实验基础信息后再进行实验说明编辑')
+  if (activeTab.value === 'experimentDesc' && !(experimentId.value || props.toEexperimentInfoId)) {
+    ElMessage.warning('请先添加并保存实验基础信息后再生成内容简介')
     activeTab.value = 'basicInfo' // 强制切回基础信息标签
     return;
   }
-  
-  if(activeTab.value == 'experimentDesc') {
-    //获取实验说明列表
-    getExperimentInfoDescribeList()
-  }
+
   if(activeTab.value == 'basicInfo') {
     //获取实验信息
     if (route.query.type === 'edit') {//新增状态的话无需调用接口
@@ -702,28 +629,6 @@ const isDefaultImage = (slot) => {
   const d = basicForm.value.defaultImage
   if (d === 1 || d === 2) return d === slot
   return slot === 1
-}
-
-//实验说明列表
-const experimentDescribeList = ref([])
-// 实验说明表单数据
-const descForm = ref({
-  pageNum: 1,
-  pageSize:10,
-  id:null,
-  experimentInfoId:'',
-  title:'',
-  text:''
-})
-
-//实验说明表单重置
-const descReset = () => {
-  descForm.value = {
-    id:null,
-    experimentInfoId:null,
-    title:null,
-    text:null
-  }
 }
 
 //学段
@@ -1023,10 +928,6 @@ const rules = {
   // version: [{ required: true, message: '版本号不能为空', trigger: 'blur' }],
   courseSystems: [{ required: true, message: '请选择版本教材', trigger: 'change' }],
   // knowledgePoints: [{ required: true, message: "知识点体系不能为空", trigger: "change" }],
-}    
-//实验说明表单验证规则
-const descFormRules = {
-  title: [{ required: true, message: '请输入实验标题', trigger: 'blur' }],
 }
 
 
@@ -1075,8 +976,6 @@ const isEdit = ref(false)
 
 const operateType = ref('')
 onMounted(async () => {
-  getExperimentInfoDescribeList();
-
   const { type, id } = route.query
   operateType.value = type
   if (type === 'edit' && id) {
@@ -1198,98 +1097,8 @@ const handleClose = () => {
   }
 }
 
-const descDialogVisible = ref(false)
-
-//实验说明编辑弹框
-const handleDescUpdate = (row) => {
-  descReset()
-  getExperimentInfoDescribe(row.id).then(response => {
-    descForm.value = response.data;
-    descDialogVisible.value = true;
-  });
-}
-
-//删除实验说明
-const handleDesDelete = (row) => {
-  ElMessageBox.confirm(
-    `确定要删除吗？`,
-    '警告',{
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    // 实现删除逻辑
-    delExperimentInfoDescribe(row.id).then(response => {
-      if(response.code == 200){
-        ElMessage.success('删除成功')
-        getExperimentInfoDescribeList()
-      } else {
-        ElMessage.error('删除失败')
-      }
-    });
-  }).catch(() => {
-    ElMessage.info('取消删除')
-  })
-}
-
-//实验说明的弹框方法
-const showDescDialog = () => {
-  descReset()
-  descDialogVisible.value = true
-}
-
-
-// 处理对话框关闭
-const handleDescClose = (done) => {
-    descDialogVisible.value = false
-}
-
-// 提交实验说明表单
-const submitDescForm = async () => {
-
-  try {
-    proxy.$refs["descFormRef"].validate(valid => {
-    if (valid) {
-      descForm.value.experimentInfoId = experimentId.value? experimentId.value : props.toEexperimentInfoId;
-      if (descForm.value.id != null) {
-        updateExperimentInfoDescribe(descForm.value).then(response => {
-          proxy.$modal.msgSuccess("修改成功");
-          getExperimentInfoDescribeList();
-        });
-      } else {
-        addExperimentInfoDescribe(descForm.value).then(response => {
-          proxy.$modal.msgSuccess("新增成功");
-          getExperimentInfoDescribeList();
-        });
-      }
-    }
-  });
-  } catch (error) {
-    ElMessage.error('编辑失败，请重试')
-  }finally {
-    // 关闭对话框
-    descDialogVisible.value = false
-  }
-}
-const total = ref(0);
-const experimentDescQueryParams = ref({
-    experimentInfoId: null,
-    pageNum: 1,
-    pageSize: 10,
-  }
-)
-function getExperimentInfoDescribeList() {
-  loading.value = true;
-  experimentDescQueryParams.value.experimentInfoId = experimentId.value?(experimentId.value?experimentId.value:route.query.id):props.toEexperimentInfoId;
-  if(experimentDescQueryParams.value.experimentInfoId) {
-    listExperimentInfoDescribe(experimentDescQueryParams.value).then(response => {
-      experimentDescribeList.value = response.rows;
-      total.value = response.total;
-      loading.value = false;
-    });
-  }
-}
+// 原"实验说明"手输 CRUD(列表/弹窗/提交/删除/分页查询)已随内容简介改版整体移除,
+// 新实现见 IntroManagement.vue(AI 生成纯 PPT:空态新增 → 大纲确认 → 生成 → 翻页查看/单页编辑)。
 
 const validateForm = () => {
   return true
