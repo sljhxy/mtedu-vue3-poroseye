@@ -211,13 +211,17 @@ export const constantRoutes = [
       meta: { title: '实验步骤'},
       hidden: true
     },
-    {
-      path: 'experiment_generate',
-      name: 'experimentGenerate',
-      component: () => import('@/views/glxt/experiment/experiment_generate.vue'),
-      meta: { title: 'AI课堂生成' },
-      hidden: true
-    }
+    // [2026-08-29] AI课堂多内容改版:旧的单内容生成页已废弃,入口改为 experiment_list.vue
+    // 的"AI课堂"按钮打开全屏弹窗(ExperimentClassroomList 组件)。
+    // 不可恢复此路由:后端 byExperiment 接口已改为返回数组(多内容),旧页面期望单个对象,直访会异常。
+    // 如需恢复多内容管理,请从实验列表的"AI课堂"按钮进入。
+    // {
+    //   path: 'experiment_generate',
+    //   name: 'experimentGenerate',
+    //   component: () => import('@/views/glxt/experiment/experiment_generate.vue'),
+    //   meta: { title: 'AI课堂生成' },
+    //   hidden: true
+    // }
     // ... 其他路由
   ]
 },

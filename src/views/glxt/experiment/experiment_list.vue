@@ -219,6 +219,23 @@
         <el-button type="primary" @click="doAudit" :loading="auditSubmitting">确认审核</el-button>
       </template>
     </el-dialog>
+
+    <!-- AI课堂多内容列表(全屏弹窗,2026-08-28 多内容改版) -->
+    <el-dialog
+      v-model="classroomVisible"
+      :title="`AI课堂内容 — ${classroomRow?.experimentName || ''}`"
+      fullscreen
+      destroy-on-close
+      append-to-body
+    >
+      <ExperimentClassroomList
+        v-if="classroomVisible && classroomRow"
+        :experiment-id="classroomRow.id"
+        :experiment-name="classroomRow.experimentName"
+        :school-type="classroomRow.schoolType"
+        :academic-stage-type="classroomRow.academicStageType"
+      />
+    </el-dialog>
   </div>
 </template>
 
@@ -231,6 +248,7 @@ import { listExperimentInfo, delExperimentInfo, toExamine } from '@/api/glxt/exp
 // 复用课程页的「科目/教材版本/分册」级联树接口
 import { getCourseSystemOptions } from '@/api/glxt/subject'
 import { useTeacherInfo } from '@/store/modules/teacherInfo'
+import ExperimentClassroomList from './components/ExperimentClassroomList.vue'
 
 const { proxy } = getCurrentInstance();
 const { mt_academic_stage, mt_school_type, mt_vocal_education_type, mt_experiment_audit_status, mt_school_subject, mt_vocal_school_subject } = proxy.useDict('mt_academic_stage', 'mt_school_type','mt_vocal_education_type', 'mt_experiment_audit_status', 'mt_school_subject', 'mt_vocal_school_subject');
@@ -492,15 +510,13 @@ const handleEdit = (row) => {
   })
 }
 
-// 进入"AI课堂"生成/预览流程页(流程页内按是否已生成决定显示生成还是预览)
+// 打开AI课堂多内容列表(全屏弹窗,内嵌 ExperimentClassroomList 组件)
+// 2026-08-28 多内容改版:不再跳 experiment_generate 页,列表+向导+预览全在弹窗内闭环
+const classroomVisible = ref(false)
+const classroomRow = ref(null) // 当前操作的实验行(传 id/name/schoolType/academicStageType 给子组件)
 const handleClassroom = (row) => {
-  router.push({
-    path: '/glxt/experiment/experiment_generate',
-    query: {
-      id: row.id,
-      name: row.experimentName
-    }
-  })
+  classroomRow.value = row
+  classroomVisible.value = true
 }
 
 
